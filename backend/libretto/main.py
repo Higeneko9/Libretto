@@ -155,13 +155,24 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
         except ValueError as exc:
             raise HTTPException(400, str(exc))
 
+    def error_label(exc: Exception) -> str:
+        # a short fixed label, never the exception text, so internals are not exposed to the client
+        name = exc.__class__.__name__
+        if isinstance(exc, ValueError):
+            return "invalid address"
+        if "Timeout" in name:
+            return "timed out"
+        if "Connect" in name or isinstance(exc, OSError):
+            return "connection refused or host not found"
+        return name
+
     @app.get("/api/health")
     def health():
         try:
             stats = comfy.system_stats()
             return {"comfyui": "ok", "version": stats.get("system", {}).get("comfyui_version")}
         except Exception as exc:
-            return {"comfyui": "unreachable", "error": str(exc)}
+            return {"comfyui": "unreachable", "error": error_label(exc)}
 
     def settings_payload(saved: dict) -> dict:
         # `configured` is false only until the first-run dialog has been shown or an address saved
@@ -214,7 +225,7 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
             stats = httpx.get(f"{url}/system_stats", timeout=5).json()
             return {"ok": True, "url": url, "version": stats.get("system", {}).get("comfyui_version")}
         except Exception as exc:
-            return {"ok": False, "error": str(exc) or exc.__class__.__name__}
+            return {"ok": False, "error": error_label(exc)}
 
     @app.get("/api/profiles")
     def get_profiles():
