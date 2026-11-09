@@ -1,0 +1,9 @@
+name: Arm Up
+keywords: arm up
+description: arm up
+negative: ''
+labels:
+- t-ed2aaff9
+weight: 1.0
+names:
+  ja-JP: 片腕を上げる

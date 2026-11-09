@@ -1,0 +1,39 @@
+name: Flux (natural language)
+format: natural
+order: [style, character, hair, costume, pose, emotion, props, situation, location, lighting, view]
+quality_prefix: ""
+use_negative: false
+natural:
+  style: "A {text} image"
+  character: "{text}"
+  hair: "She has {text}"
+  costume: "She is wearing {text}"
+  pose: "{text}"
+  emotion: "Her expression is {text}"
+  props: "{text}"
+  situation: "{text}"
+  location: "The scene takes place in {text}"
+  lighting: "The lighting is {text}"
+  view: "Shot as {text}"
+workflow_template: workflows/txt2img_checkpoint.json
+defaults:
+  checkpoint: flux1-dev-fp8.safetensors
+  width: 1024
+  height: 1024
+  steps: 20
+  cfg: 1.0
+  sampler: euler
+  scheduler: simple
+  denoise: 1.0
+injection:
+  positive: "6"
+  negative: "7"
+  seed: "3"
+  steps: "3"
+  cfg: "3"
+  sampler: "3"
+  scheduler: "3"
+  denoise: "3"
+  width: "5"
+  height: "5"
+  checkpoint: "4"

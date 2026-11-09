@@ -1,0 +1,9 @@
+name: Upper body
+keywords: upper body, portrait, eye level
+description: an eye-level upper-body portrait
+negative: ''
+labels:
+- t-57d4011b
+weight: 1.0
+names:
+  ja-JP: 上半身

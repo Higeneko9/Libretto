@@ -1,0 +1,122 @@
+categories:
+- id: style
+  names:
+    en-US: Style
+    ja-JP: スタイル
+  kind: scene
+  color: '#b07cf0'
+  folder: styles
+  locked: true
+  can_belong: false
+  has_color: false
+  template: '{text}'
+- id: character
+  names:
+    en-US: Character
+    ja-JP: キャラクター
+  kind: group_head
+  color: '#e5739b'
+  folder: characters
+  locked: true
+  can_belong: false
+  has_color: false
+  template: '{text}'
+- id: hair
+  names:
+    en-US: Hair
+    ja-JP: 髪型
+  kind: attribute
+  color: '#c98a5a'
+  folder: hairstyles
+  locked: true
+  can_belong: true
+  has_color: true
+  template: '{text}'
+- id: costume
+  names:
+    en-US: Costume
+    ja-JP: 衣装
+  kind: attribute
+  color: '#7c9cf0'
+  folder: costumes
+  locked: true
+  can_belong: true
+  has_color: false
+  template: '{text}'
+- id: pose
+  names:
+    en-US: Pose
+    ja-JP: ポーズ
+  kind: attribute
+  color: '#e58a5c'
+  folder: poses
+  locked: true
+  can_belong: true
+  has_color: false
+  template: '{text}'
+- id: emotion
+  names:
+    en-US: Emotion
+    ja-JP: 表情
+  kind: attribute
+  color: '#f07ca0'
+  folder: emotions
+  locked: true
+  can_belong: true
+  has_color: false
+  template: '{text}'
+- id: props
+  names:
+    en-US: Props
+    ja-JP: 小道具
+  kind: attribute
+  color: '#8fb85c'
+  folder: props
+  locked: true
+  can_belong: true
+  has_color: false
+  template: '{text}'
+- id: situation
+  names:
+    en-US: Situation
+    ja-JP: シチュエーション
+  kind: situation
+  color: '#f0b45c'
+  folder: situations
+  locked: true
+  can_belong: true
+  has_color: false
+  template: '{text}'
+- id: location
+  names:
+    en-US: Location
+    ja-JP: 場所
+  kind: scene
+  color: '#5cc08a'
+  folder: locations
+  locked: true
+  can_belong: false
+  has_color: false
+  template: '{text}'
+- id: lighting
+  names:
+    en-US: Lighting
+    ja-JP: 照明
+  kind: scene
+  color: '#f0e05c'
+  folder: lighting
+  locked: true
+  can_belong: false
+  has_color: false
+  template: '{text}'
+- id: view
+  names:
+    en-US: View
+    ja-JP: 視点
+  kind: scene
+  color: '#5cc0c0'
+  folder: views
+  locked: true
+  can_belong: false
+  has_color: false
+  template: '{text}'

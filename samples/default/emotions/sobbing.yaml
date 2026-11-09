@@ -1,0 +1,9 @@
+name: Sobbing
+keywords: sobbing
+description: sobbing
+negative: ''
+labels:
+- t-ec5c1d19
+weight: 1.0
+names:
+  ja-JP: すすり泣き

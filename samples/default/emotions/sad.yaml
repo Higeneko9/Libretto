@@ -1,0 +1,9 @@
+name: Sad
+keywords: sad
+description: sad
+negative: ''
+labels:
+- t-ec5c1d19
+weight: 1.0
+names:
+  ja-JP: 悲しい

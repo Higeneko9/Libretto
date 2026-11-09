@@ -1,0 +1,9 @@
+name: Leaning Forward Standing
+keywords: leaning forward, standing
+description: leaning forward, standing
+negative: ''
+labels:
+- t-acad01ca
+weight: 1.0
+names:
+  ja-JP: 前かがみ

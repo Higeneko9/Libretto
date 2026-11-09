@@ -1,0 +1,9 @@
+name: Indian Style
+keywords: indian style
+description: indian style
+negative: ''
+labels:
+- t-6cea1520
+weight: 1.0
+names:
+  ja-JP: あぐら

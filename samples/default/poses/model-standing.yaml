@@ -1,0 +1,9 @@
+name: Contrapposto
+keywords: contrapposto
+description: contrapposto
+negative: ''
+labels:
+- t-acad01ca
+weight: 1.0
+names:
+  ja-JP: コントラポスト

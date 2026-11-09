@@ -1,0 +1,9 @@
+name: Anime illustration
+keywords: anime style, detailed illustration
+description: anime-style illustration
+negative: photorealistic
+labels:
+- t-b9f9722c
+weight: 1.0
+names:
+  ja-JP: アニメイラスト風

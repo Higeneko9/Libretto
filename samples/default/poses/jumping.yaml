@@ -1,0 +1,9 @@
+name: Jumping
+keywords: jumping
+description: jumping
+negative: ''
+labels:
+- t-6cc59cfa
+weight: 1.0
+names:
+  ja-JP: ジャンプ

@@ -1,0 +1,9 @@
+name: Nancy
+keywords: 1girl, nancy, long brown hair, green eyes
+description: a young woman named Nancy with long brown hair and green eyes
+negative: ''
+labels:
+- sample
+weight: 1.0
+thumbnail_source:
+  upload: iLustMix_00093_.png

@@ -1,0 +1,9 @@
+name: Holding Own Arm
+keywords: holding own arm
+description: holding own arm
+negative: ''
+labels:
+- t-ed2aaff9
+weight: 1.0
+names:
+  ja-JP: 腕を持つ

@@ -1,0 +1,9 @@
+name: Short bob
+keywords: '{color} hair, short hair, bob cut'
+description: a short {color} bob cut
+negative: ''
+labels:
+- t-9bccaad6
+weight: 1.0
+names:
+  ja-JP: ショートボブ

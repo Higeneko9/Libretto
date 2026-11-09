@@ -1,0 +1,10 @@
+name: White one-piece
+keywords: white one-piece dress, sundress
+description: a white one-piece dress
+negative: ''
+labels:
+- casual
+- summer
+weight: 1.0
+thumbnail_source:
+  upload: iLustMix_00078_.png

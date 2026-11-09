@@ -1,0 +1,8 @@
+name: Floor Angle
+keywords: from below, worm’s eye view, floor angle
+description: from below, worm’s eye view, floor angle
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: 床アングル

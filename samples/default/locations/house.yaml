@@ -1,0 +1,11 @@
+name: House
+keywords: real architecture, real dimensions, in front of a cozy house, garden, wooden
+  porch
+description: real architecture, real dimensions, front of a cozy house with a garden
+  and a wooden porch
+negative: ''
+labels:
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: 家

@@ -1,0 +1,28 @@
+name: SDXL (tags)
+format: tags
+order: [style, character, hair, costume, pose, emotion, props, situation, location, lighting, view]
+quality_prefix: "masterpiece, best quality"
+negative_template: "lowres, bad anatomy, bad hands, text, watermark, worst quality"
+use_negative: true
+workflow_template: workflows/txt2img_checkpoint.json
+defaults:
+  checkpoint: sd_xl_base_1.0.safetensors
+  width: 1024
+  height: 1024
+  steps: 28
+  cfg: 6.5
+  sampler: dpmpp_2m
+  scheduler: karras
+  denoise: 1.0
+injection:
+  positive: "6"
+  negative: "7"
+  seed: "3"
+  steps: "3"
+  cfg: "3"
+  sampler: "3"
+  scheduler: "3"
+  denoise: "3"
+  width: "5"
+  height: "5"
+  checkpoint: "4"

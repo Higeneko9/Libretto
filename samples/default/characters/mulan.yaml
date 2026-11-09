@@ -1,0 +1,10 @@
+name: Lucky
+keywords: cat, black cat
+description: cat, black cat
+negative: ''
+labels:
+- t-67e23300
+- t-82ca0c7a
+weight: 1.0
+names:
+  ja-JP: ラッキー

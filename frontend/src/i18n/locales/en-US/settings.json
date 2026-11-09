@@ -1,0 +1,20 @@
+{
+  "title": "Settings",
+  "language": "Language",
+  "languageHint": "Display language of the app. Tag names are shown and edited in this language too.",
+  "comfyui": "ComfyUI",
+  "address": "Address (host name or IP)",
+  "port": "Port",
+  "comfyHint": "ComfyUI Desktop and the standalone server use the same API. Check the port in ComfyUI's own settings (the server, usually 8188 or 8000). To reach ComfyUI on another machine, start it with listening on the network enabled.",
+  "useLocal": "Use local",
+  "useLocalTitle": "ComfyUI running on this computer",
+  "test": "Test connection",
+  "libretto": "Libretto",
+  "preferredPort": "Preferred port (applies after restart; a free one is used if taken)",
+  "save": "Save",
+  "close": "Close",
+  "connected": "Connected to ComfyUI {version} at {url}",
+  "unreachable": "Cannot reach ComfyUI: {error}",
+  "savedDesktop": "Saved. The ComfyUI address is in use now.",
+  "savedServer": "Saved. The ComfyUI address is in use now; the Libretto port applies after a restart."
+}

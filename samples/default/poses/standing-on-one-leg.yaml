@@ -1,0 +1,9 @@
+name: Standing on One Leg
+keywords: standing on one leg
+description: standing on one leg
+negative: ''
+labels:
+- t-acad01ca
+weight: 1.0
+names:
+  ja-JP: 片足立ち

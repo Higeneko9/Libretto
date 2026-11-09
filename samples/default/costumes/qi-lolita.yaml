@@ -1,0 +1,10 @@
+name: Pinafore Dress
+keywords: pinafore_dress
+description: pinafore_dress
+negative: ''
+labels:
+- t-955d59f3
+- t-5c825084
+weight: 1.0
+names:
+  ja-JP: エプロンドレス

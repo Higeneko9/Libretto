@@ -1,0 +1,11 @@
+name: Henshin
+keywords: henshin pose, transformation pose, heroic pose, dramatic stance, arms crossed
+  in front of chest, one arm raised, determined expression, looking forward
+description: henshin pose, transformation pose, heroic pose, dramatic stance, arms
+  crossed in front of chest, one arm raised, determined expression, looking forward
+negative: ''
+labels:
+- t-acad01ca
+weight: 1.0
+names:
+  ja-JP: 変身ポーズ

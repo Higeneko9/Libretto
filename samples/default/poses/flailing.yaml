@@ -1,0 +1,9 @@
+name: Flailing
+keywords: flailing
+description: flailing
+negative: ''
+labels:
+- t-ed2aaff9
+weight: 1.0
+names:
+  ja-JP: 手をバタバタさせる

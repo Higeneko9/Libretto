@@ -1,0 +1,10 @@
+name: 'Park: Slide'
+keywords: slide, park
+description: slide, park
+negative: ''
+labels:
+- t-6a72642e
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: すべり台(公園)

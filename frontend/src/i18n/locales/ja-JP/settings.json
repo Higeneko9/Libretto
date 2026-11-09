@@ -1,0 +1,20 @@
+{
+  "title": "設定",
+  "language": "言語",
+  "languageHint": "アプリの表示言語です。タグ名もこの言語で表示・編集されます。",
+  "comfyui": "ComfyUI",
+  "address": "アドレス（ホスト名またはIP）",
+  "port": "ポート",
+  "comfyHint": "ComfyUI Desktop とスタンドアロンサーバーは同じ API を使います。ポートは ComfyUI 自身の設定（サーバー、通常は 8188 または 8000）で確認してください。別のマシンの ComfyUI に接続するには、ネットワークでの待ち受けを有効にして起動します。",
+  "useLocal": "ローカルを使う",
+  "useLocalTitle": "このコンピューターで動作している ComfyUI",
+  "test": "接続テスト",
+  "libretto": "Libretto",
+  "preferredPort": "優先ポート（再起動後に反映。使用中の場合は空いているポートを使います）",
+  "save": "保存",
+  "close": "閉じる",
+  "connected": "ComfyUI {version} に接続しました（{url}）",
+  "unreachable": "ComfyUI に接続できません: {error}",
+  "savedDesktop": "保存しました。ComfyUI のアドレスはすぐに反映されます。",
+  "savedServer": "保存しました。ComfyUI のアドレスはすぐに反映されます。Libretto のポートは再起動後に反映されます。"
+}

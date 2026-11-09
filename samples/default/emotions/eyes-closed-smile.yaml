@@ -1,0 +1,9 @@
+name: Eyes Closed Smile
+keywords: eyes closed smile
+description: eyes closed smile
+negative: ''
+labels:
+- t-7e2169b7
+weight: 1.0
+names:
+  ja-JP: 目を閉じた笑顔

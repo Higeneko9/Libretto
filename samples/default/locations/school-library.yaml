@@ -1,0 +1,9 @@
+name: 'School: Library'
+keywords: school library
+description: school library
+negative: ''
+labels:
+- t-b5339689
+weight: 1.0
+names:
+  ja-JP: 図書室(学校)

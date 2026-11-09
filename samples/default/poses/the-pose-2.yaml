@@ -1,0 +1,9 @@
+name: The Pose
+keywords: the pose
+description: the pose
+negative: ''
+labels:
+- t-01dd76c7
+weight: 1.0
+names:
+  ja-JP: ポーズ

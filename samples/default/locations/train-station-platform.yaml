@@ -1,0 +1,8 @@
+name: Train Station Platform
+keywords: Train Station Platform, real architecture
+description: Train Station Platform, real architecture
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: プラットフォーム(駅)

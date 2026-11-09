@@ -1,0 +1,9 @@
+name: Standing
+keywords: standing
+description: standing
+negative: ''
+labels:
+- t-acad01ca
+weight: 1.0
+names:
+  ja-JP: 立つ

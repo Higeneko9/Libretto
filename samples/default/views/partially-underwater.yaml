@@ -1,0 +1,8 @@
+name: Partially Underwater
+keywords: partially underwater shot
+description: partially underwater shot
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: 半水中

@@ -1,0 +1,9 @@
+name: Wavy Hair
+keywords: '{color} hair, wavy hair'
+description: '{color} hair, wavy hair'
+negative: ''
+labels:
+- t-728183cd
+weight: 1.0
+names:
+  ja-JP: ウェーブヘア

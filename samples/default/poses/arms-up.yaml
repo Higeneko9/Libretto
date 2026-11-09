@@ -1,0 +1,9 @@
+name: Arms Up
+keywords: arms up
+description: arms up
+negative: ''
+labels:
+- t-ed2aaff9
+weight: 1.0
+names:
+  ja-JP: 両腕を上げる

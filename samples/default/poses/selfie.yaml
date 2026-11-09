@@ -1,0 +1,8 @@
+name: Selfie
+keywords: selfie
+description: selfie
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: 自撮り

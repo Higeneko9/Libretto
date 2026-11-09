@@ -1,0 +1,227 @@
+seeded_locales:
+- ja-JP
+tags:
+  t-01dd76c7:
+    names:
+      en-US: lying
+      ja-JP: 横たわる
+    parent: null
+  t-02dacc75:
+    names:
+      en-US: casual
+      ja-JP: カジュアル
+    parent: null
+  t-11931301:
+    names:
+      en-US: weapon
+      ja-JP: 武器
+    parent: null
+  t-2c777209:
+    names:
+      en-US: fantasy
+      ja-JP: ファンタジー
+    parent: null
+  t-2d9de5c3:
+    names:
+      en-US: hand pose
+      ja-JP: 手のポーズ
+    parent: null
+  t-400055d2:
+    names:
+      en-US: chara
+      ja-JP: キャラクター
+    parent: null
+  t-45a692f6:
+    names:
+      en-US: traditional
+      ja-JP: 和風
+    parent: null
+  t-57d4011b:
+    names:
+      en-US: portrait
+      ja-JP: ポートレート
+    parent: null
+  t-5867f4b8:
+    names:
+      en-US: surprise
+      ja-JP: 驚き
+    parent: null
+  t-5996815e:
+    names:
+      en-US: sample
+      ja-JP: サンプル
+    parent: null
+  t-5c825084:
+    names:
+      en-US: outfit
+      ja-JP: 服装
+    parent: null
+  t-67e23300:
+    names:
+      en-US: animal
+      ja-JP: 動物
+    parent: null
+  t-69f722ec:
+    names:
+      en-US: house
+      ja-JP: 家
+    parent: null
+  t-6a72642e:
+    names:
+      en-US: park
+      ja-JP: 公園
+    parent: null
+  t-6cc59cfa:
+    names:
+      en-US: locomotion
+      ja-JP: 移動
+    parent: null
+  t-6cea1520:
+    names:
+      en-US: sitting
+      ja-JP: 座る
+    parent: null
+  t-70bfeaa2:
+    names:
+      en-US: food
+      ja-JP: 食べ物
+    parent: null
+  t-70fb8f8e:
+    names:
+      en-US: person
+      ja-JP: 人物
+    parent: null
+  t-728183cd:
+    names:
+      en-US: long
+      ja-JP: ロング
+    parent: null
+  t-736c56f4:
+    names:
+      en-US: angry
+      ja-JP: 怒り
+    parent: null
+  t-7a413c8f:
+    names:
+      en-US: scare
+      ja-JP: 恐怖
+    parent: null
+  t-7e2169b7:
+    names:
+      en-US: happy
+      ja-JP: 嬉しい
+    parent: null
+  t-82ca0c7a:
+    names:
+      en-US: cat
+      ja-JP: 猫
+    parent: null
+  t-8b522f7c:
+    names:
+      en-US: neko
+      ja-JP: ネコ
+    parent: null
+  t-8dff1a4c:
+    names:
+      en-US: dress
+      ja-JP: ドレス
+    parent: null
+  t-955d59f3:
+    names:
+      en-US: uniform
+      ja-JP: 制服
+    parent: null
+  t-9bccaad6:
+    names:
+      en-US: short
+      ja-JP: ショート
+    parent: null
+  t-a00bd594:
+    names:
+      en-US: outdoor
+      ja-JP: 屋外
+    parent: null
+  t-a0b137b1:
+    names:
+      en-US: boy
+      ja-JP: 少年
+    parent: null
+  t-a2e8da86:
+    names:
+      en-US: pppp
+    parent: null
+  t-a3c147a4:
+    names:
+      en-US: formal
+      ja-JP: フォーマル
+    parent: null
+  t-a87670de:
+    names:
+      en-US: woman
+      ja-JP: 女性
+    parent: null
+  t-acad01ca:
+    names:
+      en-US: standing
+      ja-JP: 立つ
+    parent: null
+  t-b4d20831:
+    names:
+      en-US: hand sign
+      ja-JP: ハンドサイン
+    parent: null
+  t-b5339689:
+    names:
+      en-US: school
+      ja-JP: 学校
+    parent: null
+  t-b9f9722c:
+    names:
+      en-US: anime
+      ja-JP: アニメ
+    parent: null
+  t-d0211c6c:
+    names:
+      en-US: summer
+      ja-JP: 夏
+    parent: null
+  t-d4a1e221:
+    names:
+      en-US: swimsuit
+      ja-JP: 水着
+    parent: null
+  t-d9f607b0:
+    names:
+      en-US: urban
+      ja-JP: 都会
+    parent: null
+  t-df9764e3:
+    names:
+      en-US: umbrella
+      ja-JP: 傘
+    parent: null
+  t-ea88d8bb:
+    names:
+      en-US: stuffed animal
+      ja-JP: ぬいぐるみ
+    parent: null
+  t-ec5c1d19:
+    names:
+      en-US: sad
+      ja-JP: 悲しい
+    parent: null
+  t-ed2aaff9:
+    names:
+      en-US: arm pose
+      ja-JP: 腕のポーズ
+    parent: null
+  t-f63d593a:
+    names:
+      en-US: tied
+      ja-JP: 結んだ髪
+    parent: null
+  t-fa71efe4:
+    names:
+      en-US: girl
+      ja-JP: 少女
+    parent: null

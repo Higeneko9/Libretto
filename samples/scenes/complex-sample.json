@@ -1,0 +1,521 @@
+{
+  "id": "complex-sample",
+  "name": "Complex Sample",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false,
+          "group_sep": "comma",
+          "width": 1024,
+          "batch": 1
+        },
+        "position": {
+          "x": 450.04257488705275,
+          "y": 68.2103165110399
+        }
+      },
+      {
+        "id": "character-mw71lbch",
+        "type": "character",
+        "data": {
+          "presetId": "yui",
+          "lib": "default",
+          "name": "Yui",
+          "keywords": "1girl, Yui, skinny, slender, small breasts",
+          "description": "1girl, Yui, skinny, slender, small breasts",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "girl",
+            "person"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 642.4327427986763,
+          "y": 163.05428861186263
+        }
+      },
+      {
+        "id": "character-mw71lbci",
+        "type": "character",
+        "data": {
+          "presetId": "takashi",
+          "lib": "default",
+          "name": "Takashi",
+          "keywords": "1boy, Takashi, young child \n",
+          "description": "1boy, Takashi, young child ",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "person",
+            "boy"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 909.1989047605051,
+          "y": 159.2649971955867
+        }
+      },
+      {
+        "id": "character-mw71lbcj",
+        "type": "character",
+        "data": {
+          "presetId": "mike",
+          "lib": "default",
+          "name": "Mike",
+          "keywords": "1cat, calico",
+          "description": "1cat, calico",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "cat",
+            "animal"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 444.5975080709606,
+          "y": 179.97330097406143
+        }
+      },
+      {
+        "id": "costume-mw71lbck",
+        "type": "costume",
+        "data": {
+          "presetId": "raglan-sleeve-t-shirt",
+          "lib": "default",
+          "name": "Raglan Sleeve T-shirt",
+          "keywords": "Raglan Sleeve T-shirt",
+          "description": "Raglan Sleeve T-shirt",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1,
+          "owner": "character-mw71lbci"
+        },
+        "position": {
+          "x": 914.9185746752618,
+          "y": 396.38878886697785
+        }
+      },
+      {
+        "id": "hair-mw71lbcl",
+        "type": "hair",
+        "data": {
+          "presetId": "short-hair",
+          "lib": "default",
+          "name": "Short Hair",
+          "keywords": "{color} hair, very short hair",
+          "description": "{color} hair, very short hair",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1,
+          "hair_color": "light brown",
+          "owner": "character-mw71lbci"
+        },
+        "position": {
+          "x": 912.4828956466127,
+          "y": 270.9227688431864
+        }
+      },
+      {
+        "id": "hair-mw71lbcm",
+        "type": "hair",
+        "data": {
+          "presetId": "very-long",
+          "lib": "default",
+          "name": "Very Long",
+          "keywords": "{color} hair, very long hair",
+          "description": "{color} hair, very long hair",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1,
+          "owner": "character-mw71lbch",
+          "hair_color": "black"
+        },
+        "position": {
+          "x": 648.7482130738034,
+          "y": 274.2068522412914
+        }
+      },
+      {
+        "id": "costume-mw71lbcn",
+        "type": "costume",
+        "data": {
+          "presetId": "jeans",
+          "lib": "default",
+          "name": "Apron",
+          "keywords": "semi long t-shirt, oversized t-shirt, denim loosen jeans, ribbon-trimmed apron with H-back straps",
+          "description": "semi long t-shirt, oversized t-shirt, denim loosen jeans, ribbon-trimmed apron with H-back straps",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1,
+          "owner": "character-mw71lbch"
+        },
+        "position": {
+          "x": 648.495609064718,
+          "y": 394.2010650046985
+        }
+      },
+      {
+        "id": "location-mw71lbco",
+        "type": "location",
+        "data": {
+          "presetId": "house",
+          "lib": "default",
+          "name": "House",
+          "keywords": "real architecture, real dimensions, in front of a cozy house, garden, wooden porch",
+          "description": "real architecture, real dimensions, front of a cozy house with a garden and a wooden porch",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "outdoor"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 1205.3737016752636,
+          "y": 151.48548453007135
+        }
+      },
+      {
+        "id": "lighting-mw71lbcp",
+        "type": "lighting",
+        "data": {
+          "presetId": "noon",
+          "lib": "default",
+          "name": "Mid day",
+          "keywords": "mid-day lighting, strong shadow",
+          "description": "mid-day lighting, strong shadow",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 1204.607949512588,
+          "y": 280.5225763710771
+        }
+      },
+      {
+        "id": "view-mw71lbcq",
+        "type": "view",
+        "data": {
+          "presetId": "overhead-view",
+          "lib": "default",
+          "name": "Overhead",
+          "keywords": "overhead view",
+          "description": "overhead view",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 1427.219881482768,
+          "y": 393.61587860585047
+        }
+      },
+      {
+        "id": "pose-mw71lbcs",
+        "type": "pose",
+        "data": {
+          "presetId": "indian-style",
+          "lib": "default",
+          "name": "Indian Style",
+          "keywords": "indian style",
+          "description": "indian style",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "sitting"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbci"
+        },
+        "position": {
+          "x": 949.0722073965513,
+          "y": 515.0388048594776
+        }
+      },
+      {
+        "id": "pose-mw71lbct",
+        "type": "pose",
+        "data": {
+          "presetId": "crossed-arms",
+          "lib": "default",
+          "name": "Crossed Arms",
+          "keywords": "crossed arms",
+          "description": "crossed arms",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "arm pose"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbci"
+        },
+        "position": {
+          "x": 1181.2193991921688,
+          "y": 515.9928269192762
+        }
+      },
+      {
+        "id": "pose-mw71lbcu",
+        "type": "pose",
+        "data": {
+          "presetId": "standing-on-one-leg",
+          "lib": "default",
+          "name": "Standing on One Leg",
+          "keywords": "standing on one leg",
+          "description": "standing on one leg",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "standing"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbch"
+        },
+        "position": {
+          "x": 693.5852372461479,
+          "y": 515.0239840994005
+        }
+      },
+      {
+        "id": "pose-mw71lbcv",
+        "type": "pose",
+        "data": {
+          "presetId": "on-back",
+          "lib": "default",
+          "name": "On Back",
+          "keywords": "on back",
+          "description": "on back",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "lying"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbcj"
+        },
+        "position": {
+          "x": 433.84966223553175,
+          "y": 291.3197763916775
+        }
+      },
+      {
+        "id": "props-mw71lbcx",
+        "type": "props",
+        "data": {
+          "presetId": "bouquet",
+          "lib": "default",
+          "name": "Bouquet",
+          "keywords": "bouquet",
+          "description": "bouquet",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1,
+          "owner": "character-mw71lbch"
+        },
+        "position": {
+          "x": 460.1986356580567,
+          "y": 514.0970726318228
+        }
+      },
+      {
+        "id": "style-mw71lbcy",
+        "type": "style",
+        "data": {
+          "presetId": "anime-illustration",
+          "lib": "default",
+          "name": "Anime illustration",
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "anime"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 781.5040086813577,
+          "y": 51.931603726667035
+        }
+      },
+      {
+        "id": "emotion-mw71lbcz",
+        "type": "emotion",
+        "data": {
+          "presetId": "bit-smile",
+          "lib": "default",
+          "name": "Big Smile",
+          "keywords": "big smile",
+          "description": "big smile",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "happy"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbch"
+        },
+        "position": {
+          "x": 397.98329185790044,
+          "y": 401.52543262168285
+        }
+      },
+      {
+        "id": "emotion-mw71lbd0",
+        "type": "emotion",
+        "data": {
+          "presetId": "jitome",
+          "lib": "default",
+          "name": "Jitome",
+          "keywords": "jitome",
+          "description": "jitome",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1,
+          "owner": "character-mw71lbci"
+        },
+        "position": {
+          "x": 1193.3023561049806,
+          "y": 405.0009205002435
+        }
+      },
+      {
+        "id": "prompt-mw78t081",
+        "type": "prompt",
+        "data": {
+          "text": "Yui holds bouquet",
+          "polarity": "positive",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 463.2257055481099,
+          "y": 627.0447799914108
+        }
+      },
+      {
+        "id": "prompt-mw78t082",
+        "type": "prompt",
+        "data": {
+          "text": "expose back",
+          "polarity": "negative",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 661.8446841725438,
+          "y": 628.6791408771397
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "character-mw71lbch",
+        "target": "generate"
+      },
+      {
+        "source": "character-mw71lbci",
+        "target": "generate"
+      },
+      {
+        "source": "character-mw71lbcj",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mw71lbck",
+        "target": "generate"
+      },
+      {
+        "source": "hair-mw71lbcl",
+        "target": "generate"
+      },
+      {
+        "source": "hair-mw71lbcm",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mw71lbcn",
+        "target": "generate"
+      },
+      {
+        "source": "location-mw71lbco",
+        "target": "generate"
+      },
+      {
+        "source": "lighting-mw71lbcp",
+        "target": "generate"
+      },
+      {
+        "source": "view-mw71lbcq",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mw71lbcs",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mw71lbct",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mw71lbcu",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mw71lbcv",
+        "target": "generate"
+      },
+      {
+        "source": "props-mw71lbcx",
+        "target": "generate"
+      },
+      {
+        "source": "style-mw71lbcy",
+        "target": "generate"
+      },
+      {
+        "source": "emotion-mw71lbcz",
+        "target": "generate"
+      },
+      {
+        "source": "emotion-mw71lbd0",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mw78t081",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mw78t082",
+        "target": "generate"
+      }
+    ],
+    "name": "Complex Sample",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "updated_at": "2026-11-08T05:34:10.560195+00:00",
+  "starter": 2,
+  "names": {
+    "ja-JP": "複数キャラサンプル"
+  }
+}

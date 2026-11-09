@@ -1,0 +1,9 @@
+name: House
+keywords: in front of a cozy house, garden, wooden porch
+description: front of a cozy house with a garden and a wooden porch
+negative: ''
+labels:
+- outdoor
+weight: 1.0
+thumbnail_source:
+  upload: iLustMix_00095_.png

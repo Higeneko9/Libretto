@@ -1,0 +1,12 @@
+name: Sailor Uniform
+keywords: a Japanese high school girl in a white short-sleeved sailor uniform with
+  a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers
+description: a Japanese high school girl in a white short-sleeved sailor uniform with
+  a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers
+negative: ''
+labels:
+- t-955d59f3
+- t-5c825084
+weight: 1.0
+names:
+  ja-JP: セーラー服

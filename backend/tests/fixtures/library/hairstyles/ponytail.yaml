@@ -1,0 +1,7 @@
+name: Ponytail
+keywords: '{color} hair, ponytail, hair tie'
+description: '{color} hair tied back in a ponytail'
+negative: ''
+labels:
+- tied
+weight: 1.0

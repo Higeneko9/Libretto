@@ -1,0 +1,13 @@
+name: Armored Dress
+keywords: detailed armor dress, layered armor, detailed clothes, armor, armored boots,
+  parade rest
+description: detailed armor dress, layered armor, detailed clothes, armor, armored
+  boots, parade rest
+negative: 'flash belly, flash thigh '
+labels:
+- t-5c825084
+- t-2c777209
+- t-8dff1a4c
+weight: 1.0
+names:
+  ja-JP: ドレスアーマー

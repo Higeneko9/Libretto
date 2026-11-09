@@ -1,0 +1,10 @@
+name: Park:Water Fountain
+keywords: water fountain, park
+description: water fountain, park
+negative: ''
+labels:
+- t-6a72642e
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: 噴水

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+data/
+
+# user-generated content (libraries, scenes, profiles, history, images) lives here
+ugc/
+# zip backups of ugc/ (see the Backups dialog)
+backups/
+*.tsbuildinfo
+
+# build output of the packaged app
+build/
+release/

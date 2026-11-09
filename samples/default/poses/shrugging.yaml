@@ -1,0 +1,9 @@
+name: Shrugging
+keywords: shrugging
+description: shrugging
+negative: ''
+labels:
+- t-b4d20831
+weight: 1.0
+names:
+  ja-JP: 肩をすくめる

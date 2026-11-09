@@ -1,0 +1,19 @@
+{
+  "copyNamePrompt": "\"{name}\" のコピーの名前",
+  "copySuffix": "{name} のコピー",
+  "newScenePrompt": "新しいシーンの名前",
+  "defaultSceneName": "シーン {n}",
+  "renameTitle": "ダブルクリックで名前変更、右クリックでその他の操作",
+  "closeTab": "タブを閉じる",
+  "plusTitle": "新規シーン、読み込み、閉じたシーンを開き直す",
+  "rename": "名前を変更",
+  "duplicate": "複製…",
+  "exportJson": "JSON を書き出し",
+  "deleteConfirm": "シーン \"{name}\" を削除しますか?",
+  "deleteOk": "削除",
+  "delete": "削除…",
+  "newScene": "新規シーン",
+  "importJson": "シーン JSON を読み込み…",
+  "closedScenes": "閉じたシーン (クリックで開く)",
+  "reopen": "開き直す"
+}

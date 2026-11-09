@@ -1,0 +1,9 @@
+name: Facepalm
+keywords: facepalm
+description: facepalm
+negative: ''
+labels:
+- t-2d9de5c3
+weight: 1.0
+names:
+  ja-JP: 顔を手で覆う

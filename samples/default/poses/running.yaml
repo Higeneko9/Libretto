@@ -1,0 +1,9 @@
+name: Running
+keywords: running
+description: running
+negative: ''
+labels:
+- t-6cc59cfa
+weight: 1.0
+names:
+  ja-JP: 走る

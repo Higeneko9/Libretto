@@ -1,0 +1,10 @@
+name: T-Shirt and Jeans
+keywords: semi long t-shirt, denim loosen jeans
+description: semi long t-shirt, denim loosen jeans
+negative: ''
+labels:
+- t-02dacc75
+- t-5c825084
+weight: 1.0
+names:
+  ja-JP: Tシャツ＆ジーンズ

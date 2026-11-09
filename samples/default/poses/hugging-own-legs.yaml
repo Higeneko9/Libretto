@@ -1,0 +1,9 @@
+name: Hugging Own Legs
+keywords: hugging own legs
+description: hugging own legs
+negative: ''
+labels:
+- t-6cea1520
+weight: 1.0
+names:
+  ja-JP: 体育座り

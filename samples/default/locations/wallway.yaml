@@ -1,0 +1,13 @@
+name: 'House: Hallway'
+keywords: real architecture, proper dimensions, proper sizes, in residential house,
+  long straight narrow hallway, white wall, bright wooden floor, shoe shelf, upstairs,
+  stair railing, a living room door, apartment door, entrance rug
+description: real architecture, proper dimensions, proper sizes, in residential house,
+  long straight narrow hallway, white wall, bright wooden floor, shoe shelf, upstairs,
+  stair railing, a living room door, apartment door, entrance rug
+negative: ''
+labels:
+- t-69f722ec
+weight: 1.0
+names:
+  ja-JP: 廊下

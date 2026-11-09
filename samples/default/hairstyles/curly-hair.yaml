@@ -1,0 +1,9 @@
+name: Curly Hair
+keywords: '{color} hair, fine hair, long curly hair, wavy bang,'
+description: '{color} hair, fine hair, long curly hair, wavy bang,'
+negative: ''
+labels:
+- t-728183cd
+weight: 1.0
+names:
+  ja-JP: 巻き毛ロングヘアー

@@ -1,0 +1,8 @@
+name: Side
+keywords: from side
+description: from side
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: 真横

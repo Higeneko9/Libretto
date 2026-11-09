@@ -1,0 +1,9 @@
+name: Bow
+keywords: archery bow
+description: archery bow
+negative: ''
+labels:
+- t-11931301
+weight: 1.0
+names:
+  ja-JP: 弓

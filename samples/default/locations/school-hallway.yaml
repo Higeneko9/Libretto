@@ -1,0 +1,11 @@
+name: 'School: Hallway'
+keywords: 'school hallway with polished linoleum floor, rows of tall windows on one
+  side, classroom doors with nameplates on the other, real architecture  '
+description: 'school hallway with polished linoleum floor, rows of tall windows on
+  one side, classroom doors with nameplates on the other, real architecture  '
+negative: ''
+labels:
+- t-b5339689
+weight: 1.0
+names:
+  ja-JP: 廊下(学校)

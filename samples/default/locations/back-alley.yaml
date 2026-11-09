@@ -1,0 +1,22 @@
+name: 'Urban: Back Alley'
+keywords: 'in a narrow back alley connected to a busy main street,
+
+  the entrance of the alley opens toward a bustling boulevard,
+
+  the main street is visible in the background,
+
+  view from inside the alley looking toward the avenue'
+description: 'in a narrow back alley connected to a busy main street,
+
+  the entrance of the alley opens toward a bustling boulevard,
+
+  the main street is visible in the background,
+
+  view from inside the alley looking toward the avenue'
+negative: ''
+labels:
+- t-d9f607b0
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: 路地裏

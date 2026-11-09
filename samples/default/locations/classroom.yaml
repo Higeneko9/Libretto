@@ -1,0 +1,13 @@
+name: 'School: Classroom'
+keywords: 'classroom with neatly arranged desks and chairs, large windows facing east,
+  green chalkboard with handwritten notes, posters on the walls, realistic Japanese
+  high school interior, real architecture '
+description: 'classroom with neatly arranged desks and chairs, large windows facing
+  east, green chalkboard with handwritten notes, posters on the walls, realistic Japanese
+  high school interior, real architecture '
+negative: ''
+labels:
+- t-b5339689
+weight: 1.0
+names:
+  ja-JP: 教室

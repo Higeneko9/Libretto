@@ -1,0 +1,9 @@
+name: 'School: Principal’s Office'
+keywords: principal’s office
+description: principal’s office
+negative: ''
+labels:
+- t-b5339689
+weight: 1.0
+names:
+  ja-JP: 校長室

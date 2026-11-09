@@ -1,0 +1,9 @@
+name: Smiling
+keywords: smile, happy, looking at viewer
+description: she is smiling happily at the viewer
+negative: ''
+labels:
+- happy
+weight: 1.0
+thumbnail_source:
+  upload: iLustMix_00082_.png

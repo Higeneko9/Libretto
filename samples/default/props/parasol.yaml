@@ -1,0 +1,9 @@
+name: Parasol
+keywords: parasol
+description: parasol
+negative: ''
+labels:
+- t-df9764e3
+weight: 1.0
+names:
+  ja-JP: 日傘

@@ -1,0 +1,330 @@
+{
+  "id": "sample",
+  "name": "Sample",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "batch": 1,
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false
+        },
+        "position": {
+          "x": 291.3528667423293,
+          "y": -9.92560689290854
+        }
+      },
+      {
+        "id": "character-mw78t07m",
+        "type": "character",
+        "data": {
+          "presetId": "yui",
+          "lib": "default",
+          "name": "Yui",
+          "keywords": "1girl, Yui, skinny, slender, small breasts",
+          "description": "1girl, Yui, skinny, slender, small breasts",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "girl",
+            "person"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 550.1245842277085,
+          "y": -12.870623096438333
+        }
+      },
+      {
+        "id": "hair-mw78t07n",
+        "type": "hair",
+        "data": {
+          "presetId": "long-straight",
+          "lib": "default",
+          "name": "Long straight",
+          "keywords": "{color} hair, long hair, straight hair",
+          "description": "long straight {color} hair",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "long"
+          ],
+          "weight": 1,
+          "hair_color": "black"
+        },
+        "position": {
+          "x": 550.8034509863423,
+          "y": 99.62937123496906
+        }
+      },
+      {
+        "id": "costume-mw78t07o",
+        "type": "costume",
+        "data": {
+          "presetId": "sailor-uniform",
+          "lib": "default",
+          "name": "Sailor Uniform",
+          "keywords": "a Japanese high school girl in a white short-sleeved sailor uniform with a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers",
+          "description": "a Japanese high school girl in a white short-sleeved sailor uniform with a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 551.3837826057468,
+          "y": 212.51077865376305
+        }
+      },
+      {
+        "id": "pose-mw78t07p",
+        "type": "pose",
+        "data": {
+          "presetId": "crossed-legs-standing",
+          "lib": "default",
+          "name": "Crossed Legs Standing",
+          "keywords": "crossed legs ,standing",
+          "description": "crossed legs ,standing",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "standing"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 555.1561506686334,
+          "y": 323.6510318117751
+        }
+      },
+      {
+        "id": "pose-mw78t07q",
+        "type": "pose",
+        "data": {
+          "presetId": "waving-arm",
+          "lib": "default",
+          "name": "Waving Arm",
+          "keywords": "waving arm",
+          "description": "waving arm",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 816.0311538477685,
+          "y": 212.51077865376305
+        }
+      },
+      {
+        "id": "emotion-mw78t07r",
+        "type": "emotion",
+        "data": {
+          "presetId": "bit-smile",
+          "lib": "default",
+          "name": "Big Smile",
+          "keywords": "big smile",
+          "description": "big smile",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "happy"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 816.9017044110647,
+          "y": 323.94125075566694
+        }
+      },
+      {
+        "id": "props-mw78t07s",
+        "type": "props",
+        "data": {
+          "presetId": "leather-school-back",
+          "lib": "default",
+          "name": "School Bag",
+          "keywords": "black leather school bag",
+          "description": "black leather school bag",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 1083.9688036178436,
+          "y": 129.3376372146423
+        }
+      },
+      {
+        "id": "location-mw78t07t",
+        "type": "location",
+        "data": {
+          "presetId": "school-main-gate",
+          "lib": "default",
+          "name": "School: Main Gate",
+          "keywords": "school main gate",
+          "description": "school main gate",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "school",
+            "outdoor"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 815.4790506006483,
+          "y": -8.7273912386174
+        }
+      },
+      {
+        "id": "lighting-mw78t07u",
+        "type": "lighting",
+        "data": {
+          "presetId": "golden-hour",
+          "lib": "default",
+          "name": "Golden Hour",
+          "keywords": "golden hour, warm sunlight, soft shadows",
+          "description": "golden hour, warm sunlight, soft shadows",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "outdoor"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 811.9574503542335,
+          "y": 100.13085373372323
+        }
+      },
+      {
+        "id": "view-mw78t07v",
+        "type": "view",
+        "data": {
+          "presetId": "upper-body-2",
+          "lib": "default",
+          "name": "Upper body",
+          "keywords": "upper body, portrait, eye level",
+          "description": "an eye-level upper-body portrait",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "portrait"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 1090.1050018321182,
+          "y": -6.4989483665079035
+        }
+      },
+      {
+        "id": "style-mw78t07w",
+        "type": "style",
+        "data": {
+          "presetId": "anime-illustration",
+          "lib": "default",
+          "name": "Anime illustration",
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "anime"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 285.1422056191547,
+          "y": 105.55702532873775
+        }
+      },
+      {
+        "id": "view-mw78t07x",
+        "type": "view",
+        "data": {
+          "presetId": "feet-focus",
+          "lib": "default",
+          "name": "Dutch Angle",
+          "keywords": "dutch angle",
+          "description": "dutch angle",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 1352.6578112411,
+          "y": -8.803261813922994
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "character-mw78t07m",
+        "target": "generate"
+      },
+      {
+        "source": "hair-mw78t07n",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mw78t07o",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mw78t07p",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mw78t07q",
+        "target": "generate"
+      },
+      {
+        "source": "emotion-mw78t07r",
+        "target": "generate"
+      },
+      {
+        "source": "props-mw78t07s",
+        "target": "generate"
+      },
+      {
+        "source": "location-mw78t07t",
+        "target": "generate"
+      },
+      {
+        "source": "lighting-mw78t07u",
+        "target": "generate"
+      },
+      {
+        "source": "view-mw78t07v",
+        "target": "generate"
+      },
+      {
+        "source": "style-mw78t07w",
+        "target": "generate"
+      },
+      {
+        "source": "view-mw78t07x",
+        "target": "generate"
+      }
+    ],
+    "name": "Sample",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "updated_at": "2026-11-08T05:48:51.273237+00:00",
+  "starter": 1,
+  "names": {
+    "ja-JP": "サンプル"
+  }
+}

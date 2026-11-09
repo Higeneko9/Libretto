@@ -1,0 +1,15 @@
+{
+  "imported": "\"{name}\" を {format} プロファイルとして読み込みました。",
+  "warnings": " 警告: {list}",
+  "title": "ComfyUI ワークフロー",
+  "intro": "ComfyUI サーバーに保存されたワークフローです。読み込むと Libretto のモデルプロファイルに変換されます (prompt、seed、サイズ、サンプラー、モデルが差し込まれ、それ以外はワークフローのままです)。",
+  "search": "検索",
+  "keepNegative": " ネガティブプロンプトを残す",
+  "keepPositiveTitle": "通常は被写体固有の内容です。ポジティブ側が汎用の品質タグの場合のみ有効にしてください",
+  "keepPositive": " ポジティブテキストをプレフィックスとして残す",
+  "importedBadge": "読み込み済み",
+  "use": "使用",
+  "reimport": "再読み込み",
+  "importUse": "読み込んで使用",
+  "none": "ワークフローが見つかりません。"
+}

@@ -1,0 +1,10 @@
+name: 'School: Main Gate'
+keywords: school main gate
+description: school main gate
+negative: ''
+labels:
+- t-b5339689
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: 校門

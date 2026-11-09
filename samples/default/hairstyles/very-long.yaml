@@ -1,0 +1,9 @@
+name: Very Long
+keywords: '{color} hair, very long hair'
+description: '{color} hair, very long hair'
+negative: ''
+labels:
+- t-728183cd
+weight: 1.0
+names:
+  ja-JP: ロング

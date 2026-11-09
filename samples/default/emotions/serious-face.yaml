@@ -1,0 +1,8 @@
+name: Serious Face
+keywords: serious face
+description: serious face
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: 真剣

@@ -1,0 +1,17 @@
+{
+  "type_generate": "generate",
+  "type_collection": "collection",
+  "type_prompt": "prompt",
+  "belongsToCharacter": "Belongs to this character",
+  "disabledHint": "Disabled: ignored when generating. Click to enable",
+  "enabledHint": "Enabled. Click to disable (ignored when generating)",
+  "unnamed": "(unnamed)",
+  "poolSummary": "pool · {mode} · {count} items",
+  "lastPick": "last pick: {name}",
+  "profile": "profile:",
+  "batchSeed": "batch {batch} · seed {seed}",
+  "random": "random",
+  "negative": "negative",
+  "prompt": "prompt",
+  "emptyPrompt": "(empty prompt)"
+}

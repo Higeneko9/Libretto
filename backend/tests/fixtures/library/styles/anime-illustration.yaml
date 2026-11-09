@@ -1,0 +1,12 @@
+name: Anime illustration
+keywords: anime style, detailed illustration
+description: anime-style illustration
+negative: photorealistic
+labels:
+- anime
+weight: 1.0
+thumbnail_source:
+  run_id: 20261031-234659-6d1a70
+  image: image_00008_.png
+  profile: wf-model-test-moss-image
+  seed: 7225674247898813

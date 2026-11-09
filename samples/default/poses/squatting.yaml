@@ -1,0 +1,9 @@
+name: Squatting
+keywords: squatting
+description: squatting
+negative: ''
+labels:
+- t-6cea1520
+weight: 1.0
+names:
+  ja-JP: しゃがみ

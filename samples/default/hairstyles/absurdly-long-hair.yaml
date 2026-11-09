@@ -1,0 +1,9 @@
+name: Absurdly Long Hair
+keywords: '{color} hair, absurdly long hair'
+description: '{color} hair, absurdly long hair'
+negative: ''
+labels:
+- t-728183cd
+weight: 1.0
+names:
+  ja-JP: 超ロング

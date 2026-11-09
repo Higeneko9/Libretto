@@ -1,0 +1,8 @@
+name: Convenience Store
+keywords: convenience store, indoors
+description: convenience store, indoors
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: コンビニ

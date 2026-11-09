@@ -1,0 +1,10 @@
+name: 'Park: Swing'
+keywords: 'Park: Swing'
+description: 'Park: Swing'
+negative: ''
+labels:
+- t-6a72642e
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: ブランコ(公園)

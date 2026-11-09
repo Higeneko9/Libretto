@@ -1,0 +1,7 @@
+name: Short bob
+keywords: '{color} hair, short hair, bob cut'
+description: a short {color} bob cut
+negative: ''
+labels:
+- short
+weight: 1.0

@@ -1,0 +1,9 @@
+name: On Side
+keywords: on side
+description: on side
+negative: ''
+labels:
+- t-01dd76c7
+weight: 1.0
+names:
+  ja-JP: 横向き

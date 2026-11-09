@@ -1,0 +1,15 @@
+{
+  "imported": "Imported \"{name}\" as {format} profile.",
+  "warnings": " Warnings: {list}",
+  "title": "ComfyUI workflows",
+  "intro": "Workflows saved on your ComfyUI server. Importing converts one into a Libretto model profile (prompt, seed, size, sampler and model are injected; everything else stays as in your workflow).",
+  "search": "search",
+  "keepNegative": " keep negative prompt",
+  "keepPositiveTitle": "Usually subject-specific; enable only if the positive text is generic quality tags",
+  "keepPositive": " keep positive text as prefix",
+  "importedBadge": "imported",
+  "use": "Use",
+  "reimport": "Re-import",
+  "importUse": "Import & use",
+  "none": "No workflows found."
+}

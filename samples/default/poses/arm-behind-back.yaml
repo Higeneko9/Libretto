@@ -1,0 +1,9 @@
+name: Arm Behind Back
+keywords: arm behind back
+description: arm behind back
+negative: ''
+labels:
+- t-ed2aaff9
+weight: 1.0
+names:
+  ja-JP: 後ろ手(片手)

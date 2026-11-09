@@ -1,0 +1,9 @@
+name: Ponytail
+keywords: '{color} hair, high ponytail, hair tie'
+description: '{color} hair tied back in a high ponytail'
+negative: ''
+labels:
+- t-f63d593a
+weight: 1.0
+names:
+  ja-JP: ポニーテール

@@ -1,0 +1,10 @@
+name: Rural Bus Stop
+keywords: mountain bus stop, rustic wooden shelter, old bench, stone retaining wall,
+  cedar forest, fern-covered slope, winding road, small route sign, real architecture
+description: mountain bus stop, rustic wooden shelter, old bench, stone retaining
+  wall, cedar forest, fern-covered slope, winding road, small route sign, real architecture
+negative: ''
+labels: []
+weight: 1.0
+names:
+  ja-JP: 古いバス停

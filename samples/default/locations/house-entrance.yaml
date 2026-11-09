@@ -1,0 +1,9 @@
+name: 'house: Entrance'
+keywords: residential front door
+description: residential front door
+negative: ''
+labels:
+- t-69f722ec
+weight: 1.0
+names:
+  ja-JP: 玄関

@@ -1,0 +1,9 @@
+name: Long straight
+keywords: '{color} hair, long hair, straight hair'
+description: long straight {color} hair
+negative: ''
+labels:
+- t-728183cd
+weight: 1.0
+names:
+  ja-JP: ストレートロング

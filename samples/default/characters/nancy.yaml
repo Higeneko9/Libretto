@@ -1,0 +1,11 @@
+name: Nancy
+keywords: '1girl, Nancy, young woman, long brown hair, green eyes, '
+description: a young woman named Nancy with long brown hair and green eyes
+negative: ''
+labels:
+- t-70fb8f8e
+- t-a87670de
+- t-5996815e
+weight: 1.0
+names:
+  ja-JP: ナンシー

@@ -1,0 +1,10 @@
+name: Princess Dress
+keywords: princess dress, multi-layered frills, long skirt, tiara
+description: princess dress, multi-layered frills, long skirt, tiara
+negative: expose thigh
+labels:
+- t-8dff1a4c
+- t-5c825084
+weight: 1.0
+names:
+  ja-JP: 姫ドレス

@@ -1,0 +1,10 @@
+name: Miko
+keywords: miko
+description: miko
+negative: ''
+labels:
+- t-5c825084
+- t-45a692f6
+weight: 1.0
+names:
+  ja-JP: 巫女服

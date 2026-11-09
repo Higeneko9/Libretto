@@ -1,0 +1,23 @@
+{
+  "copied": "{n} 件をコピーしました",
+  "copyNodes": "ライブラリ間でノードをコピー",
+  "from": "コピー元: {name}",
+  "to": "コピー先: {name}",
+  "selectAll": "すべて選択",
+  "copy": "コピー {n}",
+  "title": "ライブラリ",
+  "active": "（使用中）",
+  "items": "{n} 件",
+  "renameTitle": "ライブラリ名を変更",
+  "rename": "名前を変更",
+  "use": "使用",
+  "exportZip": "zip をエクスポート",
+  "deleteConfirm": "ライブラリ「{name}」とそのすべてのプリセットを削除しますか？",
+  "delete": "削除",
+  "createImport": "作成 / インポート",
+  "namePlaceholder": "ライブラリ名",
+  "empty": "空",
+  "copyOf": "{name} のコピー",
+  "create": "作成",
+  "importZip": "ライブラリ zip をインポート…"
+}

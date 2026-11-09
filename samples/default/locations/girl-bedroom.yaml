@@ -1,0 +1,13 @@
+name: 'House: Girl Bedroom'
+keywords: girl bed room, bed on rug, bedside table with night stand, stuffed animals
+  on bed, pillows, cushions, a school uniform on the wall,book shelf,desk with bookstand,
+  window covered by curtains, bright wall, bright room
+description: girl bed room, bed on rug, bedside table with night stand, stuffed animals
+  on bed, pillows, cushions, a school uniform on the wall,book shelf,desk with bookstand,
+  window covered by curtains, bright wall, bright room
+negative: ''
+labels:
+- t-69f722ec
+weight: 1.0
+names:
+  ja-JP: 女子部屋

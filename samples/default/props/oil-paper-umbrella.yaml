@@ -1,0 +1,9 @@
+name: Wagasa
+keywords: oil-paper umbrella
+description: oil-paper umbrella
+negative: ''
+labels:
+- t-df9764e3
+weight: 1.0
+names:
+  ja-JP: 和傘

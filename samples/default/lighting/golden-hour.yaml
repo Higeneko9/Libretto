@@ -1,0 +1,9 @@
+name: Golden Hour
+keywords: golden hour, warm sunlight, soft shadows
+description: golden hour, warm sunlight, soft shadows
+negative: ''
+labels:
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: 夕暮れ

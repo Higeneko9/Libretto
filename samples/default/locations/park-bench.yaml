@@ -1,0 +1,10 @@
+name: 'Park: Bench'
+keywords: white wooden bench front of bushes, park
+description: white wooden bench front of bushes, park
+negative: ''
+labels:
+- t-6a72642e
+- t-a00bd594
+weight: 1.0
+names:
+  ja-JP: ベンチ(公園)

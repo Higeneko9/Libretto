@@ -1,0 +1,23 @@
+{
+  "copied": "Copied {n} item(s)",
+  "copyNodes": "Copy nodes between libraries",
+  "from": "from {name}",
+  "to": "to {name}",
+  "selectAll": "Select all",
+  "copy": "Copy {n}",
+  "title": "Libraries",
+  "active": "(active)",
+  "items": "{n} items",
+  "renameTitle": "Rename library",
+  "rename": "Rename",
+  "use": "Use",
+  "exportZip": "Export zip",
+  "deleteConfirm": "Delete library \"{name}\" and all its presets?",
+  "delete": "Delete",
+  "createImport": "Create / import",
+  "namePlaceholder": "library name",
+  "empty": "empty",
+  "copyOf": "copy of {name}",
+  "create": "Create",
+  "importZip": "Import library zip…"
+}

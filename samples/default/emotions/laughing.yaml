@@ -1,0 +1,9 @@
+name: Laughing
+keywords: laughing
+description: laughing
+negative: ''
+labels:
+- t-7e2169b7
+weight: 1.0
+names:
+  ja-JP: 笑う

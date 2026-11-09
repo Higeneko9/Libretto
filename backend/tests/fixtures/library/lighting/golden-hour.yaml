@@ -1,0 +1,9 @@
+name: Golden hour
+keywords: golden hour, warm sunlight, soft shadows
+description: warm golden hour sunlight with soft shadows
+negative: ''
+labels:
+- outdoor
+weight: 1.0
+thumbnail_source:
+  upload: iLustMix_00098_.png

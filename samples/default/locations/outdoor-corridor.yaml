@@ -1,0 +1,9 @@
+name: 'School: Outdoor Corridor'
+keywords: covered outdoor corridor between school buildings
+description: covered outdoor corridor between school buildings
+negative: ''
+labels:
+- t-b5339689
+weight: 1.0
+names:
+  ja-JP: 屋外廊下(学校)

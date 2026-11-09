@@ -1,0 +1,9 @@
+name: Pancake
+keywords: pancake
+description: pancake
+negative: ''
+labels:
+- t-70bfeaa2
+weight: 1.0
+names:
+  ja-JP: ホットケーキ

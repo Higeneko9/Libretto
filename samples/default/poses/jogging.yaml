@@ -1,0 +1,9 @@
+name: Jogging
+keywords: jogging
+description: jogging
+negative: ''
+labels:
+- t-6cc59cfa
+weight: 1.0
+names:
+  ja-JP: ジョギング

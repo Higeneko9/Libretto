@@ -1,0 +1,17 @@
+{
+  "type_generate": "生成",
+  "type_collection": "コレクション",
+  "type_prompt": "プロンプト",
+  "belongsToCharacter": "このキャラクターに属します",
+  "disabledHint": "無効: 生成時に無視されます。クリックで有効化",
+  "enabledHint": "有効。クリックで無効化（生成時に無視）",
+  "unnamed": "（名称未設定）",
+  "poolSummary": "プール · {mode} · {count}件",
+  "lastPick": "前回の選択: {name}",
+  "profile": "プロファイル:",
+  "batchSeed": "バッチ {batch} · seed {seed}",
+  "random": "ランダム",
+  "negative": "ネガティブ",
+  "prompt": "プロンプト",
+  "emptyPrompt": "（プロンプトなし）"
+}

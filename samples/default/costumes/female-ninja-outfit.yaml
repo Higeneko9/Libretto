@@ -1,0 +1,26 @@
+name: Kunoichi
+keywords: "modest outfit,\ndark colored traditional female ninja outfit,\n\nlayered\
+  \ clothing,\nvisible inner layer,\n\nblack fishnet long sleeve undershirt,\n dark\
+  \ colored jinbei,\nred trimmed short sleeves jinbei top worn over the undershirt,\n\
+  \nred trimmed long sleeves,\ndetached long sleeves,\n\nred obi, gold obj-dome\n\
+  large red ribbon on back,\n\nshort straight katana sheathed horizontally on back,\n\
+  red tassel hanging from pommel,\n\nlong ninja gloves,\ndark colored gold trimmed\
+  \ arm gauntlets,\n\npuffy long pants worn over the under tights,\ndark fishnet tights\
+  \ visible beneath pants,\nlong flowing wide red sash tails, detailed gold patterns,\n\
+  \nblack cloth leg wraps,\nknee high black tabi,\n\nmetal trimmed headband"
+description: "modest outfit,\ndark colored traditional female ninja outfit,\n\nlayered\
+  \ clothing,\nvisible inner layer,\n\nblack fishnet long sleeve undershirt,\n dark\
+  \ colored jinbei,\nred trimmed short sleeves jinbei top worn over the undershirt,\n\
+  \nred trimmed long sleeves,\ndetached long sleeves,\n\nred obi, gold obj-dome\n\
+  large red ribbon on back,\n\nshort straight katana sheathed horizontally on back,\n\
+  red tassel hanging from pommel,\n\nlong ninja gloves,\ndark colored gold trimmed\
+  \ arm gauntlets,\n\npuffy long pants worn over the under tights,\ndark fishnet tights\
+  \ visible beneath pants,\nlong flowing wide red sash tails, detailed gold patterns,\n\
+  \nblack cloth leg wraps,\nknee high black tabi,\n\nmetal trimmed headband"
+negative: thigh window, revealing outfit, expose skin, expose thigh
+labels:
+- t-2c777209
+- t-5c825084
+weight: 1.0
+names:
+  ja-JP: くノ一

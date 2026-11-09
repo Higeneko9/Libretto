@@ -1,0 +1,9 @@
+name: Surprised
+keywords: surprised
+description: surprised
+negative: ''
+labels:
+- t-5867f4b8
+weight: 1.0
+names:
+  ja-JP: 驚き

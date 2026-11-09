@@ -1,0 +1,9 @@
+name: Arm Across Waist
+keywords: arm across waist
+description: arm across waist
+negative: ''
+labels:
+- t-ed2aaff9
+weight: 1.0
+names:
+  ja-JP: 腰に腕を回す

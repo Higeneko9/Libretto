@@ -1,0 +1,9 @@
+name: Katana
+keywords: katana
+description: katana
+negative: ''
+labels:
+- t-11931301
+weight: 1.0
+names:
+  ja-JP: 日本刀

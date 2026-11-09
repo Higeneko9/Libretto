@@ -1,0 +1,35 @@
+{
+  "name": "libretto-desktop",
+  "productName": "Libretto",
+  "version": "0.1.0",
+  "description": "Node-based image prompt generator for ComfyUI",
+  "author": "Higeneko9",
+  "homepage": "https://github.com/Higeneko9/Libretto",
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:app": "node scripts/build-app.js",
+    "dist": "npm run build:app && electron-builder",
+    "pack": "npm run build:app && electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "afterPack": "scripts/adhoc-sign.js",
+    "appId": "com.higeneko9.libretto",
+    "productName": "Libretto",
+    "files": ["main.js", "package.json"],
+    "extraResources": [{ "from": "build/backend", "to": "backend" }],
+    "directories": { "output": "release" },
+    "win": { "target": ["nsis"] },
+    "nsis": { "include": "installer.nsh", "deleteAppDataOnUninstall": false },
+    "mac": { "target": ["dmg"], "hardenedRuntime": true, "gatekeeperAssess": false, "entitlements": "scripts/entitlements.mac.plist", "entitlementsInherit": "scripts/entitlements.mac.plist", "notarize": true, "category": "public.app-category.graphics-design", "extendInfo": { "NSLocalNetworkUsageDescription": "Libretto connects to your ComfyUI server on the local network." } },
+    "linux": { "target": ["AppImage", "deb"], "category": "Graphics", "maintainer": "Higeneko9 <Higeneko9@users.noreply.github.com>" },
+    "deb": { "afterInstall": "scripts/linux-after-install.sh", "synopsis": "Node-based image prompt generator for ComfyUI" },
+    "artifactName": "Libretto-${version}-${os}-${arch}.${ext}"
+  }
+}

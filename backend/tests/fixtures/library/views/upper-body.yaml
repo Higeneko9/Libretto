@@ -1,0 +1,9 @@
+name: Upper body
+keywords: upper body, portrait, eye level
+description: an eye-level upper-body portrait
+negative: ''
+labels:
+- portrait
+weight: 1.0
+thumbnail_source:
+  upload: iLustMix_00086_.png

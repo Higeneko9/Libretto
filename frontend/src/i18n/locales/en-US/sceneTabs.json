@@ -1,0 +1,19 @@
+{
+  "copyNamePrompt": "Name for the copy of \"{name}\"",
+  "copySuffix": "{name} copy",
+  "newScenePrompt": "Name for the new scene",
+  "defaultSceneName": "Scene {n}",
+  "renameTitle": "Double-click to rename, right-click for more",
+  "closeTab": "Close tab",
+  "plusTitle": "New scene, import, or reopen a closed scene",
+  "rename": "Rename",
+  "duplicate": "Duplicate…",
+  "exportJson": "Export JSON",
+  "deleteConfirm": "Delete scene \"{name}\"?",
+  "deleteOk": "Delete",
+  "delete": "Delete…",
+  "newScene": "New scene",
+  "importJson": "Import scene JSON…",
+  "closedScenes": "Closed scenes (click to open)",
+  "reopen": "Reopen"
+}

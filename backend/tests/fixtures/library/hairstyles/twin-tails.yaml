@@ -1,0 +1,8 @@
+name: Twin tails
+keywords: '{color} hair, twintails, long hair'
+description: long {color} hair in twin tails
+negative: ''
+labels:
+- long
+- tied
+weight: 1.0

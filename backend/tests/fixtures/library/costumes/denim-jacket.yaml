@@ -1,0 +1,9 @@
+name: Denim jacket
+keywords: denim jacket, white t-shirt, jeans
+description: a denim jacket over a white t-shirt and jeans
+negative: ''
+labels:
+- casual
+weight: 1.0
+thumbnail_source:
+  upload: iLustMix_00075_.png

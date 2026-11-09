@@ -1,0 +1,7 @@
+name: Long straight
+keywords: '{color} hair, long hair, straight hair'
+description: long straight {color} hair
+negative: ''
+labels:
+- long
+weight: 1.0

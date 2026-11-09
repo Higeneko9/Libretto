@@ -1,0 +1,10 @@
+name: Siro
+keywords: cat, white cat
+description: cat, white cat
+negative: ''
+labels:
+- t-67e23300
+- t-82ca0c7a
+weight: 1.0
+names:
+  ja-JP: シロ
