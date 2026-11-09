@@ -91,15 +91,57 @@ function setupZoom(win) {
   });
 }
 
+const windowFile = () => path.join(app.getPath("userData"), "window.json");
+
+function savedWindowState() {
+  try {
+    const s = JSON.parse(fs.readFileSync(windowFile(), "utf8"));
+    const { screen } = require("electron");
+    const visible = screen.getAllDisplays().some((d) => {
+      const a = d.workArea;
+      return s.x < a.x + a.width && s.x + s.width > a.x && s.y < a.y + a.height && s.y + s.height > a.y;
+    });
+    if (s.width >= 600 && s.height >= 400) return { width: s.width, height: s.height, ...(visible ? { x: s.x, y: s.y } : {}), maximized: !!s.maximized };
+  } catch {
+    /* no saved window state yet */
+  }
+  return null;
+}
+
+function trackWindowState(win, initial) {
+  const save = () => {
+    if (win.isDestroyed() || win.isMinimized() || win.isFullScreen()) return;
+    try {
+      fs.writeFileSync(windowFile(), JSON.stringify({ ...win.getNormalBounds(), maximized: win.isMaximized() }));
+    } catch {
+      /* not being able to remember the window is harmless */
+    }
+  };
+  let timer;
+  const later = () => {
+    clearTimeout(timer);
+    timer = setTimeout(save, 400);
+  };
+  win.on("resize", later);
+  win.on("move", later);
+  win.on("maximize", later);
+  win.on("unmaximize", later);
+  win.on("close", save);
+  if (initial && initial.maximized) win.maximize();
+}
+
 function createWindow(url) {
+  const initial = savedWindowState();
   mainWindow = new BrowserWindow({
-    width: 1500,
-    height: 950,
+    width: initial ? initial.width : 1500,
+    height: initial ? initial.height : 950,
+    ...(initial && initial.x !== undefined ? { x: initial.x, y: initial.y } : {}),
     backgroundColor: "#16181d",
     title: "Libretto",
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, sandbox: true },
   });
+  trackWindowState(mainWindow, initial);
   const local = new URL(url).origin;
   // links to other sites open in the normal browser, never inside the app
   mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {

@@ -30,6 +30,12 @@ export type LbNode = Node<GraphNodeData>;
 
 const LEGACY_KEY = "LB_Graph";
 const UI_KEY = "LB_Ui";
+
+let uiSaveTimer: ReturnType<typeof setTimeout> | undefined;
+function scheduleUiSave(ui: UiPrefs) {
+  clearTimeout(uiSaveTimer);
+  uiSaveTimer = setTimeout(() => void api.saveUi(ui).catch(() => undefined), 400);
+}
 const DEFAULT_LIBRARY = "default";
 let counter = Date.now();
 const nextId = (prefix: string) => `${prefix}-${(counter++).toString(36)}`;
@@ -485,10 +491,25 @@ export const useStore = create<State>((set, get) => {
         setLanguage(patch.locale);
       }
       localStorage.setItem(UI_KEY, JSON.stringify(ui));
+      scheduleUiSave(ui);
       set(patch.locale ? { ui, categories: withLabels(get().categories, ui.locale) } : { ui });
     },
 
     initScenes: async () => {
+      try {
+        const remote = await api.ui();
+        if (Object.keys(remote).length > 0) {
+          const ui = { ...get().ui, ...remote, locale: resolveLanguage(remote.locale ?? get().ui.locale) };
+          setApiLocale(ui.locale);
+          setLanguage(ui.locale);
+          localStorage.setItem(UI_KEY, JSON.stringify(ui));
+          set({ ui });
+        } else {
+          scheduleUiSave(get().ui);
+        }
+      } catch {
+        // the server copy is a convenience; the local copy still works
+      }
       await Promise.all([get().refreshLibraries(), get().refreshProfiles()]);
       let scenes = await api.scenes();
       if (scenes.length === 0) {

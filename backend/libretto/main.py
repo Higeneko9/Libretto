@@ -6,6 +6,7 @@ import shutil
 from urllib.parse import quote
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, Response
@@ -189,6 +190,20 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
             return settings_payload(saved)
 
         return guard(run)
+
+    @app.get("/api/ui")
+    def get_ui():
+        ui = load_user_settings(settings.SettingsFile).get("ui")
+        return ui if isinstance(ui, dict) else {}
+
+    @app.put("/api/ui")
+    def put_ui(body: dict[str, Any]):
+        # layout preferences live next to the data so they survive a changed port or browser profile
+        if settings.SettingsFile:
+            saved = load_user_settings(settings.SettingsFile)
+            saved["ui"] = body
+            save_user_settings(settings.SettingsFile, saved)
+        return body
 
     @app.post("/api/settings/test")
     def test_settings(body: SettingsBody):

@@ -68,6 +68,17 @@ def test_first_run_dialog_is_marked_seen(client, monkeypatch):
     assert http.get("/api/settings").json()["configured"] is True
 
 
+def test_ui_preferences_round_trip(client):
+    http, _ = client
+    assert http.get("/api/ui").json() == {}
+    prefs = {"resultsThumb": 200, "locale": "ja-JP"}
+    assert http.put("/api/ui", json=prefs).json() == prefs
+    assert http.get("/api/ui").json() == prefs
+    # saving settings must not drop them
+    http.put("/api/settings", json={"port": 8123})
+    assert http.get("/api/ui").json() == prefs
+
+
 def test_settings_validation(client):
     http, _ = client
     assert http.put("/api/settings", json={"port": 0}).status_code == 400

@@ -54,6 +54,8 @@ export const api = {
     return call<BackupInfo>("/api/backups/import", { method: "POST", body: form });
   },
   settings: () => call<AppSettings>("/api/settings"),
+  ui: () => call<Record<string, any>>("/api/ui"),
+  saveUi: (ui: object) => call<object>("/api/ui", json("PUT", ui)),
   saveSettings: (body: Partial<AppSettings>) => call<AppSettings>("/api/settings", json("PUT", body)),
   testComfy: (comfy_url: string) => call<{ ok: boolean; url?: string; version?: string; error?: string }>("/api/settings/test", json("POST", { comfy_url })),
   health: () => call<{ comfyui: string; version?: string; error?: string }>("/api/health"),
