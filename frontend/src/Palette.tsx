@@ -24,6 +24,7 @@ export function presetPayload(category: Category, p: Preset, lib?: string): { ty
       lib,
       name: p.name,
       names: p.names,
+      keywords: p.keywords,
       description: p.description,
       negative: p.negative,
       emphasis: 1,
