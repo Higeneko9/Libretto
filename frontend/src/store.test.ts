@@ -55,6 +55,18 @@ describe("addNode replacement", () => {
   });
 });
 
+describe("addNodeFocused", () => {
+  it("selects only the new node and asks the canvas to scroll to it", () => {
+    useStore.setState({ nodes: [generate(), { ...character(), selected: true }] });
+    useStore.getState().addNodeFocused("costume", { name: "Suit" });
+    const { nodes, focusId, selectedId } = useStore.getState();
+    const added = nodes.find((n) => n.type === "costume")!;
+    expect(focusId).toBe(added.id);
+    expect(selectedId).toBe(added.id);
+    expect(nodes.filter((n) => n.selected).map((n) => n.id)).toEqual([added.id]);
+  });
+});
+
 describe("undo/redo", () => {
   it("undoes and redoes an edit", () => {
     edit("nancy, smiling");

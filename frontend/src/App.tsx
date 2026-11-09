@@ -178,6 +178,20 @@ function Canvas() {
   }, [categories, types]);
   const [menu, setMenu] = useState<{ x: number; y: number; ids: string[] } | null>(null);
 
+  // scroll to a node just added from the palette, keeping the current zoom
+  const focusId = useStore((s) => s.focusId);
+  const { getNode, setCenter, getZoom } = useReactFlow();
+  useEffect(() => {
+    if (!focusId) return;
+    const node = getNode(focusId);
+    if (node) {
+      const w = node.measured?.width ?? node.width ?? 220;
+      const h = node.measured?.height ?? node.height ?? 120;
+      void setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom: getZoom(), duration: 300 });
+    }
+    useStore.setState({ focusId: null });
+  }, [focusId, getNode, setCenter, getZoom]);
+
   // Auto-scroll while a palette item is dragged: arms once the pointer reaches the canvas interior, keeps going outside it, and uses the same edge zone/speed as React Flow's node-drag auto-pan.
   useEffect(() => {
     const EDGE = 40;

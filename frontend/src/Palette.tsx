@@ -72,7 +72,7 @@ export function Palette() {
   const library = useStore((s) => s.library);
   const libraries = useStore((s) => s.libraries);
   const setLibrary = useStore((s) => s.setLibrary);
-  const addNode = useStore((s) => s.addNode);
+  const addNode = useStore((s) => s.addNodeFocused);
   const clip = useStore((s) => s.presetClip);
   const setClip = useStore((s) => s.setPresetClip);
   const [manage, setManage] = useState(false);
@@ -365,7 +365,7 @@ export function Palette() {
               className="card prompt-card"
               style={{ borderColor: polarity === "negative" ? NEGATIVE_COLOR : COLORS.prompt }}
               onPointerDown={(e) => beginPaletteDrag(e, { type: "prompt", data: { text: "", polarity, placement: "inline" } }, t(polarity === "positive" ? "palette.positivePrompt" : "palette.negativePrompt"))}
-              onDoubleClick={() => addNode("prompt", { text: "", polarity, placement: "inline" }, { x: 120, y: 80 })}
+              onDoubleClick={() => addNode("prompt", { text: "", polarity, placement: "inline" })}
               title={t("palette.dragPrompt")}
             >
               ✍ {polarity === "positive" ? "+" : "−"}
@@ -496,7 +496,7 @@ export function Palette() {
                   }
                   }
                   onDoubleClick={() =>
-                    addNode("collection", { category: s.category, mode: "random", ...(s.path && s.path !== UNTAGGED ? { filter_labels: [s.path] } : {}) }, { x: 120, y: 80 })
+                    addNode("collection", { category: s.category, mode: "random", ...(s.path && s.path !== UNTAGGED ? { filter_labels: [s.path] } : {}) })
                   }
                   title={t("palette.randomTip", { title: s.title })}
                 >
@@ -519,7 +519,7 @@ export function Palette() {
                       onContextMenu={(e) => (e.stopPropagation(), openMenu(e, key))}
                       onDoubleClick={() => {
                         const { type, data } = presetPayload(s.category, p, library);
-                        addNode(type, data, { x: 120, y: 80 });
+                        addNode(type, data);
                       }}
                       title={`${presetTitle(p.name, p.names, tags.locale)}\n${p.keywords}`}
                     >

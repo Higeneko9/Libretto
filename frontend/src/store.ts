@@ -174,6 +174,9 @@ interface State {
   scenePrompt: string;
   sceneNegative: string;
   selectedId: string | null;
+  // set when a node was added from the palette; the canvas scrolls to it and clears this
+  focusId: string | null;
+  addNodeFocused: (type: string, data: GraphNodeData) => void;
   categories: CategoryConfig[];
   presets: Partial<Record<Category, Preset[]>>;
   tags: Tag[];
@@ -383,6 +386,14 @@ export const useStore = create<State>((set, get) => {
     onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
     onConnect: (connection) => set({ edges: addEdge(connection, get().edges) }),
     select: (id) => set({ selectedId: id }),
+    focusId: null,
+    addNodeFocused: (type, data) => {
+      const k = get().nodes.length % 8;
+      get().addNode(type, data, { x: 120 + k * 30, y: 80 + k * 30 });
+      const id = get().selectedId;
+      if (!id) return;
+      set({ nodes: get().nodes.map((n) => (n.selected !== (n.id === id) ? { ...n, selected: n.id === id } : n)), focusId: id });
+    },
     addNode: (type, data, position, replaceId) => {
       const target = replaceId ? get().nodes.find((n) => n.id === replaceId) : undefined;
       if (target && sameCategory(target.type, target.data, type, data)) {
