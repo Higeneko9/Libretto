@@ -1,7 +1,7 @@
 {
   "name": "libretto-desktop",
   "productName": "Libretto",
-  "version": "0.1.0",
+  "version": "0.26.1108",
   "description": "Node-based image prompt generator for ComfyUI",
   "author": "Higeneko9",
   "homepage": "https://github.com/Higeneko9/Libretto",
@@ -21,6 +21,7 @@
   "build": {
     "afterPack": "scripts/adhoc-sign.js",
     "appId": "com.higeneko9.libretto",
+    "buildVersion": "0.26.1108.0",
     "productName": "Libretto",
     "files": ["main.js", "package.json"],
     "extraResources": [{ "from": "build/backend", "to": "backend" }],

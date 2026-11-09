@@ -71,3 +71,7 @@ Pushing a `v*` tag runs `build.yml`; the `release` job then attaches the install
 ## Known gaps
 - NSIS uninstall prompt and Electron zoom keys are not yet verified on a real Windows installer.
 - Windows build is unsigned by decision: Store/MSIX and Azure Trusted Signing were rejected (too much friction, no active Azure subscription). The README tells users to click More info → Run anyway. If it becomes a problem, apply to SignPath Foundation (needs a public repo, OSI license, an existing release, a "Code signing policy" README section, MFA; certificate publisher would be "SignPath Foundation").
+
+## Versioning
+
+Format `MAJOR.YY.MMDD.BUILD` (e.g. `0.26.1108.0`). `VERSION` is the source of truth and feeds the window/tab title (`frontend/vite.config.ts`). Before tagging a release run `node scripts/version.js` (add `--major N` to change the major number); it bumps `VERSION` and updates `desktop/package.json`. The installer needs a 3-part semver, so `version` there is `MAJOR.YY.MMDD` without the leading zero (`0.26.1108`), and the full 4-part value goes in `build.buildVersion`. Commit both files, then tag.
