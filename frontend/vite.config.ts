@@ -6,6 +6,7 @@ import { defineConfig } from "vitest/config";
 const version = readFileSync(new URL("../VERSION", import.meta.url), "utf8").trim();
 
 export default defineConfig({
+  define: { __LB_VERSION__: JSON.stringify(version) },
   plugins: [react(), { name: "lb-title-version", transformIndexHtml: (html) => html.replace("<title>Libretto</title>", `<title>Libretto ${version}</title>`) }],
   test: { environment: "jsdom" },
   server: {

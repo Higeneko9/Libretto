@@ -57,7 +57,9 @@ function Toolbar() {
 
   return (
     <header>
-      <h1>Libretto</h1>
+      <h1>
+        Libretto <span className="muted" style={{ fontSize: 11, fontWeight: 400 }}>{__LB_VERSION__}</span>
+      </h1>
       <span className={`pill ${health.state === "ok" ? "ok" : "bad"}`}>
         {health.state === "checking"
           ? t("app.checking")
