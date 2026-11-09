@@ -5,6 +5,7 @@ export interface AppSettings {
   comfy_url: string;
   port: number;
   configured?: boolean;
+  setup_seen?: boolean;
 }
 
 export type CategoryKind = "group_head" | "attribute" | "situation" | "scene" | "custom";

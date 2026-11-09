@@ -69,6 +69,7 @@ class ThumbnailFromRun(BaseModel):
 class SettingsBody(BaseModel):
     comfy_url: str | None = None
     port: int | None = None
+    setup_seen: bool | None = None
 
 
 class NewLibrary(BaseModel):
@@ -162,8 +163,8 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
             return {"comfyui": "unreachable", "error": str(exc)}
 
     def settings_payload(saved: dict) -> dict:
-        # `configured` is false on a first run, when the UI should ask for the ComfyUI address
-        configured = bool(saved.get("comfy_url")) or bool(os.environ.get("LB_COMFY_URL"))
+        # `configured` is false only until the first-run dialog has been shown or an address saved
+        configured = bool(saved.get("comfy_url") or saved.get("setup_seen") or os.environ.get("LB_COMFY_URL"))
         return {"comfy_url": comfy.base_url, "port": int(saved.get("port") or DEFAULT_PORT), "configured": configured}
 
     @app.get("/api/settings")
@@ -181,6 +182,8 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
                 if not 1 <= body.port <= 65535:
                     raise ValueError("port must be between 1 and 65535")
                 saved["port"] = body.port
+            if body.setup_seen is not None:
+                saved["setup_seen"] = body.setup_seen
             if settings.SettingsFile:
                 save_user_settings(settings.SettingsFile, saved)
             return settings_payload(saved)

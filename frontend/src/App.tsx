@@ -31,7 +31,11 @@ function Toolbar() {
 
   useEffect(() => {
     // first run: ask for the ComfyUI address
-    void api.settings().then((s) => s.configured === false && setShowSettings(true)).catch(() => undefined);
+    void api.settings().then((s) => {
+      if (s.configured !== false) return;
+      setShowSettings(true);
+      void api.saveSettings({ setup_seen: true }).catch(() => undefined);
+    }).catch(() => undefined);
   }, []);
 
   useEffect(() => {

@@ -58,6 +58,18 @@ def test_settings_are_saved_and_applied_live(client, monkeypatch):
     assert saved == {"comfy_url": "http://newhost:9000", "port": 8123, "configured": True}
     assert http.get("/api/settings").json() == saved
     assert settings.SettingsFile.exists()
+
+
+def test_first_run_dialog_is_marked_seen(client, monkeypatch):
+    monkeypatch.delenv("LB_COMFY_URL", raising=False)
+    http, _ = client
+    assert http.get("/api/settings").json()["configured"] is False
+    assert http.put("/api/settings", json={"setup_seen": True}).json()["configured"] is True
+    assert http.get("/api/settings").json()["configured"] is True
+
+
+def test_settings_validation(client):
+    http, _ = client
     assert http.put("/api/settings", json={"port": 0}).status_code == 400
     assert http.put("/api/settings", json={"comfy_url": "ftp://x"}).status_code == 400
 
