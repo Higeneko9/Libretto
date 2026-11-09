@@ -32,7 +32,7 @@ $id = & $gh run list --workflow build.yml --repo Higeneko9/Libretto --limit 1 --
 | `libretto-desktop-macos` | signed, notarized `.dmg` (arm64) |
 | `libretto-desktop-linux-deb` / `-appimage` | `.deb`, `.AppImage` |
 | `libretto-server-windows` | server folder |
-| `libretto-server-macos-latest`, `libretto-server-ubuntu-latest` | `.tar.gz` (zip loses executable bits and symlinks) |
+| `libretto-server-macos-latest`, `libretto-server-ubuntu-24.04` | `.tar.gz` (zip loses executable bits and symlinks) |
 
 Local pack check on Windows: `cd desktop; npm run pack` (unpacked app in `desktop\release\win-unpacked`).
 

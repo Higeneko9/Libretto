@@ -52,7 +52,7 @@ The same backend and UI without Electron. It prints `LIBRETTO_URL=...` and serve
 |----|----------|-----|
 | Windows | `libretto-server-windows` | Run `libretto-server.exe --open` from the extracted folder. |
 | macOS | `libretto-server-macos-latest` | `tar -xzf libretto-server-macOS.tar.gz && ./backend/libretto-server --open` |
-| Linux | `libretto-server-ubuntu-latest` | `tar -xzf libretto-server-Linux.tar.gz && ./backend/libretto-server --open` |
+| Linux | `libretto-server-ubuntu-24.04` | `tar -xzf libretto-server-Linux.tar.gz && ./backend/libretto-server --open` |
 
 Options: `--port N` (default: the saved port, else 8000, else a free one), `--host 0.0.0.0` (default `127.0.0.1`), `--comfy-url URL`, `--data-dir DIR`, `--open` (open the browser).
 
