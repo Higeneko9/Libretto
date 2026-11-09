@@ -145,7 +145,7 @@ Because `ugc/` is not in git, use **💾 Backups…** in the toolbar. *Create ba
 - **Results browser**: the results panel is a wrapping thumbnail grid with a size slider. Use ☑ Select (or Ctrl/Shift-click; Ctrl+A, Esc, Del when the panel is focused) to multi-select and 🗑 Delete to remove entries.
 
 
-All user-generated content lives under `ugc/` and is git-ignored. A first run seeds the `default` library from `samples/default` (presets with thumbnails) and two example scenes, *Sample* and *Complex Sample*, from `samples/scenes`. The scenes use the built-in `sdxl` profile; pick your own workflow profile in the Generate node. Only a brand-new data folder is seeded, so deleting the examples keeps them deleted. To refresh the shipped samples from your own data, copy the generic thumbnails and YAML (not the per-profile `id.<profile>.webp` thumbnails) of the `default` library into `samples/default`, and the scene JSON files into `samples/scenes`.
+All user-generated content lives under `ugc/` and is git-ignored. A first run seeds the `default` library from `samples/default` (presets with thumbnails) and two example scenes, *Sample* and *Complex Sample*, from `samples/scenes`. The scenes use the built-in `sdxl` profile; pick your own workflow profile in the Generate node. Only a brand-new data folder is seeded, so deleting the examples keeps them deleted. The sample thumbnails are AI-generated. To refresh the shipped samples from your own data, copy the generic thumbnails and YAML (not the per-profile `id.<profile>.webp` thumbnails) of the `default` library into `samples/default`, and the scene JSON files into `samples/scenes`.
 
 ## License
 
