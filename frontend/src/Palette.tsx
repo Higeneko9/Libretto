@@ -82,6 +82,7 @@ export function Palette() {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const [message, setMessage] = useState("");
   const [active, setActive] = useState<string | null>(null);
+  const [reveal, setReveal] = useState<string | null>(null);
   const undoStack = useRef<DeletedItems[]>([]);
   const redoStack = useRef<DeletedItems[]>([]);
   const [history, setHistory] = useState({ undo: 0, redo: 0 });
@@ -311,9 +312,22 @@ export function Palette() {
     if (!target) return;
     const name = (await askText(t("palette.newPresetPrompt", { category: labelOf(target.category) })))?.trim();
     if (!name) return;
-    await api.savePreset(target.category, { name, keywords: name, description: name, labels: target.path && target.path !== UNTAGGED ? [target.path] : [] });
+    const saved = await api.savePreset(target.category, { name, keywords: name, description: name, labels: target.path && target.path !== UNTAGGED ? [target.path] : [] });
     await refresh(target.category);
+    // select the new card so it can be edited right away, and bring it into view
+    const key = itemKey(target.category, saved.id);
+    setActive(key);
+    setSelection({ selected: new Set(), anchor: key });
+    setReveal(key);
+    setUi({ propsOpen: true });
   };
+
+  useEffect(() => {
+    if (!reveal) return;
+    const el = [...(wrapRef.current?.querySelectorAll<HTMLElement>("[data-item]") ?? [])].find((e) => e.dataset.item === reveal);
+    if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    setReveal(null);
+  }, [reveal, presets]);
 
   const importList = async (file?: File) => {
     if (!file || !target) return;
@@ -509,6 +523,7 @@ export function Palette() {
                   return (
                     <div
                       key={key}
+                      data-item={key}
                       className={`card ${picked ? "picked" : ""}`}
                       onPointerDown={(e) => {
                         if (e.ctrlKey || e.metaKey || e.shiftKey) return;
