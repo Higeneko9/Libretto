@@ -25,7 +25,7 @@
         "id": "character-mw71lbch",
         "type": "character",
         "data": {
-          "presetId": "yui",
+          "presetId": "p-ee45808f",
           "lib": "default",
           "name": "Yui",
           "names": {
@@ -50,7 +50,7 @@
         "id": "character-mw71lbci",
         "type": "character",
         "data": {
-          "presetId": "takashi",
+          "presetId": "p-ae0977cd",
           "lib": "default",
           "name": "Takashi",
           "names": {
@@ -75,7 +75,7 @@
         "id": "character-mw71lbcj",
         "type": "character",
         "data": {
-          "presetId": "mike",
+          "presetId": "p-c991254b",
           "lib": "default",
           "name": "Mike",
           "names": {
@@ -100,7 +100,7 @@
         "id": "costume-mw71lbck",
         "type": "costume",
         "data": {
-          "presetId": "raglan-sleeve-t-shirt",
+          "presetId": "p-4400c0bb",
           "lib": "default",
           "name": "Raglan Sleeve T-shirt",
           "keywords": "Raglan Sleeve T-shirt",
@@ -120,7 +120,7 @@
         "id": "hair-mw71lbcl",
         "type": "hair",
         "data": {
-          "presetId": "short-hair",
+          "presetId": "p-0dc52e2c",
           "lib": "default",
           "name": "Short Hair",
           "keywords": "{color} hair, very short hair",
@@ -141,7 +141,7 @@
         "id": "hair-mw71lbcm",
         "type": "hair",
         "data": {
-          "presetId": "very-long",
+          "presetId": "p-a4e655cb",
           "lib": "default",
           "name": "Very Long",
           "keywords": "{color} hair, very long hair",
@@ -162,7 +162,7 @@
         "id": "costume-mw71lbcn",
         "type": "costume",
         "data": {
-          "presetId": "jeans",
+          "presetId": "p-5c037332",
           "lib": "default",
           "name": "Apron",
           "keywords": "semi long t-shirt, oversized t-shirt, denim loosen jeans, ribbon-trimmed apron with H-back straps",
@@ -182,7 +182,7 @@
         "id": "location-mw71lbco",
         "type": "location",
         "data": {
-          "presetId": "house",
+          "presetId": "p-3abd3030",
           "lib": "default",
           "name": "House",
           "keywords": "real architecture, real dimensions, in front of a cozy house, garden, wooden porch",
@@ -203,7 +203,7 @@
         "id": "lighting-mw71lbcp",
         "type": "lighting",
         "data": {
-          "presetId": "noon",
+          "presetId": "p-e41097f5",
           "lib": "default",
           "name": "Mid day",
           "keywords": "mid-day lighting, strong shadow",
@@ -222,7 +222,7 @@
         "id": "view-mw71lbcq",
         "type": "view",
         "data": {
-          "presetId": "overhead-view",
+          "presetId": "p-7a8232cc",
           "lib": "default",
           "name": "Overhead",
           "keywords": "overhead view",
@@ -241,7 +241,7 @@
         "id": "pose-mw71lbcs",
         "type": "pose",
         "data": {
-          "presetId": "indian-style",
+          "presetId": "p-436df5b8",
           "lib": "default",
           "name": "Indian Style",
           "keywords": "indian style",
@@ -263,7 +263,7 @@
         "id": "pose-mw71lbct",
         "type": "pose",
         "data": {
-          "presetId": "crossed-arms",
+          "presetId": "p-1696a2d7",
           "lib": "default",
           "name": "Crossed Arms",
           "keywords": "crossed arms",
@@ -285,7 +285,7 @@
         "id": "pose-mw71lbcu",
         "type": "pose",
         "data": {
-          "presetId": "standing-on-one-leg",
+          "presetId": "p-47ad94fc",
           "lib": "default",
           "name": "Standing on One Leg",
           "keywords": "standing on one leg",
@@ -307,7 +307,7 @@
         "id": "pose-mw71lbcv",
         "type": "pose",
         "data": {
-          "presetId": "on-back",
+          "presetId": "p-ff914e7c",
           "lib": "default",
           "name": "On Back",
           "keywords": "on back",
@@ -329,7 +329,7 @@
         "id": "props-mw71lbcx",
         "type": "props",
         "data": {
-          "presetId": "bouquet",
+          "presetId": "p-a9af152f",
           "lib": "default",
           "name": "Bouquet",
           "keywords": "bouquet",
@@ -349,7 +349,7 @@
         "id": "style-mw71lbcy",
         "type": "style",
         "data": {
-          "presetId": "anime-illustration",
+          "presetId": "p-7293def1",
           "lib": "default",
           "name": "Anime illustration",
           "keywords": "anime style, detailed illustration",
@@ -370,7 +370,7 @@
         "id": "emotion-mw71lbcz",
         "type": "emotion",
         "data": {
-          "presetId": "bit-smile",
+          "presetId": "p-ea12ee16",
           "lib": "default",
           "name": "Big Smile",
           "keywords": "big smile",
@@ -392,7 +392,7 @@
         "id": "emotion-mw71lbd0",
         "type": "emotion",
         "data": {
-          "presetId": "jitome",
+          "presetId": "p-56398699",
           "lib": "default",
           "name": "Jitome",
           "keywords": "jitome",
@@ -522,7 +522,7 @@
     "scene_prompt": "",
     "scene_negative": ""
   },
-  "updated_at": "2026-11-09T19:53:56.721971+00:00",
+  "updated_at": "2026-11-09T20:21:58.156065+00:00",
   "names": {
     "ja-JP": "複数キャラサンプル"
   },

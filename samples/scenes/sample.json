@@ -23,7 +23,7 @@
         "id": "character-mw78t07m",
         "type": "character",
         "data": {
-          "presetId": "yui",
+          "presetId": "p-ee45808f",
           "lib": "default",
           "name": "Yui",
           "names": {
@@ -48,7 +48,7 @@
         "id": "hair-mw78t07n",
         "type": "hair",
         "data": {
-          "presetId": "long-straight",
+          "presetId": "p-7640c391",
           "lib": "default",
           "name": "Long straight",
           "keywords": "{color} hair, long hair, straight hair",
@@ -70,7 +70,7 @@
         "id": "costume-mw78t07o",
         "type": "costume",
         "data": {
-          "presetId": "sailor-uniform",
+          "presetId": "p-0b8d5800",
           "lib": "default",
           "name": "Sailor Uniform",
           "names": {
@@ -95,7 +95,7 @@
         "id": "pose-mw78t07p",
         "type": "pose",
         "data": {
-          "presetId": "crossed-legs-standing",
+          "presetId": "p-d48883ff",
           "lib": "default",
           "name": "Crossed Legs Standing",
           "keywords": "crossed legs ,standing",
@@ -116,7 +116,7 @@
         "id": "pose-mw78t07q",
         "type": "pose",
         "data": {
-          "presetId": "waving-arm",
+          "presetId": "p-49b10a24",
           "lib": "default",
           "name": "Waving Arm",
           "keywords": "waving arm",
@@ -135,7 +135,7 @@
         "id": "emotion-mw78t07r",
         "type": "emotion",
         "data": {
-          "presetId": "bit-smile",
+          "presetId": "p-ea12ee16",
           "lib": "default",
           "name": "Big Smile",
           "keywords": "big smile",
@@ -156,7 +156,7 @@
         "id": "props-mw78t07s",
         "type": "props",
         "data": {
-          "presetId": "leather-school-back",
+          "presetId": "p-db5081d2",
           "lib": "default",
           "name": "School Bag",
           "keywords": "black leather school bag",
@@ -175,7 +175,7 @@
         "id": "location-mw78t07t",
         "type": "location",
         "data": {
-          "presetId": "school-main-gate",
+          "presetId": "p-efe225ca",
           "lib": "default",
           "name": "School: Main Gate",
           "keywords": "school main gate",
@@ -197,7 +197,7 @@
         "id": "lighting-mw78t07u",
         "type": "lighting",
         "data": {
-          "presetId": "golden-hour",
+          "presetId": "p-0709d437",
           "lib": "default",
           "name": "Golden Hour",
           "keywords": "golden hour, warm sunlight, soft shadows",
@@ -218,7 +218,7 @@
         "id": "view-mw78t07v",
         "type": "view",
         "data": {
-          "presetId": "upper-body-2",
+          "presetId": "p-653e224b",
           "lib": "default",
           "name": "Upper body",
           "keywords": "upper body, portrait, eye level",
@@ -239,7 +239,7 @@
         "id": "style-mw78t07w",
         "type": "style",
         "data": {
-          "presetId": "anime-illustration",
+          "presetId": "p-7293def1",
           "lib": "default",
           "name": "Anime illustration",
           "keywords": "anime style, detailed illustration",
@@ -260,7 +260,7 @@
         "id": "view-mw78t07x",
         "type": "view",
         "data": {
-          "presetId": "feet-focus",
+          "presetId": "p-2dc96b22",
           "lib": "default",
           "name": "Dutch Angle",
           "keywords": "dutch angle",
@@ -331,7 +331,7 @@
     "scene_prompt": "",
     "scene_negative": ""
   },
-  "updated_at": "2026-11-09T19:53:31.705588+00:00",
+  "updated_at": "2026-11-09T20:19:49.266231+00:00",
   "names": {
     "ja-JP": "サンプル"
   },
