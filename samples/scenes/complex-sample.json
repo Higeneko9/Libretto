@@ -28,13 +28,16 @@
           "presetId": "yui",
           "lib": "default",
           "name": "Yui",
-          "keywords": "1girl, Yui, skinny, slender, small breasts",
-          "description": "1girl, Yui, skinny, slender, small breasts",
+          "names": {
+            "ja-JP": "ゆい"
+          },
+          "keywords": "Yui,1girl, skinny, slender, small breasts",
+          "description": "Yui,1girl, skinny, slender, small breasts",
           "negative": "",
           "emphasis": 1,
           "labels": [
-            "girl",
-            "person"
+            "t-70fb8f8e",
+            "t-fa71efe4"
           ],
           "weight": 1
         },
@@ -50,13 +53,16 @@
           "presetId": "takashi",
           "lib": "default",
           "name": "Takashi",
-          "keywords": "1boy, Takashi, young child \n",
-          "description": "1boy, Takashi, young child ",
+          "names": {
+            "ja-JP": "たかし"
+          },
+          "keywords": "Takashi,1boy, young child \n",
+          "description": "Takashi,1boy, young child \n",
           "negative": "",
           "emphasis": 1,
           "labels": [
-            "person",
-            "boy"
+            "t-70fb8f8e",
+            "t-a0b137b1"
           ],
           "weight": 1
         },
@@ -72,19 +78,22 @@
           "presetId": "mike",
           "lib": "default",
           "name": "Mike",
-          "keywords": "1cat, calico",
-          "description": "1cat, calico",
+          "names": {
+            "ja-JP": "ミケ"
+          },
+          "keywords": "Mike, calico cat",
+          "description": "Mike, calico cat",
           "negative": "",
           "emphasis": 1,
           "labels": [
-            "cat",
-            "animal"
+            "t-67e23300",
+            "t-82ca0c7a"
           ],
           "weight": 1
         },
         "position": {
-          "x": 444.5975080709606,
-          "y": 179.97330097406143
+          "x": 416.26552879556624,
+          "y": 168.43064275075264
         }
       },
       {
@@ -513,9 +522,9 @@
     "scene_prompt": "",
     "scene_negative": ""
   },
-  "updated_at": "2026-11-08T05:34:10.560195+00:00",
-  "starter": 2,
+  "updated_at": "2026-11-09T19:53:56.721971+00:00",
   "names": {
     "ja-JP": "複数キャラサンプル"
-  }
+  },
+  "starter": 2
 }

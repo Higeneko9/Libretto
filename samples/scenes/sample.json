@@ -26,13 +26,16 @@
           "presetId": "yui",
           "lib": "default",
           "name": "Yui",
-          "keywords": "1girl, Yui, skinny, slender, small breasts",
-          "description": "1girl, Yui, skinny, slender, small breasts",
+          "names": {
+            "ja-JP": "ゆい"
+          },
+          "keywords": "Yui,1girl, skinny, slender, small breasts",
+          "description": "Yui,1girl, skinny, slender, small breasts",
           "negative": "",
           "emphasis": 1,
           "labels": [
-            "girl",
-            "person"
+            "t-70fb8f8e",
+            "t-fa71efe4"
           ],
           "weight": 1
         },
@@ -70,11 +73,17 @@
           "presetId": "sailor-uniform",
           "lib": "default",
           "name": "Sailor Uniform",
+          "names": {
+            "ja-JP": "セーラー服"
+          },
           "keywords": "a Japanese high school girl in a white short-sleeved sailor uniform with a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers",
           "description": "a Japanese high school girl in a white short-sleeved sailor uniform with a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers",
           "negative": "",
           "emphasis": 1,
-          "labels": [],
+          "labels": [
+            "t-955d59f3",
+            "t-5c825084"
+          ],
           "weight": 1
         },
         "position": {
@@ -322,9 +331,9 @@
     "scene_prompt": "",
     "scene_negative": ""
   },
-  "updated_at": "2026-11-08T05:48:51.273237+00:00",
-  "starter": 1,
+  "updated_at": "2026-11-09T19:53:31.705588+00:00",
   "names": {
     "ja-JP": "サンプル"
-  }
+  },
+  "starter": 1
 }
