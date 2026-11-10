@@ -21,7 +21,7 @@
   "build": {
     "afterPack": "scripts/adhoc-sign.js",
     "appId": "com.higeneko9.libretto",
-    "buildVersion": "0.26.1109.2",
+    "buildVersion": "0.26.1109.3",
     "productName": "Libretto",
     "files": ["main.js", "package.json"],
     "extraResources": [{ "from": "build/backend", "to": "backend" }],
