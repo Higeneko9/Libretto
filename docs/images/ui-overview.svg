@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720" role="img" aria-labelledby="title description">
+  <title id="title">Libretto UI overview</title>
+  <desc id="description">Schematic with eight numbered areas: Toolbar across the top; Results browser down the left; Scene tabs above the Graph editor and Inspector; Library browser along the bottom with Preset properties on its right. Scene history is nested inside the Inspector.</desc>
+  <style>
+    text { font-family: system-ui, sans-serif; fill: #eef2f7; }
+    .label { font-size: 19px; font-weight: 600; }
+    .detail { font-size: 13px; fill: #c2cbd8; }
+    .number { font-size: 18px; font-weight: 700; text-anchor: middle; }
+    .badge { fill: #10141d; stroke: #eef2f7; stroke-width: 2; }
+    .panel { stroke-width: 2; rx: 6; }
+  </style>
+  <rect width="1100" height="720" fill="#12151c"/>
+  <rect class="panel" x="12" y="12" width="1076" height="66" fill="#273447" stroke="#7ea7d8"/>
+  <circle class="badge" cx="39" cy="45" r="17"/>
+  <text class="number" x="39" y="51">1</text>
+  <text class="label" x="70" y="42">Toolbar</text>
+  <text class="detail" x="70" y="63">Libretto / connection / workflows / backups / settings / import / export / Generate</text>
+
+  <rect class="panel" x="12" y="88" width="234" height="620" fill="#292e44" stroke="#9399db"/>
+  <circle class="badge" cx="39" cy="119" r="17"/>
+  <text class="number" x="39" y="125">3</text>
+  <text class="label" x="68" y="125">Results browser</text>
+  <text class="detail" x="27" y="153">Selection / thumbnail size</text>
+  <g fill="#383f59" stroke="#5d6886">
+    <rect x="28" y="176" width="96" height="108" rx="4"/>
+    <rect x="134" y="176" width="96" height="108" rx="4"/>
+    <rect x="28" y="296" width="96" height="108" rx="4"/>
+    <rect x="134" y="296" width="96" height="108" rx="4"/>
+  </g>
+  <text class="detail" x="27" y="439">Generation entries and images</text>
+  <text class="detail" x="27" y="463">Open result: Result viewer</text>
+
+  <rect class="panel" x="256" y="88" width="832" height="48" fill="#263d3f" stroke="#71b4ac"/>
+  <circle class="badge" cx="283" cy="112" r="17"/>
+  <text class="number" x="283" y="118">2</text>
+  <text class="label" x="314" y="119">Scene tabs</text>
+  <text class="detail" x="472" y="118">Scene A / Scene B / +</text>
+
+  <rect class="panel" x="256" y="146" width="540" height="338" fill="#3c2b32" stroke="#d58d9f"/>
+  <circle class="badge" cx="283" cy="178" r="17"/>
+  <text class="number" x="283" y="184">4</text>
+  <text class="label" x="314" y="184">Graph editor</text>
+  <text class="detail" x="391" y="217">Prompt order controls / undo / redo</text>
+  <path d="M 443 290 L 602 322 M 443 375 L 602 336" fill="none" stroke="#dba2af" stroke-width="2"/>
+  <g fill="#543c49" stroke="#d58d9f">
+    <rect x="298" y="261" width="145" height="58" rx="5"/>
+    <rect x="298" y="346" width="145" height="58" rx="5"/>
+    <rect x="602" y="293" width="158" height="62" rx="5"/>
+  </g>
+  <text class="detail" x="315" y="295">Preset node</text>
+  <text class="detail" x="315" y="380">Prompt node</text>
+  <text class="detail" x="626" y="330">Generate node</text>
+  <text class="detail" x="278" y="453">Zoom / fit</text>
+  <text class="detail" x="445" y="453">Generation bar</text>
+  <text class="detail" x="719" y="453">Minimap</text>
+
+  <rect class="panel" x="806" y="146" width="282" height="338" fill="#3c3526" stroke="#c7ac68"/>
+  <circle class="badge" cx="833" cy="178" r="17"/>
+  <text class="number" x="833" y="184">5</text>
+  <text class="label" x="864" y="184">Inspector</text>
+  <text class="detail" x="823" y="221">Selected node properties</text>
+  <text class="detail" x="823" y="249">Scene-wide prompts</text>
+  <rect class="panel" x="820" y="274" width="254" height="116" fill="#4a4131" stroke="#c7ac68"/>
+  <circle class="badge" cx="847" cy="305" r="17"/>
+  <text class="number" x="847" y="311">8</text>
+  <text class="label" x="878" y="311">Scene history</text>
+  <text class="detail" x="835" y="352">Saved graph versions</text>
+  <text class="detail" x="823" y="430">Prompt preview</text>
+
+  <rect class="panel" x="256" y="494" width="832" height="214" fill="#253b2d" stroke="#7db68c"/>
+  <circle class="badge" cx="283" cy="525" r="17"/>
+  <text class="number" x="283" y="531">6</text>
+  <text class="label" x="314" y="531">Library browser</text>
+  <text class="detail" x="276" y="565">Library toolbar / category filters / tag filters</text>
+  <g fill="#38553f" stroke="#7db68c">
+    <rect x="277" y="590" width="110" height="89" rx="4"/>
+    <rect x="401" y="590" width="110" height="89" rx="4"/>
+    <rect x="525" y="590" width="110" height="89" rx="4"/>
+  </g>
+  <text class="detail" x="289" y="639">Preset card</text>
+  <text class="detail" x="413" y="639">Preset card</text>
+  <text class="detail" x="537" y="639">Random card</text>
+  <rect class="panel" x="806" y="508" width="268" height="186" fill="#304c3a" stroke="#7db68c"/>
+  <circle class="badge" cx="833" cy="539" r="17"/>
+  <text class="number" x="833" y="545">7</text>
+  <text class="label" x="864" y="545">Preset properties</text>
+  <text class="detail" x="823" y="587">Reusable preset fields</text>
+  <text class="detail" x="823" y="615">Optional subpanel</text>
+  <text class="detail" x="823" y="643">Autosaves library changes</text>
+</svg>
