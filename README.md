@@ -47,8 +47,6 @@ The Windows uninstaller asks whether to delete this data.
 **YouTube walkthrough:** [English introduction](https://youtu.be/jTv9STxC0xk)
 | [Japanese introduction](https://youtu.be/FM9a2HxqP0Q)
 
-*The videos are not public yet.*
-
 See the [UI overview](docs/UI_OVERVIEW.md) for a numbered layout diagram and
 the names used throughout this guide: **Toolbar**, **Scene tabs**, **Results
 browser**, **Graph editor**, **Inspector**, and **Library browser**.

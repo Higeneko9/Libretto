@@ -49,8 +49,6 @@ Windows のアンインストーラーでは、このデータも削除するか
 **YouTube 解説動画：** [日本語版](https://youtu.be/FM9a2HxqP0Q)
 | [英語版](https://youtu.be/jTv9STxC0xk)
 
-*動画は現在、公開準備中です。*
-
 番号付きのレイアウト図と各領域の名称は、[UI の概要（英語）](docs/UI_OVERVIEW.md)
 を参照してください。このガイドでは、**ツールバー（Toolbar）**、
 **シーンタブ（Scene tabs）**、**結果ブラウザー（Results browser）**、
