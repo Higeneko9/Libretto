@@ -42,9 +42,12 @@ The Windows uninstaller asks whether to delete this data.
 
 ## How to use it
 
-![Libretto workspace with the Results browser on the left, Graph editor in the center, Inspector on the right, and Library browser at the bottom.](docs/images/workspace.png)
+[![Libretto workspace with the Results browser on the left, Graph editor in the center, Inspector on the right, and Library browser at the bottom. Click to watch the English introduction on YouTube.](docs/images/workspace.png)](https://youtu.be/jTv9STxC0xk)
 
-**YouTube walkthrough:** link coming soon.
+**YouTube walkthrough:** [English introduction](https://youtu.be/jTv9STxC0xk)
+| [Japanese introduction](https://youtu.be/FM9a2HxqP0Q)
+
+*The videos are not public yet.*
 
 See the [UI overview](docs/UI_OVERVIEW.md) for a numbered layout diagram and
 the names used throughout this guide: **Toolbar**, **Scene tabs**, **Results
@@ -115,6 +118,14 @@ or delete libraries. Category settings let you add, rename, color, and reorder
 categories. Tags can be nested, such as `dress/formal`; selecting `dress` also
 matches its descendants. Ctrl-click category or tag buttons to select more
 than one.
+
+Library ZIP exports preserve the library ID, so importing a shared library
+keeps scene references working when that ID is available. If it already
+exists, import creates a separate library with a new ID; conflicting names
+become `Library (1)`, and so on. The existing library is left unchanged.
+You can then manually copy presets between libraries. Scenes are not
+automatically redirected to a conflicting library's new ID. Older ZIP files
+without identity metadata receive a new library ID.
 
 For variation, drag a **Random** card onto the canvas to create a Collection
 node. Collections support random/weighted, shuffle, sequential, and fixed

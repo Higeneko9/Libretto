@@ -64,14 +64,18 @@ class Libraries:
             data["names"] = cleaned
         (path / META_FILE).write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
-    def _unique_name(self, name: str, ignore_id: str | None = None) -> str:
+    def _unique_name(self, name: str, ignore_id: str | None = None, *, auto_suffix: bool = False) -> str:
         name = (name or "").strip()
         if not name:
             raise ValueError("library name is required")
         taken = {self._name(p).casefold() for p in self._library_dirs() if p.name != ignore_id}
-        if name.casefold() in taken:
-            raise ValueError(f"library already exists: {name}")
-        return name
+        candidate, n = name, 0
+        while candidate.casefold() in taken:
+            if not auto_suffix:
+                raise ValueError(f"library already exists: {name}")
+            n += 1
+            candidate = f"{name} ({n})"
+        return candidate
 
     def _library_dirs(self) -> list[Path]:
         return sorted(p for p in self.root.iterdir() if p.is_dir() and _ID_RE.match(p.name))
@@ -127,6 +131,12 @@ class Libraries:
             raise FileNotFoundError(library_id)
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+            metadata = {
+                "id": library_id,
+                "name": self._name(path),
+                "names": normalize_names(self._meta(path).get("names")),
+            }
+            archive.writestr(META_FILE, yaml.safe_dump(metadata, allow_unicode=True, sort_keys=False))
             library = Library(path)
             if library.categories_path.exists():
                 archive.write(library.categories_path, cats.CATEGORIES_FILE)
@@ -140,9 +150,7 @@ class Libraries:
         return buffer.getvalue()
 
     def import_zip(self, name: str, data: bytes) -> dict:
-        name = self._unique_name(name)
-        library_id = self._new_id()
-        path = self._path(library_id)
+        name = self._unique_name(name, auto_suffix=True)
         try:
             archive = zipfile.ZipFile(io.BytesIO(data))
         except zipfile.BadZipFile:
@@ -150,16 +158,27 @@ class Libraries:
         entries = []
         categories_bytes = None
         tags_bytes = None
+        metadata = {}
         total = 0
         for info in archive.infolist():
             if info.is_dir():
                 continue
             parts = PurePosixPath(info.filename).parts
-            if parts == (cats.CATEGORIES_FILE,):
-                categories_bytes = archive.read(info)
-                continue
-            if parts == (TAGS_FILE,):
-                tags_bytes = archive.read(info)
+            if parts in ((cats.CATEGORIES_FILE,), (TAGS_FILE,), (META_FILE,)):
+                total += info.file_size
+                if total > MAX_IMPORT_BYTES:
+                    raise ValueError("zip is too large")
+                if parts == (cats.CATEGORIES_FILE,):
+                    categories_bytes = archive.read(info)
+                elif parts == (TAGS_FILE,):
+                    tags_bytes = archive.read(info)
+                else:
+                    try:
+                        metadata = yaml.safe_load(archive.read(info))
+                    except yaml.YAMLError as exc:
+                        raise ValueError("invalid library metadata") from exc
+                    if not isinstance(metadata, dict):
+                        raise ValueError("library metadata must be a mapping")
                 continue
             if len(parts) != 2 or not _ID_RE.match(parts[0]) or not _FILE_RE.match(parts[1]):
                 continue
@@ -169,6 +188,11 @@ class Libraries:
             raise ValueError("zip contains no library files")
         if total > MAX_IMPORT_BYTES:
             raise ValueError("zip is too large")
+        archived_id = metadata.get("id")
+        if archived_id is not None and (not isinstance(archived_id, str) or not _ID_RE.fullmatch(archived_id)):
+            raise ValueError("invalid library id in archive")
+        library_id = archived_id if archived_id is not None and not self._path(archived_id).exists() else self._new_id()
+        path = self._path(library_id)
         path.mkdir()
         try:
             for info, (folder, filename) in entries:
@@ -179,14 +203,14 @@ class Libraries:
                 (path / cats.CATEGORIES_FILE).write_bytes(categories_bytes)
             if tags_bytes:
                 (path / TAGS_FILE).write_bytes(tags_bytes)
-            self._write_name(path, name)
+            self._write_name(path, name, metadata.get("names"))
         except Exception:
             shutil.rmtree(path, ignore_errors=True)
             raise
         return {"id": library_id, "name": name}
 
     def copy_items(self, source_id: str, target_id: str, items: list[dict]) -> list[dict]:
-        """Copy presets (with their thumbnails) between libraries (or within one); ids are suffixed on collision."""
+        """Copy presets and thumbnails with fresh opaque ids, within or between libraries."""
         source, target = self.get(source_id), self.get(target_id)
         copied = []
         for item in items:
@@ -194,7 +218,7 @@ class Libraries:
             preset = source.get(category, preset_id)
             target.ensure_category(source.category(category))
             name = target.unique_name(category, preset["name"])
-            new_id = target.unique_id(category, preset_id)
+            new_id = target.new_preset_id(category)
             source_dir, target_dir = source._dir(category), target._dir(category)
             target_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source._file(category, preset_id), target._file(category, new_id))

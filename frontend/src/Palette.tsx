@@ -156,6 +156,24 @@ export function Palette() {
     setMessage(t(cut ? "palette.cutDone" : "palette.copiedDone", { n: count }));
   };
 
+  const refreshCopies = async (items: { category: Category; id: string }[]) => {
+    const { refreshLibraries, bumpThumbs } = useStore.getState();
+    await Promise.all([refreshCategories(items.map((i) => i.category)), refreshLibraries()]);
+    bumpThumbs();
+    setSelection({ selected: new Set(items.map((i) => itemKey(i.category, i.id))), anchor: null });
+  };
+
+  const duplicateSelected = async () => {
+    if (count === 0) return;
+    try {
+      const done = await api.copyItems(library, library, [...selection.selected].map(splitItem));
+      await refreshCopies(done);
+      setMessage(t("palette.duplicated", { n: done.length }));
+    } catch (e) {
+      setMessage((e as Error).message);
+    }
+  };
+
   const pasteClip = async () => {
     if (!clip || clip.items.length === 0) return;
     try {
@@ -169,10 +187,7 @@ export function Palette() {
         await Promise.allSettled(clip.items.map((i) => api.deletePreset(i.category, i.id, clip.library)));
         setClip(null);
       }
-      const { refreshLibraries, bumpThumbs } = useStore.getState();
-      await Promise.all([refreshCategories(clip.items.map((i) => i.category)), refreshLibraries()]);
-      bumpThumbs();
-      setSelection({ selected: new Set(done.map((d) => itemKey(d.category as Category, d.id))), anchor: null });
+      await refreshCopies(done);
       setMessage(t(clip.cut ? "palette.pastedMoved" : "palette.pasted", { n: done.length }));
     } catch (e) {
       setMessage((e as Error).message);
@@ -583,7 +598,7 @@ export function Palette() {
         {menu && (
           <>
             <div className="ctx-backdrop" onClick={() => setMenu(null)} onContextMenu={(e) => (e.preventDefault(), setMenu(null))} />
-            <div className="ctx-menu" style={{ left: Math.min(menu.x, window.innerWidth - 170), top: Math.min(menu.y, window.innerHeight - 190) }} onClick={() => setMenu(null)}>
+            <div className="ctx-menu" style={{ left: Math.min(menu.x, window.innerWidth - 170), top: Math.min(menu.y, window.innerHeight - 220) }} onClick={() => setMenu(null)}>
               <button disabled={count === 0} onClick={() => copySelected(false)}>
                 {t("palette.copy")}
               </button>
@@ -592,6 +607,9 @@ export function Palette() {
               </button>
               <button disabled={!canPaste} onClick={() => void pasteClip()}>
                 {t("palette.paste")}{canPaste ? t("palette.pasteDetail", { n: clip!.items.length, library: libraryName(libraries, clip!.library, tags.locale) }) : ""}
+              </button>
+              <button disabled={count === 0} onClick={() => void duplicateSelected()}>
+                {t("palette.duplicate")}
               </button>
               <hr />
               <button disabled={count === 0} onClick={() => void deleteSelected()}>

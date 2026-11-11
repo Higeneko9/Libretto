@@ -158,14 +158,6 @@ class Library:
             candidate = f"{name} ({n})"
         return candidate
 
-    def unique_id(self, category: str, base: str) -> str:
-        existing = {i.casefold() for i in self._names(category)}
-        candidate, n = base, 1
-        while candidate.casefold() in existing:
-            n += 1
-            candidate = f"{base}-{n}"
-        return candidate
-
     def create(self, category: str, data: dict, locale: str | None = None) -> dict:
         name = self.unique_name(category, str(data.get("name") or "").strip() or "preset")
         return self.save(category, {**data, "name": name}, self.new_preset_id(category), locale)
