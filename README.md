@@ -1,152 +1,339 @@
 # Libretto
 
-Node-based prompt builder and generation front end for a local ComfyUI server.
-## Features (v1)
+[日本語版はこちら](README-JP.md)
 
-- React Flow canvas with a drag-and-drop library palette; every node is editable and can be saved back as a preset.
-- Model profiles (`profiles/*.yaml`; your imported/edited ones in `ugc/profiles/`): SDXL and Pony (tag prompts), Flux (natural language). Each maps to a ComfyUI API-format workflow template.
-- **Collection** nodes pick a random item from a category (random/weighted, shuffle, sequential, fixed, label filters, exclude-last-N). With several library cards selected, dragging one of them drops all of them, and dragging a **Random** card makes a collection of just the selected cards of that category.
-- Reproducible snapshots: every run stores `ugc/data/snapshots/<id>/snapshot.json` (seed, pick-seed, params, graph, prompts, workflow, model hashes, ComfyUI environment). "Regenerate exactly" re-queues the saved workflow; "Restore graph" and "Make variation" reload it into the canvas.
-- Thumbnails (256px WebP) next to each preset, uploaded or set from any generated image; per-profile variants with fallback.
-- Live prompt preview, batch generation, history gallery.
-- **Scene history**: each Generate saves the scene's graph as a numbered version (skipped when an identical graph is already stored, which is found by hash) with a thumbnail of the generated image. Versions are listed in the Inspector; click one to load it into the scene (undoable), 📌 keeps it from being removed, and the list is capped (per-scene **Max**, default `LB_SCENE_SNAP_MAX`=30) with least-recently-used eviction. Hover a version and press ✎ to give it a name. Thumbnail size has its own slider (or Shift + mouse wheel). Stored in `ugc/data/scene_snaps/<scene>/`.
-- **Zoom and thumbnail size**: in the desktop app, Ctrl + mouse wheel (or Ctrl + `+` / `-` / `0`) zooms the whole UI like a browser, and the zoom is remembered. Shift + mouse wheel over the library, the results or the scene history resizes their thumbnails.
+## Introduction
 
-## Using your ComfyUI workflows
+Libretto is a node-based **prompt generation tool** for ComfyUI. Build prompts
+visually from reusable presets for characters, costumes, poses, locations,
+lighting, and more, then arrange them into scenes.
 
-Click **ComfyUI workflows…** in the header to list workflows saved on the ComfyUI server (`user/default/workflows`).
-**Import & use** converts a workflow (UI format) into API format via the server's `/object_info`, detects the
-KSampler, positive/negative `CLIPTextEncode`, empty latent and model loader, and registers it as a model profile
-(selectable on the Generate node). Libretto injects the compiled prompt, seed, size, sampler settings and checkpoint;
-everything else stays as in your workflow. LoRAs from presets are added automatically. Re-import after editing a workflow.
-Subgraph-based workflows (e.g. MOSS-Image, Qwen-Image) are flattened automatically. Limits: KSampler-based text-to-image workflows only (no upscaler-only or 3D workflows). If a prompt passes through a prompt-enhancer switch, check its toggle in ComfyUI.
+**Libretto is not an image generation engine.** It composes prompts, sends them
+with generation settings to a separately running ComfyUI installation, and
+displays the results. ComfyUI performs the image generation using your installed
+models and workflows.
 
-## Install a packaged build
+## How to install
 
-Builds come from the **Build installers** GitHub Actions workflow (run it manually, or push a `v*` tag), which uploads one artifact per package. With the GitHub CLI: `gh run download --repo Higeneko9/Libretto -n <artifact>`. Artifacts expire after 3 days.
+Download a desktop package from the [latest release](https://github.com/Higeneko9/Libretto/releases/latest).
+The direct links below are for **v0.26.1109.3**.
+You do not need to install Python or Node.js to use these packages.
 
-Whichever you use, set your ComfyUI address in **⚙ Settings** (it opens by itself on the first run; *Use local* fills `127.0.0.1:8188`, then press *Test connection* and *Save*). Desktop ComfyUI works too; it exposes the same HTTP API, so enter its address and port.
+| Platform | Download | Installation |
+|---|---|---|
+| Windows x64 | [Windows installer (.exe)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1109.3/Libretto-0.26.1109-win-x64.exe) | Run the installer, then open Libretto from the Start menu. The installer is unsigned; if SmartScreen warns, choose **More info > Run anyway** after confirming you downloaded it from this repository. |
+| macOS Apple silicon | [macOS disk image (.dmg)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1109.3/Libretto-0.26.1109-mac-arm64.dmg) | Open the disk image and drag Libretto into Applications. The app is Developer ID signed and notarized. Allow Local Network access if connecting to ComfyUI on another machine. |
+| Debian / Ubuntu amd64 | [Debian package (.deb)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1109.3/Libretto-0.26.1109-linux-amd64.deb) | Install with `sudo apt install ./Libretto-0.26.1109-linux-amd64.deb`, then open Libretto from the app menu. |
+| Linux x86_64 | [AppImage](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1109.3/Libretto-0.26.1109-linux-x86_64.AppImage) | Make the downloaded file executable and run it. Some distributions require `libfuse2`. |
 
-User data (libraries, scenes, history, backups, settings) lives in a per-user folder and is kept when you upgrade. The Windows uninstaller asks whether to delete it too:
+Install and start [ComfyUI](https://github.com/Comfy-Org/ComfyUI) separately,
+with a working text-to-image workflow and the models it needs.
 
-| OS | Data folder |
-|----|-------------|
+Libraries, scenes, history, and settings are kept in a per-user folder across
+upgrades:
+
+| Platform | Desktop app data folder |
+|---|---|
 | Windows | `%APPDATA%\Libretto` |
 | macOS | `~/Library/Application Support/Libretto` |
-| Linux | `~/.config/Libretto` (desktop app) or `~/.local/share/Libretto` (server) |
+| Linux | `~/.config/Libretto` |
 
-### Desktop app
+The Windows uninstaller asks whether to delete this data.
 
-| OS | Artifact | Install and run |
-|----|----------|-----------------|
-| Windows | `libretto-desktop-windows` (`.exe`) | Run the installer, then start **Libretto** from the Start menu. SmartScreen may warn because the app is unsigned: *More info → Run anyway*. |
-| macOS | `libretto-desktop-macos` (`.dmg`) | Open the `.dmg` and drag **Libretto** to Applications. The app is signed with a Developer ID certificate and notarized by Apple, so it opens normally. macOS may ask for **Local Network** access: allow it when prompted (or enable it under System Settings → Privacy & Security → Local Network) to reach a ComfyUI server on another machine. |
-| Debian / Ubuntu | `libretto-desktop-linux-deb` (`.deb`) | `sudo apt install ./Libretto-*.deb`, then start **Libretto** from the app menu or run `libretto-desktop`. Remove with `sudo apt remove libretto-desktop`. |
-| Other Linux | `libretto-desktop-linux-appimage` (`.AppImage`) | `chmod +x Libretto-*.AppImage && ./Libretto-*.AppImage`. Needs `libfuse2` on newer Ubuntu releases. |
+## How to use it
 
-### Server package (use from any browser)
+![Libretto workspace with the Results browser on the left, Graph editor in the center, Inspector on the right, and Library browser at the bottom.](docs/images/workspace.png)
 
-The same backend and UI without Electron. It prints `LIBRETTO_URL=...` and serves the UI there.
+**YouTube walkthrough:** link coming soon.
 
-| OS | Artifact | Run |
-|----|----------|-----|
-| Windows | `libretto-server-windows` | Run `libretto-server.exe --open` from the extracted folder. |
-| macOS | `libretto-server-macos-latest` | `tar -xzf libretto-server-macOS.tar.gz && ./backend/libretto-server --open` |
-| Linux | `libretto-server-ubuntu-24.04` | `tar -xzf libretto-server-Linux.tar.gz && ./backend/libretto-server --open` |
+See the [UI overview](docs/UI_OVERVIEW.md) for a numbered layout diagram and
+the names used throughout this guide: **Toolbar**, **Scene tabs**, **Results
+browser**, **Graph editor**, **Inspector**, and **Library browser**.
 
-Options: `--port N` (default: the saved port, else 8000, else a free one), `--host 0.0.0.0` (default `127.0.0.1`), `--comfy-url URL`, `--data-dir DIR`, `--open` (open the browser).
+### Set up the connection
 
-To use it from other machines, start it with `--host 0.0.0.0 --port 8000`, allow the port in the firewall (`sudo ufw allow 8000/tcp`), and browse to `http://<server>:8000`. There is no authentication, so only do this on a trusted network, or use an SSH tunnel (`ssh -L 8000:127.0.0.1:8000 user@server`) or a VPN.
+![Settings dialog for the ComfyUI connection and display language.](docs/images/settings-dialog.png)
 
-### Building the packages yourself
+The Settings dialog opens on first launch. Reopen it at any time using
+**Settings** in the Toolbar.
 
-```
-cd desktop
-npm ci
-npm run dist        # builds the frontend and the backend bundle, then the installer for this OS
-npm run pack        # unpacked app only, faster for testing
-```
+1. Start ComfyUI and confirm it is accessible.
+2. Enter its address and port. **Use local** fills in `127.0.0.1` and `8188`;
+   use the port shown by your ComfyUI installation, which may be different.
+3. Press **Test connection**, then **Save**.
+4. Choose your display language and close the dialog.
 
-Needs Node, Python with `requirements.txt` and `pyinstaller`, and a built frontend (done by the script). Installers can only be built for the OS you run on, which is why CI uses a Windows, macOS and Ubuntu matrix. The backend bundle alone: `python backend/build_backend.py`.
+ComfyUI Desktop and the standalone ComfyUI server expose the same API. To use
+ComfyUI on another computer, enter that computer's address and ensure ComfyUI
+is listening on the network and its port is allowed through the firewall.
+
+### Choose a workflow
+
+Open **ComfyUI workflows** from the Toolbar, select a workflow saved on your
+ComfyUI server, and choose **Import & use**. Libretto converts it to API format
+and registers it as a model profile.
+
+Select the **Generate node** in the Graph editor and choose that profile in
+the Inspector. Libretto fills in the compiled prompts, seed, image size,
+sampler settings, and checkpoint while preserving the rest of the workflow.
+Re-import the workflow after changing it in ComfyUI.
+
+Supported workflows are KSampler-based text-to-image workflows. Subgraph-based
+workflows are flattened during import; upscaler-only and 3D workflows are not
+supported. If your workflow includes a prompt-enhancer switch, check its
+setting in ComfyUI.
+
+### Build a scene
+
+A new data folder starts with the **default** library and **Sample** and
+**Complex Sample** scenes. The examples use the built-in `sdxl` profile;
+choose your own working profile before generating.
+
+1. Open a scene using Scene tabs, or use **+** to create one.
+2. Choose a category in the Library browser and filter by tags or search text.
+3. Drag preset cards onto the Graph editor canvas. Drag several selected cards
+   together to add several nodes.
+4. Select a node and edit its properties in the Inspector. Select the Generate
+   node to change the model profile, seed, size, sampling, and output settings.
+5. Adjust scene-wide positive and negative text in the Inspector and inspect
+   the Prompt preview.
+
+Scenes autosave. Right-click a scene tab to rename, duplicate, export, close,
+or delete it. Use **Export scene** and **Import scene** in the Toolbar to
+exchange scene JSON files.
+
+### Work with presets and prompts
+
+The **Inspector** edits nodes in the current scene. **Preset properties**, on
+the right of the Library browser, edits reusable library presets and autosaves
+those changes. Toggle Preset properties with **N** while the pointer is over
+the Library browser, or use its edge button. Editing a node does not
+automatically change its source preset; save it back explicitly when needed.
+
+Use the Library browser's management button to create, copy, import/export,
+or delete libraries. Category settings let you add, rename, color, and reorder
+categories. Tags can be nested, such as `dress/formal`; selecting `dress` also
+matches its descendants. Ctrl-click category or tag buttons to select more
+than one.
+
+For variation, drag a **Random** card onto the canvas to create a Collection
+node. Collections support random/weighted, shuffle, sequential, and fixed
+selection, plus tag filters. Dragging a Random card with presets selected
+restricts the collection to the selected presets of that category.
+
+Add positive or negative **Prompt nodes** for custom text. The **Prompt order
+controls** at the top of the Graph editor switch between category order and
+canvas position order. For multi-character scenes, use **Belongs to character**
+to keep attributes with their character. The Generate node's **Between
+characters** setting can separate character segments for tag-based models.
+
+### Generate and inspect results
+
+Use **Generate** in the Toolbar or the **Generation bar** at the bottom of the
+Graph editor. The Generation bar also sets the batch count, shows queued and
+running counts, and cancels runs. Generation entries appear in the Results
+browser.
+
+![Result viewer with a generated image, prompts, generation details, and reproduction actions.](docs/images/result-viewer.png)
+
+Open a completed result to see the **Result viewer**, including its image,
+prompts, seeds, profile, and generation time. Its actions include:
+
+- **Regenerate exactly**: re-queues the saved ComfyUI workflow.
+- **Restore graph**: loads the saved graph with seeds locked.
+- **Make variation**: loads the graph for another variation.
+- **Set as thumbnail**: uses the image for a preset thumbnail.
+
+Exact reproduction still depends on matching models, GPU, drivers, and
+PyTorch. Snapshots record the workflow, prompts, settings, and environment to
+help identify differences.
+
+On the Generate node, **Output subfolder/prefix** controls ComfyUI's output
+path relative to its output folder; `{scene}`, `{profile}`, and `{date}` are
+supported. **Also copy images to local folder** keeps an additional copy on
+the computer running Libretto.
+
+### Revisit scenes and protect your work
+
+**Scene history**, inside the Inspector, stores numbered graph versions when
+you generate. An unchanged graph reuses its existing version, so several
+results can share one scene version. Click a version to load it, rename it,
+or pin it against automatic eviction. The per-scene **Max** setting limits
+the number of versions; the default is 30.
+
+Open **Backups** from the Toolbar to create or restore backups of libraries,
+scenes, and profiles, optionally including generation history and images.
+Restore merges data; **Replace all** replaces it. Both take a safety backup
+first. Automatic backups run at most once a day, keeping the last 10.
+Download or copy backups somewhere off the machine for protection.
+
+Drag panel edges to resize the workspace. Shift + mouse wheel over the
+Library browser, Results browser, or Scene history resizes thumbnails.
+In the desktop app, Ctrl + mouse wheel or Ctrl + `+` / `-` / `0` changes
+the whole UI's zoom.
 
 ## Run from source
 
-`run.ps1` starts the server against `http://127.0.0.1:8188` (override with `-LB_ComfyUrl`), serving the built UI at http://127.0.0.1:8000.
+### Requirements and structure
 
-Manual setup:
+The commands below use PowerShell from the repository root.
+CI uses **Python 3.12** and **Node.js 22**; install those along with Git and npm.
+ComfyUI runs separately and needs its own environment and models.
+
+| Directory | Role |
+|---|---|
+| `backend` | Python FastAPI service, prompt compilation, ComfyUI integration, and storage |
+| `frontend` | React, TypeScript, Vite, React Flow, and Zustand UI |
+| `desktop` | Electron shell and desktop packaging scripts |
+| `profiles` | Built-in YAML model profiles and workflow templates |
+| `samples` | Starter presets, thumbnails, and scenes |
+
+### Install dependencies
 
 ```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt     # Linux: .venv/bin/pip
-.venv\Scripts\python -m pytest
-$env:LB_COMFY_URL = "http://127.0.0.1:8188"
-.venv\Scripts\python -m uvicorn libretto.main:app_factory --factory --port 8000
+git clone https://github.com/Higeneko9/Libretto.git
+Set-Location Libretto
+python -m venv backend\.venv
+& .\backend\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+Set-Location frontend
+npm ci
+Set-Location ..
 ```
 
-Frontend:
+On macOS/Linux, use your shell's equivalent commands and the virtual
+environment's `bin/python` executable in place of `Scripts\python.exe`.
+
+### Run the built UI
+
+Build the frontend, then start the backend from the repository root:
 
 ```powershell
-cd frontend
-npm install
-npm run dev        # http://localhost:5173, proxies /api to :8000
-npm run build      # the backend serves frontend/dist at / when it exists
+Set-Location frontend
+npm run build
+Set-Location ..
+.\run.ps1
 ```
 
-## Configuration
+Open <http://127.0.0.1:8000>. The backend serves `frontend/dist` when it exists.
+`run.ps1` expects `backend\.venv` and does not install dependencies or build
+the frontend.
+
+To select another ComfyUI address or Libretto port:
+
+```powershell
+.\run.ps1 -LB_ComfyUrl "http://127.0.0.1:8188" -LB_Port 8001
+```
+
+A ComfyUI URL saved through Settings takes precedence over `LB_COMFY_URL`,
+including the value set by `-LB_ComfyUrl`.
+
+### Develop with live reload
+
+Start the backend from the repository root:
+
+```powershell
+Set-Location backend
+.\.venv\Scripts\python.exe -m uvicorn libretto.main:app_factory --factory --host 127.0.0.1 --port 8000 --reload
+```
+
+In another terminal, starting from the repository root:
+
+```powershell
+Set-Location frontend
+npm run dev
+```
+
+Open <http://localhost:5173>. Vite proxies `/api` requests to
+`http://127.0.0.1:8000`; if you change the backend port, update the proxy in
+`frontend/vite.config.ts` too.
+
+Keep the backend bound to localhost unless you explicitly need network
+access. It has no authentication; use only a trusted network, SSH tunnel,
+or VPN when exposing it.
+
+### Run the desktop shell or build an installer
+
+After building the frontend and installing backend dependencies, run the
+desktop shell from source:
+
+```powershell
+Set-Location desktop
+npm ci
+npm start
+```
+
+Electron starts its own backend process using `backend\.venv` when available.
+Source runs use the repository's `ugc` folder by default. Set
+`LB_DESKTOP_DATA` to a separate directory to isolate desktop development data.
+
+To build a desktop package, install PyInstaller into the backend virtual
+environment, then run the packaging command:
+
+```powershell
+Set-Location ..
+& .\backend\.venv\Scripts\python.exe -m pip install pyinstaller
+Set-Location desktop
+npm run dist
+```
+
+`npm run dist` builds the frontend, bundles the backend with PyInstaller,
+and creates an installer under `desktop/release`. Use `npm run pack` for
+an unpacked app. Build on the target operating system; macOS distribution
+also requires signing and notarization credentials. The **Build installers**
+GitHub Actions workflow provides the cross-platform build matrix.
+
+### Configuration and storage
+
+Source-run data lives under the git-ignored `ugc` directory by default.
+Libraries contain YAML presets and thumbnails; scenes are JSON graphs;
+generation history uses SQLite with per-run snapshot directories.
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
-| `LB_COMFY_URL` | `http://127.0.0.1:8188` | ComfyUI server |
-| `LB_UGC_ROOT` | `ugc/` | Parent of all user-generated content below (git-ignored) |
-| `LB_LIBRARIES_ROOT` | `ugc/libraries/` | One sub-folder per library (preset YAML + thumbnails) |
-| `LB_SCENES_ROOT` | `ugc/scenes/` | Saved scenes (node graphs), one JSON each |
-| `LB_PROFILES_ROOT` | `profiles/` | Built-in model profiles and workflow template (shipped) |
-| `LB_USER_PROFILES_ROOT` | `ugc/profiles/` | Imported/edited profiles and their workflow templates |
-| `LB_DATA_ROOT` | `ugc/data/` | SQLite history, snapshots, collection state |
-| `LB_BACKUP_ROOT` | `backups/` | Where backup zips are written (git-ignored) |
-| `LB_AUTO_BACKUP` | on | Set to `0` to disable the daily automatic backup |
-| `LB_MODELS_ROOT` | unset | ComfyUI `models/` folder; enables SHA256 hashes of checkpoints and LoRAs in snapshots |
+|---|---|---|
+| `LB_COMFY_URL` | `http://127.0.0.1:8188` | ComfyUI URL when no URL is saved in Settings |
+| `LB_UGC_ROOT` | `ugc` | Parent of user-generated content and `settings.json` |
+| `LB_LIBRARIES_ROOT` | `ugc/libraries` | Presets and thumbnails, one folder per library |
+| `LB_SCENES_ROOT` | `ugc/scenes` | Saved scene graphs |
+| `LB_PROFILES_ROOT` | `profiles` | Built-in profiles and workflow templates |
+| `LB_USER_PROFILES_ROOT` | `ugc/profiles` | Imported and edited profiles |
+| `LB_DATA_ROOT` | `ugc/data` | SQLite history, snapshots, and collection state |
+| `LB_BACKUP_ROOT` | `backups` | Backup archives; defaults beside the UGC root |
+| `LB_AUTO_BACKUP` | `1` | Set to `0` to disable automatic backups |
+| `LB_SCENE_SNAP_MAX` | `30` | Default maximum graph versions per scene |
+| `LB_MODELS_ROOT` | unset | ComfyUI models directory; enables model SHA256 hashes in snapshots |
 
-## Adding a model profile
+When `LB_UGC_ROOT` changes, its default child paths change with it unless
+individually overridden. Scene versions are stored under
+`ugc/data/scene_snaps`; generation snapshots under `ugc/data/snapshots`.
+User content is not protected by Git: use Backups before experimenting.
 
-Copy `profiles/sdxl.yaml`, set `format` (`tags` or `natural`), the quality prefix, negative template, defaults,
-and a `workflow_template` exported with ComfyUI "Save (API Format)". `injection` maps each parameter
-to the node id in that template.
+To add a built-in model profile, use `profiles/sdxl.yaml` as a starting point.
+Set its prompt format (`tags` or `natural`), defaults, quality prefix,
+negative template, and `workflow_template`. The template must be a ComfyUI
+API-format workflow; `injection` maps parameters to its node IDs.
 
-## Notes
+### Checks
 
-- Progress is polled from ComfyUI history/queue (no WebSocket yet).
-- Bit-exact reproduction needs the same GPU, drivers, PyTorch and model files; snapshots record these to detect drift.
+Run backend tests from the repository root:
 
-## Libraries, scenes and output (v1.1)
+```powershell
+Set-Location backend
+.\.venv\Scripts\python.exe -m pytest -q
+```
 
-- **Libraries**: switch between libraries from the palette; *Manage…* creates (optionally copying an existing one), imports/exports (zip) and deletes libraries, and copies selected nodes between libraries.
-- **Scenes**: each tab is a separate node graph (like ComfyUI workflows) with its own library, scene prompt/negative and output settings. Scenes autosave to `ugc/scenes/`. Right-click a scene tab to rename, duplicate, export, close or delete it; the **+** button (or right-clicking empty tab space) creates, imports, or reopens a closed scene.
-- **Layout**: results browser on the left, graph with the inspector on its right, and the library browser at the bottom; drag pane edges to resize. The library browser has two quick-access rows: category buttons (click to show one, Ctrl-click to add or remove) and, below them, tag buttons for the selected categories (click to narrow to one tag; Ctrl-click to add more). All matching presets show at once; the slider resizes thumbnails. A preset property pane on the right of the library (toggle with `N` while the pointer is over the library, or the small ◂ button at its right edge) edits the clicked preset directly and autosaves. Select several presets (Ctrl/Shift-click) to edit them together: fields whose values differ show a "mixed" badge, typing writes to all, and tags show `n/m` when only some have them. Right-click a node in the graph for Copy / Cut / Duplicate / Delete (applies to all selected nodes), or right-click empty canvas to Paste the copied nodes at that spot. When several categories or tags are selected, a sticky row of jump buttons at the top of the card area scrolls to each section.
-- **Output control**: the Generate node's *Output subfolder/prefix* overrides every SaveImage `filename_prefix` (relative to ComfyUI's output folder; `{scene}`, `{profile}`, `{date}` supported), and *Also copy images to local folder* copies results to a folder on this machine.
-- **Prompt order**: the toggle at the top of the graph (or the Generate node) switches between category order and canvas position order; category order can be rearranged per Generate node. *Replace entire prompt* ignores everything else.
-- **Hair category**: hair styles are their own category (placed right after the character). A hair node has a **hair color** property (pick from the list or type your own). A style's keywords may contain `{color}` (for example `{color} hair, long hair`); without it, `<color> hair` is prepended. On a Collection node the color can be `random`, which picks a color per image from the pick seed, so the same snapshot reproduces the same color.
-- **Pose / Emotion / Props categories**: pose is one person's body position, emotion is expression/mood, props are held or nearby objects (interactions between several characters belong in situation). In prompt order they follow costume; profiles saved before these existed place them there automatically.
-- **Per-character attributes**: hair, costume, pose, emotion and props nodes (and inline prompt nodes) have a "Belongs to character" setting. Their text is written right behind that character in the prompt, so with several characters each person's tags stay together and are less likely to bleed onto someone else. The Generate node's "Between characters" setting can also insert `BREAK` between characters (tag models). ComfyUI's own text encoders ignore BREAK, so Libretto encodes each segment with its own CLIPTextEncode and joins them with ConditioningConcat when it builds the workflow. Natural-language profiles just keep each character's sentences together. Replacing a node by dropping a preset on it keeps its character. Select several graph nodes (Ctrl/Shift-click, or hold Ctrl or Shift and drag a box on empty canvas, as in ComfyUI) to edit state, character and emphasis for all of them at once; differing values show a "mixed" badge.
-- **Configurable categories**: every library has its own category list (⚙ next to the library selector; stored in `categories.yaml` in the library folder). Each category has a stable id, an editable label, a color, a **kind** and flags: *belongs to* (nodes may be grouped under a group head such as a character), *color* (hair-style color picker) and *locked* (prevents deletion; the built-ins start locked, but you can unlock them). Behavior depends on the kind (`group_head`, `attribute`, `situation`, `scene`, `custom`), never on the name, so renaming a category is safe. Add your own (for example "Effects"), reorder them (the order is the default prompt order) and delete empty ones. A scene can mix presets from different libraries: nodes keep their own copy of the preset and remember the library their thumbnail comes from. Copying nodes to another library creates any missing category there.
-- **Search tags**: tag presets (e.g. `formal`, `casual`) via the 🏷 button on a library card or the Inspector's tags field. Use `/` for nested tags (`dress/formal`), which appear as their own tag buttons; an item tagged `dress/formal` also matches `dress`. Collection nodes can restrict to tags. Each category also has a "no tags" button listing untagged presets.
+Run frontend checks from a separate terminal at the repository root:
 
-- **Prompt nodes**: drag a positive or negative prompt node onto the canvas to add a piece of prompt text. Set its category (node color; inline position) and placement (prepend / inline / append). Negative prompt nodes are dark red.
+```powershell
+Set-Location frontend
+npm run typecheck
+npm test
+npm run build
+```
 
-## Backups
+## License information
 
-Because `ugc/` is not in git, use **💾 Backups…** in the toolbar. *Create backup* zips your libraries (with thumbnails), scenes and profiles into `backups/` (optionally with generation history and images). A settings-only backup is also taken automatically at startup at most once a day (last 10 auto backups kept). *Restore* merges the backup into the current data; *Replace all* makes it match the backup exactly. Both first take a "pre-restore" safety backup, and the page reloads afterwards. Backups can be downloaded and imported as zips; copy them somewhere off the machine for real safety.
+Libretto is released under the [MIT License](LICENSE).
+Copyright (c) 2026 Higeneko9. It is provided without warranty.
 
-## Tests
-
-- Backend: `cd backend; .\.venv\Scripts\python -m pytest -q`
-- Frontend (undo/redo store logic): `cd frontend; npm test`
-- **Results browser**: the results panel is a wrapping thumbnail grid with a size slider. Use ☑ Select (or Ctrl/Shift-click; Ctrl+A, Esc, Del when the panel is focused) to multi-select and 🗑 Delete to remove entries.
-
-
-All user-generated content lives under `ugc/` and is git-ignored. A first run seeds the `default` library from `samples/default` (presets with thumbnails) and two example scenes, *Sample* and *Complex Sample*, from `samples/scenes`. The scenes use the built-in `sdxl` profile; pick your own workflow profile in the Generate node. Only a brand-new data folder is seeded, so deleting the examples keeps them deleted. The sample thumbnails are AI-generated. To refresh the shipped samples from your own data, copy the generic thumbnails and YAML (not the per-profile `id.<profile>.webp` thumbnails) of the `default` library into `samples/default`, and the scene JSON files into `samples/scenes`.
-
-## License
-
-MIT, see [LICENSE](LICENSE).
+ComfyUI, models, and other dependencies have their own licenses; check their
+terms separately.
