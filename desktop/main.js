@@ -156,7 +156,7 @@ function createWindow(url) {
   });
   setupZoom(mainWindow);
   mainWindow.on("closed", () => (mainWindow = null));
-  void mainWindow.loadURL(url);
+  void mainWindow.loadURL(url, { extraHeaders: "Cache-Control: no-cache\n" });
 }
 
 const gotLock = app.requestSingleInstanceLock();

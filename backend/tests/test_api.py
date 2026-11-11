@@ -1,5 +1,6 @@
 import io
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -299,13 +300,14 @@ def test_library_create_copy_export_import_and_scope(env):
         f"/api/libraries/{fid}/copy",
         json={"source": "default", "items": [{"category": "costume", "id": "red-kimono"}]},
     ).json()
-    assert copied[0]["id"] == "red-kimono"
+    assert re.fullmatch(r"p-[0-9a-f]{8}", copied[0]["id"])
     again = client.post(
         f"/api/libraries/{fid}/copy",
         json={"source": "default", "items": [{"category": "costume", "id": "red-kimono"}]},
     ).json()
-    assert again[0]["id"] == "red-kimono-2"
-    assert {p["id"] for p in client.get(f"/api/library/costume?lib={fid}").json()} == {"red-kimono", "red-kimono-2"}
+    assert re.fullmatch(r"p-[0-9a-f]{8}", again[0]["id"])
+    assert again[0]["id"] != copied[0]["id"]
+    assert {p["id"] for p in client.get(f"/api/library/costume?lib={fid}").json()} == {copied[0]["id"], again[0]["id"]}
 
     renamed = client.patch(f"/api/libraries/{fid}", json={"name": "Fantasy Set"}).json()
     assert renamed == {"id": fid, "name": "Fantasy Set", "names": {}}
@@ -321,7 +323,10 @@ def test_library_create_copy_export_import_and_scope(env):
     bid = imported["id"]
     assert bid.startswith("l-") and imported["name"] == "Backup"
     assert len(client.get(f"/api/library/costume?lib={bid}").json()) == 2
-    assert client.post("/api/libraries/import?name=Backup", files={"file": ("x.zip", archive.content)}).status_code == 400
+    duplicate = client.post("/api/libraries/import?name=Backup", files={"file": ("x.zip", archive.content)})
+    assert duplicate.status_code == 200
+    assert duplicate.json()["id"] not in (fid, bid)
+    assert duplicate.json()["name"] == "Backup (1)"
     assert client.post("/api/libraries/import?name=bad", files={"file": ("x.zip", b"nope")}).status_code == 400
 
     assert client.delete("/api/libraries/default").status_code == 400
@@ -384,7 +389,52 @@ def test_copy_within_same_library_duplicates(env):
         "/api/libraries/default/copy",
         json={"source": "default", "items": [{"category": "costume", "id": "red-kimono"}]},
     ).json()
-    assert done[0]["id"] == "red-kimono-2"
+    assert re.fullmatch(r"p-[0-9a-f]{8}", done[0]["id"])
+    presets = {p["id"]: p for p in client.get("/api/library/costume").json()}
+    original = presets["red-kimono"]
+    copied = presets[done[0]["id"]]
+    assert done[0]["from"] == original["id"]
+    assert copied["name"] == f"{original['name']} (1)"
+    assert copied["keywords"] == original["keywords"]
+
+
+@pytest.mark.parametrize("same_library", [True, False])
+def test_preset_copies_preserve_metadata_and_all_thumbnails(tmp_path, same_library):
+    from libretto.libraries import Libraries
+
+    libs = Libraries(tmp_path / "libraries")
+    source = libs.get("default")
+    original = source.create("costume", {
+        "name": "Kimono",
+        "names": {"ja-JP": "着物"},
+        "keywords": "red kimono",
+        "description": "A red kimono",
+        "negative": "blue",
+        "weight": 2,
+        "labels": ["dress/formal"],
+        "lora": {"name": "kimono.safetensors", "strength": 0.8},
+        "thumbnail_source": {"run": "example"},
+    })
+    for profile, color in [(None, "red"), ("sdxl", "blue")]:
+        Image.new("RGB", (8, 8), color).save(source.thumb_path("costume", original["id"], profile), "WEBP")
+    target_id = "default" if same_library else libs.create("Other")["id"]
+    target = libs.get(target_id)
+    copied_ids = []
+    for _ in range(2):
+        copied = libs.copy_items("default", target_id, [{"category": "costume", "id": original["id"]}])[0]
+        copied_ids.append(copied["id"])
+        assert re.fullmatch(r"p-[0-9a-f]{8}", copied["id"])
+        assert copied["id"] != original["id"]
+        stored = target.get("costume", copied["id"])
+        for field in ("names", "keywords", "description", "negative", "weight", "labels", "lora", "thumbnail_source"):
+            assert stored[field] == original[field]
+        assert stored["has_thumbnail"] and stored["thumbnail_profiles"] == ["sdxl"]
+        assert target._file("costume", copied["id"]).is_file()
+        for profile in (None, "sdxl"):
+            assert target.thumb_path("costume", copied["id"], profile).read_bytes() == source.thumb_path("costume", original["id"], profile).read_bytes()
+    assert len(set(copied_ids)) == 2
+    assert source.get("costume", original["id"])["name"] == original["name"]
+
 
 def test_library_names_are_unique_case_insensitively(env):
     client, _, _ = env

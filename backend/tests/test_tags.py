@@ -82,9 +82,9 @@ def test_copy_between_libraries_keeps_tag_identity(tmp_path):
     source = libs.get("default")
     saved = source.save("costume", {"name": "x", "labels": ["dress/formal"]}, "x", "en-US")
     other = libs.create("other")["id"]
-    libs.copy_items("default", other, [{"category": "costume", "id": "x"}])
+    copied = libs.copy_items("default", other, [{"category": "costume", "id": "x"}])
     target = libs.get(other)
-    labels = target.get("costume", "x")["labels"]
+    labels = target.get("costume", copied[0]["id"])["labels"]
     assert labels == saved["labels"]
     leaf = target.tags.get(labels[0])
     assert leaf["names"]["en-US"] == "formal" and target.tags.get(leaf["parent"])["names"]["en-US"] == "dress"

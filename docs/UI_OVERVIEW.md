@@ -43,6 +43,26 @@ Use **Library browser** rather than alternating between "palette" and "library
 panel." A **library** is the collection of reusable presets, while a **preset
 card** is one of its visible items.
 
+Right-click a preset card and choose **Duplicate** to copy it within the active
+library. If the card is part of a multi-selection, all selected presets are
+duplicated. Duplicate leaves the copy/cut clipboard unchanged. Preset copies
+receive fresh `p-xxxxxxxx` IDs and filenames, including when pasted into another
+library; display-name collisions still receive a numbered suffix such as
+`Name (1)`. Generic and profile-specific thumbnails are copied too.
+
+Library ZIP exports include the library ID. Import keeps that ID when it is
+available, so scenes shared with the library retain their references. If the ID
+already exists, import creates a separate library with a fresh ID rather than
+overwriting or merging the existing one. Conflicting library names receive a
+numbered suffix such as `Library (1)`. Preset and tag IDs inside the archive stay
+unchanged. You can manually copy presets between the libraries afterward.
+
+When an ID conflict creates a separate library, shared scenes still reference
+the original ID; their references are not automatically redirected to the new
+copy. This also applies to the built-in `default` library, which normally
+already exists. Older ZIP exports without identity metadata still import, but
+receive a new library ID because their original ID is unknown.
+
 Keep **Inspector** and **Preset properties** distinct: the Inspector edits node
 instances in the active scene; Preset properties edits reusable library data.
 Changing a node does not by itself update its source preset; nodes can be saved
