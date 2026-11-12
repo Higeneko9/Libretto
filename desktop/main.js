@@ -81,13 +81,14 @@ function setupZoom(win) {
     }
   });
   contents.on("zoom-changed", (_event, direction) => apply(contents.getZoomLevel() + (direction === "in" ? 0.5 : -0.5)));
-  contents.on("before-input-event", (event, input) => {
-    if (input.type !== "keyDown" || !(input.control || input.meta) || input.alt) return;
+  contents.on("before-input-event", (_event, input) => {
+    const zoomKey = input.type === "keyDown" && (input.control || input.meta) && !input.alt && ["=", "+", "-", "0"].includes(input.key);
+    // Keep renderer key events intact so the canvas can release its selection modifiers.
+    contents.setIgnoreMenuShortcuts(zoomKey);
+    if (!zoomKey) return;
     if (input.key === "=" || input.key === "+") apply(contents.getZoomLevel() + 0.5);
     else if (input.key === "-") apply(contents.getZoomLevel() - 0.5);
     else if (input.key === "0") apply(0);
-    else return;
-    event.preventDefault();
   });
 }
 
