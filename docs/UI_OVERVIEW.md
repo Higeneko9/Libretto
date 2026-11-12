@@ -16,7 +16,7 @@ be hidden. The numbers identify areas in this guide, not controls in the app.*
 | 1 | **Toolbar** | Across the top | Shows the app version and connection status; opens ComfyUI workflows, Backups, and Settings; imports/exports scenes and starts generation. |
 | 2 | **Scene tabs** | Above the Graph editor and Inspector | Switches between scenes. The **+** button creates, imports, or reopens scenes; a tab's context menu includes rename, duplicate, export, close, and delete. |
 | 3 | **Results browser** | Left side, below the Toolbar | Displays generation entries, including queued/running runs and completed images. Select and delete entries, resize thumbnails, or open a result for a larger view and reproduction actions. |
-| 4 | **Graph editor** | Center | Arranges and connects the active scene's nodes. Drag presets from the Library browser here and select nodes to edit their properties in the Inspector. |
+| 4 | **Graph editor** | Center | Arranges the active scene's nodes. Drag presets from the Library browser here and select nodes to edit their properties in the Inspector. Connection lines and ports are hidden; added and pasted nodes still connect to Generate automatically, and existing scene connections are preserved. |
 | 5 | **Inspector** | Right of the Graph editor | Edits selected node properties and scene-wide prompts. Also contains Scene history and the Prompt preview. Selecting the Generate node exposes its generation and output settings here. |
 | 6 | **Library browser** | Below the Graph editor and Inspector | Switches and manages libraries, filters presets by category, tags, or search text, and supplies preset, Collection, and Prompt nodes for the Graph editor. |
 

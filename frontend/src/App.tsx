@@ -163,9 +163,11 @@ function GenerateBar() {
   );
 }
 
-function Canvas() {
+export function Canvas() {
   const t = useT();
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, select } = useStore();
+  // Connections still determine prompt inputs; hide them only in the editor.
+  const hiddenEdges = useMemo(() => edges.map((edge) => ({ ...edge, hidden: true })), [edges]);
   const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
   const nodeClip = useStore((s) => s.nodeClip);
   const categories = useStore((s) => s.categories);
@@ -263,7 +265,10 @@ function Canvas() {
     <div className="canvas">
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={hiddenEdges}
+        nodesConnectable={false}
+        edgesReconnectable={false}
+        edgesFocusable={false}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
