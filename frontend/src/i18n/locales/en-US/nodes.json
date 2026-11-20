@@ -13,5 +13,10 @@
   "random": "random",
   "negative": "negative",
   "prompt": "prompt",
-  "emptyPrompt": "(empty prompt)"
+  "emptyPrompt": "(empty prompt)",
+  "editPrompt": "Edit prompt",
+  "editPositivePrompt": "Edit positive prompt",
+  "editNegativePrompt": "Edit negative prompt",
+  "editPromptHint": "Double-click to edit · F2 when selected",
+  "promptEditHint": "Enter to save · Shift+Enter for a new line · Escape to cancel"
 }

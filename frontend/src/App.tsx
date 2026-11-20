@@ -1,6 +1,6 @@
 import { Background, Controls, MiniMap, Panel, ReactFlow, ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { AskHost } from "./ask";
 import { cancelAll, runGenerate, useGeneration } from "./generation";
@@ -8,8 +8,10 @@ import { Inspector } from "./Inspector";
 import { CategoryNode, COLORS, CollectionNode, GenerateNode, promptColor, PromptNode } from "./nodes";
 import { LB_DRAG_EVENT, LB_DROP_EVENT, type DragPayload } from "./paletteDrag";
 import { Palette } from "./Palette";
+import { usePanelShortcuts } from "./panelShortcuts";
 import { Results } from "./Results";
 import { SceneTabs } from "./SceneTabs";
+import { ShowExplorer } from "./ShowExplorer";
 import { Splitter } from "./Splitter";
 import { BackupDialog } from "./Backups";
 import { SettingsDialog } from "./SettingsDialog";
@@ -179,6 +181,31 @@ export function Canvas() {
     return { ...Object.fromEntries([...ids].filter(Boolean).map((c) => [c, CategoryNode])), ...baseTypes };
   }, [categories, types]);
   const [menu, setMenu] = useState<{ x: number; y: number; ids: string[] } | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const editPrompt = (id: string) => {
+    const button = Array.from(canvasRef.current?.querySelectorAll<HTMLButtonElement>("button.prompt-text") ?? [])
+      .find((element) => element.dataset.nodeId === id);
+    button?.click();
+  };
+  usePanelShortcuts(canvasRef, (event) => {
+    const state = useStore.getState();
+    const key = event.key.toLowerCase();
+    if (event.altKey) return;
+    if (event.key === "F2" && !event.ctrlKey && !event.metaKey) {
+      if (state.nodes.some((node) => node.id === state.selectedId && node.type === "prompt")) {
+        event.preventDefault();
+        if (!event.repeat && state.selectedId) editPrompt(state.selectedId);
+      }
+    } else if ((event.ctrlKey || event.metaKey) && (key === "z" || key === "y")) {
+      event.preventDefault();
+      if (key === "y" || event.shiftKey) state.redo();
+      else state.undo();
+    } else if (!event.ctrlKey && !event.metaKey && (event.key === "Delete" || event.key === "Backspace")) {
+      event.preventDefault();
+      const ids = state.nodes.filter((node) => node.selected && node.type !== "generate" && node.deletable !== false).map((node) => node.id);
+      if (!event.repeat && ids.length) state.removeNodes(ids);
+    }
+  });
 
   // scroll to a node just added from the palette, keeping the current zoom
   const focusId = useStore((s) => s.focusId);
@@ -262,7 +289,7 @@ export function Canvas() {
   }, [screenToFlowPosition]);
 
   return (
-    <div className="canvas">
+    <div ref={canvasRef} className="canvas" data-shortcut-panel="canvas">
       <ReactFlow
         nodes={nodes}
         edges={hiddenEdges}
@@ -285,7 +312,7 @@ export function Canvas() {
           e.preventDefault();
           setMenu({ x: (e as React.MouseEvent).clientX, y: (e as React.MouseEvent).clientY, ids: [] });
         }}
-        deleteKeyCode={["Delete", "Backspace"]}
+        deleteKeyCode={null}
         selectionKeyCode={["Control", "Shift"]}
         multiSelectionKeyCode={["Control", "Meta", "Shift"]}
         fitView
@@ -307,6 +334,8 @@ export function Canvas() {
           <div className="ctx-menu" style={{ left: Math.min(menu.x, window.innerWidth - 170), top: Math.min(menu.y, window.innerHeight - 150) }} onClick={() => setMenu(null)}>
             {menu.ids.length > 0 && (
               <>
+                {menu.ids.length === 1 && nodes.some((node) => node.id === menu.ids[0] && node.type === "prompt") &&
+                  <button onClick={() => editPrompt(menu.ids[0])}>{t("nodes.editPrompt")}</button>}
                 {(() => {
                   const movable = menu.ids.filter((id) => useStore.getState().nodes.find((n) => n.id === id)?.type !== "generate");
                   const n = movable.length;
@@ -366,26 +395,6 @@ export default function App() {
     initScenes().catch((e: Error) => setError(e.message));
   }, [initScenes]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      // leave native text undo alone inside form fields
-      if (target.closest("input, textarea, select, [contenteditable]")) return;
-      if (!(event.ctrlKey || event.metaKey)) return;
-      const key = event.key.toLowerCase();
-      if (key === "z") {
-        event.preventDefault();
-        if (event.shiftKey) useStore.getState().redo();
-        else useStore.getState().undo();
-      } else if (key === "y") {
-        event.preventDefault();
-        useStore.getState().redo();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
   const style = {
     "--results-w": `${ui.resultsW}px`,
     "--inspector-w": `${ui.inspectorW}px`,
@@ -398,11 +407,18 @@ export default function App() {
         <Toolbar />
         <SceneTabs />
         {ready ? <Canvas key={activeId} /> : <div className="canvas muted">{error || t("app.loading")}</div>}
-        <div className="inspector-wrap">
+        <div className="inspector-wrap" data-shortcut-panel="inspector">
           <Splitter axis="x" className="edge-left" value={ui.inspectorW} min={240} max={800} direction={-1} onChange={(v) => setUi({ inspectorW: v })} />
           <Inspector />
         </div>
-        <Results />
+        <aside className="output-sidebar">
+          <Splitter axis="x" className="edge" value={ui.resultsW} min={200} max={1000} direction={1} onChange={(v) => setUi({ resultsW: v })} />
+          <div className="explorer-pane" style={{ height: ui.explorerH }}>
+            <ShowExplorer />
+            <Splitter axis="y" className="edge-bottom" label={t("showExplorer.resize")} value={ui.explorerH} min={140} max={Math.max(140, window.innerHeight - 240)} direction={1} onChange={(v) => setUi({ explorerH: v })} />
+          </div>
+          <Results />
+        </aside>
         <Palette />
         <AskHost />
       </div>

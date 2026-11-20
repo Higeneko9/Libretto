@@ -1,6 +1,12 @@
 /** A category id. Ids are stable; labels are only for display and may be renamed. */
 export type Category = string;
 
+export interface OrganizationHistory {
+  undo: number;
+  redo: number;
+  revision: number;
+}
+
 export interface AppSettings {
   comfy_url: string;
   port: number;
@@ -143,6 +149,7 @@ export interface WorkflowFile {
 
 export interface Run {
   id: string;
+  scene_id?: string | null;
   created_at: string;
   status: "queued" | "running" | "done" | "error" | "cancelled";
   prompt_id: string | null;
@@ -187,6 +194,46 @@ export interface SceneMeta {
   names?: Record<string, string>;
   updated_at: string;
   starter?: number | null;
+  show_id?: string | null;
+  act_id?: string | null;
+  order?: number | null;
+}
+
+export interface Act {
+  kind: "act";
+  id: string;
+  name: string;
+  scene_ids: string[];
+}
+
+export const SHOW_OUTPUT_LAYOUTS = ["workflow", "show_scene", "show_act_scene"] as const;
+export type ShowOutputLayout = typeof SHOW_OUTPUT_LAYOUTS[number];
+export interface ShowOutputPreview {
+  examples: { scene_id: string; name: string; prefix: string | null }[];
+}
+
+export interface Show {
+  version: 1;
+  id: string;
+  name: string;
+  order?: number;
+  output_layout?: ShowOutputLayout;
+  items: (Act | { kind: "scene"; id: string })[];
+}
+
+export type OutputScope =
+  | { kind: "all" }
+  | { kind: "standalone" }
+  | { kind: "scene"; id: string }
+  | { kind: "show"; id: string }
+  | { kind: "act"; id: string; show_id: string };
+
+export interface ScenePlace {
+  show_id?: string | null;
+  act_id?: string | null;
+  index?: number;
+  copy?: boolean;
+  name?: string;
 }
 
 export interface SceneSnap {
@@ -222,7 +269,7 @@ export interface BackupInfo {
   note: string;
   kind: "manual" | "auto" | "pre-restore" | "imported";
   includes_history: boolean;
-  counts: { libraries: number; scenes: number; profiles: number; runs: number };
+  counts: { libraries: number; scenes: number; shows?: number; profiles: number; runs: number };
 }
 
 export interface GraphNodeData extends Record<string, unknown> {

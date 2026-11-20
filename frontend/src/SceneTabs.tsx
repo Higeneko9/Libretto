@@ -31,8 +31,13 @@ export function SceneTabs() {
   const duplicate = async (id: string, name: string) => {
     const copyName = (await askText(t("sceneTabs.copyNamePrompt", { name }), t("sceneTabs.copySuffix", { name })))?.trim();
     if (!copyName) return;
-    const scene = await api.scene(id);
-    await newScene(copyName, scene.graph);
+    let copyId = "";
+    const source = useStore.getState().scenes.find((s) => s.id === id);
+    await useStore.getState().organize(async () => {
+      const copy = await api.placeScene(id, { copy: true, name: copyName, show_id: source?.show_id, act_id: source?.act_id });
+      copyId = copy.id;
+    });
+    await openScene(copyId);
   };
 
   const create = async () => {

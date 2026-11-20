@@ -4,7 +4,9 @@ import { askConfirm } from "./ask";
 import { backdropClose } from "./backdropClose";
 import { PromptBox } from "./Inspector";
 import { applyClick, prune, selectAll, type SelectionState } from "./selection";
-import { Splitter } from "./Splitter";
+import { scopedRuns } from "./showOutline";
+import { usePanelShortcuts } from "./panelShortcuts";
+import { translatedName } from "./tags";
 import { useStore } from "./store";
 import { useT } from "./i18n/useT";
 import { useWheelResize } from "./wheelResize";
@@ -110,10 +112,8 @@ function Detail({ run, onClose, onNav }: { run: Run; onClose: () => void; onNav:
     if (!next) onClose();
   };
 
-  const keyRef = useRef<(e: KeyboardEvent) => void>(() => {});
-  keyRef.current = (e) => {
-    const tag = (e.target as HTMLElement | null)?.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  const detailRef = useRef<HTMLDivElement>(null);
+  usePanelShortcuts(detailRef, (e) => {
     if (e.key === "Escape") (full ? exitFull : onClose)();
     else if (e.key === "ArrowLeft") onNav(-1);
     else if (e.key === "ArrowRight") onNav(1);
@@ -122,12 +122,7 @@ function Detail({ run, onClose, onNav }: { run: Run; onClose: () => void; onNav:
     else if (e.key.toLowerCase() === "f" && !e.ctrlKey && !e.metaKey) (full ? exitFull : enterFull)();
     else return;
     e.preventDefault();
-  };
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => keyRef.current(e);
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+  });
 
   const setThumb = async (target: ThumbTarget) => {
     await api.thumbnailFromRun(target.category, target.id, run.id, image, target.lib);
@@ -138,14 +133,14 @@ function Detail({ run, onClose, onNav }: { run: Run; onClose: () => void; onNav:
 
   if (full && image) {
     return (
-      <div className={`fullscreen-view${cover ? " cover" : ""}`} onClick={exitFull} title={t("results.fullscreenExitHint")}>
+      <div ref={detailRef} data-shortcut-panel="result-detail" className={`fullscreen-view${cover ? " cover" : ""}`} onClick={exitFull} title={t("results.fullscreenExitHint")}>
         <img src={api.imageUrl(run.id, image)} alt="" />
       </div>
     );
   }
 
   return (
-    <div className="modal" {...backdropClose(onClose)}>
+    <div ref={detailRef} data-shortcut-panel="result-detail" className="modal" {...backdropClose(onClose)}>
       <div className="modal-body" onClick={(e) => e.stopPropagation()}>
         <button className="close" onClick={onClose}>
           ✕
@@ -233,18 +228,29 @@ function Detail({ run, onClose, onNav }: { run: Run; onClose: () => void; onNav:
 
 export function Results() {
   const t = useT();
-  const runs = useStore((s) => s.runs);
+  const allRuns = useStore((s) => s.runs);
+  const scope = useStore((s) => s.outputScope);
+  const scenes = useStore((s) => s.scenes);
+  const shows = useStore((s) => s.shows);
+  const locale = useStore((s) => s.ui.locale);
+  const scopeScene = scope.kind === "scene" ? scenes.find((s) => s.id === scope.id) : undefined;
+  const scopeName = scope.kind === "all" ? t("showExplorer.allOutputs") : scope.kind === "standalone" ? t("showExplorer.standalone")
+    : scope.kind === "scene" ? scopeScene && (translatedName(scopeScene.name, scopeScene.names, locale) ?? scopeScene.name)
+    : scope.kind === "show" ? shows.find((s) => s.id === scope.id)?.name
+    : shows.find((s) => s.id === scope.show_id)?.items.filter((i) => i.kind === "act").find((i) => i.id === scope.id)?.name;
+  const runs = useMemo(() => scopedRuns(allRuns, scope, scenes), [allRuns, scope, scenes]);
   const refresh = useStore((s) => s.refreshRuns);
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<SelectionState>({ selected: new Set(), anchor: null });
   const [selectMode, setSelectMode] = useState(false);
   const [message, setMessage] = useState("");
-  const active = runs.some((r) => r.status === "queued" || r.status === "running");
+  const active = allRuns.some((r) => r.status === "queued" || r.status === "running");
   const ids = useMemo(() => runs.map((r) => r.id), [runs]);
 
   useEffect(() => {
-    void refresh();
-    const handle = setInterval(() => void refresh(), active ? 1500 : 8000);
+    const reload = () => void refresh().catch((e: Error) => setMessage(e.message));
+    reload();
+    const handle = setInterval(reload, active ? 1500 : 8000);
     return () => clearInterval(handle);
   }, [active, refresh]);
 
@@ -260,11 +266,11 @@ export function Results() {
     return next ?? null;
   };
 
-  const width = useStore((s) => s.ui.resultsW);
   const size = useStore((s) => s.ui.resultsThumb);
   const setUi = useStore((s) => s.setUi);
   const count = selection.selected.size;
   const gridRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const focusRun = useStore((s) => s.focusRun);
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -316,20 +322,22 @@ export function Results() {
     await refresh();
   };
 
-  const onKeyDown = (event: React.KeyboardEvent) => {
+  usePanelShortcuts(panelRef, (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
       event.preventDefault();
       setSelection(selectAll(ids));
     } else if (event.key === "Escape") {
+      event.preventDefault();
       clear();
     } else if (event.key === "Delete" && count > 0) {
-      void deleteSelected();
+      event.preventDefault();
+      if (!event.repeat) void deleteSelected();
     }
-  };
+  });
 
   return (
-    <div className="results-wrap">
-      <Splitter axis="x" className="edge" value={width} min={200} max={1000} direction={1} onChange={(v) => setUi({ resultsW: v })} />
+    <div ref={panelRef} className="results-wrap" data-shortcut-panel="results">
+      <div className="results-scope">{t("showExplorer.outputs")} · {scopeName}</div>
       <div className="results-bar">
         <button className={selectMode ? "on" : ""} onClick={() => setSelectMode(!selectMode)} title={t("results.selectModeHint")}>
           ☑ {t("results.select")}
@@ -355,7 +363,6 @@ export function Results() {
         className="results"
         ref={gridRef}
         tabIndex={0}
-        onKeyDown={onKeyDown}
         style={{ gridTemplateColumns: `repeat(auto-fill, ${size}px)` }}
       >
         {runs.map((run) => {

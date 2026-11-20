@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720" role="img" aria-labelledby="title description">
   <title id="title">Libretto UI overview</title>
-  <desc id="description">Schematic with eight numbered areas: Toolbar across the top; Results browser down the left; Scene tabs above the Graph editor and Inspector; Library browser along the bottom with Preset properties on its right. Scene history is nested inside the Inspector.</desc>
+  <desc id="description">Schematic with nine numbered areas: Toolbar across the top; Show Outline above Results browser on the left; Scene tabs above the Graph editor and Inspector; Library browser along the bottom with Preset properties on its right. Scene history is nested inside the Inspector.</desc>
   <style>
     text { font-family: system-ui, sans-serif; fill: #eef2f7; }
     .label { font-size: 19px; font-weight: 600; }
@@ -16,19 +16,28 @@
   <text class="label" x="70" y="42">Toolbar</text>
   <text class="detail" x="70" y="63">Libretto / connection / workflows / backups / settings / import / export / Generate</text>
 
-  <rect class="panel" x="12" y="88" width="234" height="620" fill="#292e44" stroke="#9399db"/>
+  <rect class="panel" x="12" y="88" width="234" height="214" fill="#292e44" stroke="#9399db"/>
   <circle class="badge" cx="39" cy="119" r="17"/>
-  <text class="number" x="39" y="125">3</text>
-  <text class="label" x="68" y="125">Results browser</text>
-  <text class="detail" x="27" y="153">Selection / thumbnail size</text>
+  <text class="number" x="39" y="125">9</text>
+  <text class="label" x="68" y="125">Show Outline</text>
+  <text class="detail" x="27" y="157">All outputs</text>
+  <text class="detail" x="27" y="183">Standalone Scenes</text>
+  <text class="detail" x="27" y="209">Show</text>
+  <text class="detail" x="45" y="235">Act</text>
+  <text class="detail" x="63" y="261">Scene</text>
+  <rect class="panel" x="12" y="312" width="234" height="396" fill="#292e44" stroke="#9399db"/>
+  <circle class="badge" cx="39" cy="343" r="17"/>
+  <text class="number" x="39" y="349">3</text>
+  <text class="label" x="68" y="349">Results browser</text>
+  <text class="detail" x="27" y="377">Selection / thumbnail size</text>
   <g fill="#383f59" stroke="#5d6886">
-    <rect x="28" y="176" width="96" height="108" rx="4"/>
-    <rect x="134" y="176" width="96" height="108" rx="4"/>
-    <rect x="28" y="296" width="96" height="108" rx="4"/>
-    <rect x="134" y="296" width="96" height="108" rx="4"/>
+    <rect x="28" y="398" width="96" height="108" rx="4"/>
+    <rect x="134" y="398" width="96" height="108" rx="4"/>
+    <rect x="28" y="518" width="96" height="108" rx="4"/>
+    <rect x="134" y="518" width="96" height="108" rx="4"/>
   </g>
-  <text class="detail" x="27" y="439">Generation entries and images</text>
-  <text class="detail" x="27" y="463">Open result: Result viewer</text>
+  <text class="detail" x="27" y="659">Generation entries and images</text>
+  <text class="detail" x="27" y="683">Open result: Result viewer</text>
 
   <rect class="panel" x="256" y="88" width="832" height="48" fill="#263d3f" stroke="#71b4ac"/>
   <circle class="badge" cx="283" cy="112" r="17"/>

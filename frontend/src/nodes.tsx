@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import type { LbNode } from "./store";
 import { categoryInfo, characterLabel, isCharacterNode, useStore } from "./store";
@@ -158,13 +158,82 @@ export function GenerateNode({ data, selected }: NodeProps<LbNode>) {
 
 export function PromptNode({ id, data, selected }: NodeProps<LbNode>) {
   const t = useT();
+  const activeId = useStore((s) => s.activeId);
+  const [draft, setDraft] = useState<string | null>(null);
+  const editing = useRef<{ sceneId: string | null } | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
+  const isEditing = draft !== null && editing.current?.sceneId === activeId;
+  const editLabel = t(data.polarity === "negative" ? "nodes.editNegativePrompt" : "nodes.editPositivePrompt");
+  useEffect(() => {
+    editing.current = null;
+    setDraft(null);
+  }, [id, activeId]);
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    } else if (restoreFocus.current) {
+      buttonRef.current?.focus();
+      restoreFocus.current = false;
+    }
+  }, [isEditing]);
+  const startEditing = () => {
+    if (editing.current) return;
+    editing.current = { sceneId: activeId };
+    setDraft(data.text ?? "");
+    useStore.setState((s) => ({
+      selectedId: id,
+      nodes: s.nodes.map((n) => n.selected !== (n.id === id) ? { ...n, selected: n.id === id } : n),
+    }));
+  };
+  const finishEditing = (save: boolean) => {
+    const edit = editing.current;
+    if (!edit) return;
+    editing.current = null;
+    restoreFocus.current = true;
+    setDraft(null);
+    const state = useStore.getState();
+    const node = state.nodes.find((n) => n.id === id);
+    if (save && edit.sceneId === state.activeId && node?.type === "prompt" && draft !== null && draft !== (node.data.text ?? "")) {
+      state.updateNode(id, { text: draft });
+    }
+  };
   const negative = data.polarity === "negative";
   const placement = data.placement ?? "inline";
   const slot = placement === "inline" ? (data.category || "end") : placement;
   return (
     <Frame id={id} disabled={data.disabled} type="prompt" selected={selected} color={promptColor(data)} title={`${negative ? t("nodes.negative") : t("nodes.prompt")} · ${slot}`}>
       <div className="lb-node-body column">
-        <div className="prompt-text">{data.text || <span className="muted">{t("nodes.emptyPrompt")}</span>}</div>
+        {isEditing ? <>
+          <textarea ref={inputRef} className="prompt-editor nodrag nopan nowheel" rows={4} value={draft}
+            aria-label={editLabel} title={t("nodes.promptEditHint")}
+            onChange={(event) => setDraft(event.currentTarget.value)}
+            onBlur={() => finishEditing(true)}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onContextMenu={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+              if (event.nativeEvent.isComposing) return;
+              if (event.key === "Escape") { event.preventDefault(); finishEditing(false); }
+              else if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); finishEditing(true); }
+            }} />
+          <span className="muted prompt-edit-hint">{t("nodes.promptEditHint")}</span>
+        </> : <button ref={buttonRef} type="button" className="prompt-text nodrag" data-node-id={id}
+          aria-label={editLabel} title={t("nodes.editPromptHint")}
+          onClick={(event) => {
+            if (event.detail === 0) { event.stopPropagation(); startEditing(); }
+          }}
+          onDoubleClick={(event) => { event.preventDefault(); event.stopPropagation(); startEditing(); }}
+          onKeyDown={(event) => {
+            if (event.key === "F2") { event.preventDefault(); event.stopPropagation(); startEditing(); }
+            else if (event.key === "Enter" || event.key === " ") event.stopPropagation();
+          }}>
+          {data.text || <span className="muted">{t("nodes.emptyPrompt")}</span>}
+        </button>}
       </div>
       <Handle type="source" position={Position.Right} />
     </Frame>

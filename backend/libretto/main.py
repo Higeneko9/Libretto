@@ -6,12 +6,12 @@ import shutil
 from urllib.parse import quote
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .backups import Backups
 from .comfy import ComfyClient
@@ -99,11 +99,33 @@ class SceneBody(BaseModel):
     name: str | None = None
     names: dict | None = None
     graph: dict | None = None
+    show_id: str | None = None
+    act_id: str | None = None
 
 
 class GenerateBody(BaseModel):
     graph: dict
     scene_id: str | None = None
+
+
+class PlaceBody(BaseModel):
+    show_id: str | None = None
+    act_id: str | None = None
+    index: int | None = None
+    is_copy: bool = Field(False, alias="copy")
+    name: str | None = None
+
+
+class OrderBody(BaseModel):
+    index: int = Field(ge=0)
+
+
+class OrganizationHistoryBody(BaseModel):
+    revision: int = Field(ge=0)
+
+
+class ShowSettingsBody(BaseModel):
+    output_layout: Literal["workflow", "show_scene", "show_act_scene"]
 
 
 class SnapPatch(BaseModel):
@@ -118,15 +140,17 @@ class SnapSettings(BaseModel):
 def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = None, start_worker: bool = True) -> FastAPI:
     settings = settings or LB_LoadSettings()
     libraries = Libraries(settings.LibrariesRoot, LB_PROJECT_ROOT / "samples" / "default")
-    scenes = Scenes(settings.ScenesRoot, LB_PROJECT_ROOT / "samples" / "scenes")
+    scenes = Scenes(settings.ScenesRoot, LB_PROJECT_ROOT / "samples" / "scenes", settings.EffectiveShowsRoot,
+                    settings.SceneSnapsRoot)
     scene_snaps = SceneSnaps(settings.SceneSnapsRoot, settings.SceneSnapMax)
     profiles = load_profiles(settings.ProfilesRoot, settings.UserProfilesRoot)
     comfy = comfy or ComfyClient(settings.ComfyUrl)
     store = RunStore(settings.DbPath)
-    generator = Generator(settings, libraries, profiles, comfy, store, scene_snaps)
+    store.index_scene_ids(settings.SnapshotsRoot)
+    generator = Generator(settings, libraries, profiles, comfy, store, scene_snaps, scenes=scenes)
     backups = Backups(
         settings.BackupsRoot or settings.DataRoot.parent / "backups",
-        {"libraries": settings.LibrariesRoot, "scenes": settings.ScenesRoot, "profiles": settings.UserProfilesRoot},
+        {"libraries": settings.LibrariesRoot, "scenes": settings.ScenesRoot, "shows": settings.EffectiveShowsRoot, "profiles": settings.UserProfilesRoot},
         settings.SnapshotsRoot,
         store.export_rows,
         store.import_rows,
@@ -458,6 +482,8 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
     @app.post("/api/backups/{backup_id}/restore")
     def restore_backup(backup_id: str, body: RestoreBody):
         result = guard(lambda: backups.restore(backup_id, body.mode, body.include_history))
+        scenes.clear_history()
+        store.index_scene_ids(settings.SnapshotsRoot)
         profiles.clear()
         profiles.update(load_profiles(settings.ProfilesRoot, settings.UserProfilesRoot))
         return result
@@ -467,13 +493,79 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
         guard(lambda: backups.delete(backup_id))
         return {"deleted": backup_id}
 
+    @app.get("/api/organization/history")
+    def organization_history():
+        return scenes.history()
+
+    @app.post("/api/organization/history/undo")
+    def undo_organization(body: OrganizationHistoryBody):
+        with scene_snaps._lock:
+            return guard(lambda: scenes.step_history(False, body.revision))
+
+    @app.post("/api/organization/history/redo")
+    def redo_organization(body: OrganizationHistoryBody):
+        with scene_snaps._lock:
+            return guard(lambda: scenes.step_history(True, body.revision))
+
     @app.get("/api/scenes")
     def list_scenes():
-        return scenes.list()
+        return guard(scenes.list)
+
+    @app.get("/api/shows")
+    def list_shows():
+        return guard(scenes.list_shows)
+
+    @app.post("/api/shows")
+    def create_show(body: RenameBody):
+        return guard(lambda: scenes.create_show(body.name))
+
+    @app.patch("/api/shows/{show_id}")
+    def rename_show(show_id: str, body: RenameBody):
+        return guard(lambda: scenes.rename_show(show_id, body.name))
+
+    @app.patch("/api/shows/{show_id}/settings")
+    def show_settings(show_id: str, body: ShowSettingsBody):
+        return guard(lambda: scenes.set_output_layout(show_id, body.output_layout))
+
+    @app.get("/api/shows/{show_id}/output-preview")
+    def show_output_preview(show_id: str, layout: Literal["workflow", "show_scene", "show_act_scene"] | None = None):
+        return guard(lambda: scenes.output_preview(show_id, layout))
+
+    @app.post("/api/shows/{show_id}/place")
+    def place_show(show_id: str, body: OrderBody):
+        return guard(lambda: scenes.place_show(show_id, body.index))
+
+    @app.delete("/api/shows/{show_id}")
+    def delete_show(show_id: str):
+        guard(lambda: scenes.delete_group(show_id))
+        return {"deleted": show_id}
+
+    @app.post("/api/shows/{show_id}/acts")
+    def create_act(show_id: str, body: RenameBody):
+        return guard(lambda: scenes.create_act(show_id, body.name))
+
+    @app.patch("/api/shows/{show_id}/acts/{act_id}")
+    def rename_act(show_id: str, act_id: str, body: RenameBody):
+        return guard(lambda: scenes.rename_act(show_id, act_id, body.name))
+
+    @app.delete("/api/shows/{show_id}/acts/{act_id}")
+    def delete_act(show_id: str, act_id: str):
+        guard(lambda: scenes.delete_group(show_id, act_id))
+        return {"deleted": act_id}
+
+    @app.post("/api/shows/{show_id}/acts/{act_id}/place")
+    def place_act(show_id: str, act_id: str, body: PlaceBody):
+        if body.act_id is not None:
+            raise HTTPException(400, "acts cannot contain other acts")
+        return guard(lambda: scenes.place_act(show_id, act_id, body.show_id, body.index, body.is_copy, body.name))
+
+    @app.post("/api/scenes/{scene_id}/place")
+    def place_scene(scene_id: str, body: PlaceBody):
+        return guard(lambda: scenes.place_scene(scene_id, body.show_id, body.act_id, body.index, body.is_copy, body.name))
 
     @app.post("/api/scenes")
     def create_scene(body: SceneBody):
-        return guard(lambda: scenes.create(body.name or "Scene", body.graph))
+        return guard(lambda: scenes.create(body.name or "Scene", body.graph, body.show_id, body.act_id))
 
     @app.get("/api/scenes/{scene_id}")
     def get_scene(scene_id: str):
@@ -485,8 +577,8 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
 
     @app.delete("/api/scenes/{scene_id}")
     def delete_scene(scene_id: str):
-        guard(lambda: scenes.delete(scene_id))
-        scene_snaps.delete_scene(scene_id)
+        with scene_snaps._lock:
+            guard(lambda: scenes.delete(scene_id))
         return {"deleted": scene_id}
 
     # ---- automatic scene snapshots -----------------------------------
@@ -558,8 +650,8 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
         return path
 
     @app.get("/api/runs")
-    def list_runs(limit: int = 100, status: str | None = None):
-        return store.list(limit, status)
+    def list_runs(limit: int = Query(100, ge=0), status: str | None = None):
+        return store.list(limit or None, status)
 
     @app.get("/api/runs/{run_id}")
     def get_run(run_id: str):

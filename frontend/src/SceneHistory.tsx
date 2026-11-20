@@ -5,6 +5,7 @@ import { applyClick, prune, selectAll, type SelectionState } from "./selection";
 import { useT } from "./i18n/useT";
 import { useStore } from "./store";
 import { useWheelResize } from "./wheelResize";
+import { usePanelShortcuts } from "./panelShortcuts";
 import type { SceneSnap, SceneSnapList } from "./types";
 
 const EMPTY: SelectionState = { selected: new Set(), anchor: null };
@@ -47,6 +48,8 @@ export function SceneHistory() {
   const items = list?.items ?? [];
   const ids = useMemo(() => items.map((i) => String(i.version)), [items]);
   useEffect(() => setSelection((s) => prune(s, ids)), [ids]);
+  const panelRef = useRef<HTMLDetailsElement>(null);
+  usePanelShortcuts(panelRef, (event) => onKeyDown(event));
 
   if (!sceneId) return null;
   const count = selection.selected.size;
@@ -105,19 +108,21 @@ export function SceneHistory() {
     void guarded(async () => setList(await api.setSceneSnapMax(sceneId, max)));
   };
 
-  const onKeyDown = (event: React.KeyboardEvent) => {
+  const onKeyDown = (event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
       event.preventDefault();
       setSelection(selectAll(ids));
     } else if (event.key === "Escape") {
+      event.preventDefault();
       setSelection(EMPTY);
     } else if (event.key === "Delete" && count > 0) {
-      void deleteSelected();
+      event.preventDefault();
+      if (!event.repeat) void deleteSelected();
     }
   };
 
   return (
-    <details className="scene-history" open>
+    <details ref={panelRef} className="scene-history" data-shortcut-panel="scene-history" open>
       <summary>
         {t("sceneHistory.title")}{" "}
         <span className="muted">
@@ -146,7 +151,7 @@ export function SceneHistory() {
         </label>
       </div>
       {error && <p className="error">{error}</p>}
-      <div ref={gridRef} className="history-grid" tabIndex={0} onKeyDown={onKeyDown} style={{ gridTemplateColumns: `repeat(auto-fill, ${thumbSize + 4}px)` }}>
+      <div ref={gridRef} className="history-grid" tabIndex={0} style={{ gridTemplateColumns: `repeat(auto-fill, ${thumbSize + 4}px)` }}>
         {items.map((snap) => {
           const selected = selection.selected.has(String(snap.version));
           return (

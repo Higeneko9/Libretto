@@ -13,5 +13,10 @@
   "random": "ランダム",
   "negative": "ネガティブ",
   "prompt": "プロンプト",
-  "emptyPrompt": "（プロンプトなし）"
+  "emptyPrompt": "（プロンプトなし）",
+  "editPrompt": "プロンプトを編集",
+  "editPositivePrompt": "ポジティブプロンプトを編集",
+  "editNegativePrompt": "ネガティブプロンプトを編集",
+  "editPromptHint": "ダブルクリックで編集 · 選択中にF2",
+  "promptEditHint": "Enterで保存 · Shift+Enterで改行 · Escapeでキャンセル"
 }

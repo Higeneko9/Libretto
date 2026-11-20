@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+import logging
 from pathlib import Path
 
 SCHEMA = """
@@ -30,7 +31,7 @@ class RunStore:
         self._conn.executescript(SCHEMA)
         # columns added after the first release
         existing = {row["name"] for row in self._conn.execute("PRAGMA table_info(runs)")}
-        for column, kind in (("started_at", "TEXT"), ("finished_at", "TEXT"), ("duration_s", "REAL")):
+        for column, kind in (("started_at", "TEXT"), ("finished_at", "TEXT"), ("duration_s", "REAL"), ("scene_id", "TEXT")):
             if column not in existing:
                 self._conn.execute(f"ALTER TABLE runs ADD COLUMN {column} {kind}")
         self._conn.commit()
@@ -38,9 +39,9 @@ class RunStore:
     def insert(self, run: dict) -> None:
         with self._lock:
             self._conn.execute(
-                "INSERT INTO runs (id, created_at, status, prompt_id, profile, seed, positive, parent_id) "
-                "VALUES (:id, :created_at, :status, :prompt_id, :profile, :seed, :positive, :parent_id)",
-                {"parent_id": None, **run},
+                "INSERT INTO runs (id, created_at, status, prompt_id, profile, seed, positive, parent_id, scene_id) "
+                "VALUES (:id, :created_at, :status, :prompt_id, :profile, :seed, :positive, :parent_id, :scene_id)",
+                {"parent_id": None, "scene_id": None, **run},
             )
             self._conn.commit()
 
@@ -68,16 +69,39 @@ class RunStore:
             row = self._conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
         return self._row(row) if row else None
 
-    def list(self, limit: int = 100, status: str | None = None) -> list[dict]:
+    def list(self, limit: int | None = 100, status: str | None = None) -> list[dict]:
         query, args = "SELECT * FROM runs", []
         if status:
             query += " WHERE status = ?"
             args.append(status)
-        query += " ORDER BY created_at DESC LIMIT ?"
-        args.append(limit)
+        query += " ORDER BY created_at DESC"
+        if limit is not None:
+            query += " LIMIT ?"
+            args.append(limit)
         with self._lock:
             rows = self._conn.execute(query, args).fetchall()
         return [self._row(r) for r in rows]
+
+    def index_scene_ids(self, snapshots_root: Path) -> None:
+        """Recover only explicit ownership from older snapshots; never infer it from names."""
+        with self._lock:
+            rows = self._conn.execute("SELECT id FROM runs WHERE scene_id IS NULL").fetchall()
+            for row in rows:
+                path = snapshots_root / row["id"] / "snapshot.json"
+                if snapshots_root.resolve() not in path.resolve().parents:
+                    logging.getLogger(__name__).warning("Invalid snapshot location for run %s", row["id"])
+                    continue
+                if not path.is_file():
+                    continue
+                try:
+                    snapshot = json.loads(path.read_text(encoding="utf-8"))
+                    scene_id = snapshot.get("scene_id") or (snapshot.get("scene") or {}).get("id")
+                except (OSError, ValueError, AttributeError) as exc:
+                    logging.getLogger(__name__).warning("Cannot read scene ownership for run %s: %s", row["id"], exc)
+                    continue
+                if isinstance(scene_id, str):
+                    self._conn.execute("UPDATE runs SET scene_id = ? WHERE id = ?", (scene_id, row["id"]))
+            self._conn.commit()
 
     def export_rows(self) -> list[dict]:
         with self._lock:

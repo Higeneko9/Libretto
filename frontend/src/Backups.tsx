@@ -12,6 +12,7 @@ const formatSize = (bytes: number) =>
 
 function describe(b: BackupInfo): string {
   const parts = [tr("backups.libraryFiles", { n: b.counts.libraries }), tr("backups.scenes", { n: b.counts.scenes }), tr("backups.profileFiles", { n: b.counts.profiles })];
+  if (b.counts.shows) parts.push(tr("backups.showFiles", { n: b.counts.shows }));
   if (b.includes_history) parts.push(tr("backups.runs", { n: b.counts.runs }));
   return parts.join(" · ");
 }

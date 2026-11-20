@@ -70,6 +70,21 @@ describe("preset card duplication", () => {
     expect(container.textContent).toContain("Duplicated 1");
   });
 
+  it("routes library selection and clipboard shortcuts only while hovered", async () => {
+    const library = container.querySelector(".palette-wrap")!;
+    library.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "a", ctrlKey: true })));
+    await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "c", ctrlKey: true })));
+    expect(useStore.getState().presetClip?.items).toEqual([
+      { category: "character", id: "first" }, { category: "character", id: "second" },
+    ]);
+    await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" })));
+    expect(container.querySelectorAll("[data-item].selected")).toHaveLength(0);
+    document.body.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    await act(async () => library.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "a", ctrlKey: true })));
+    expect(container.querySelectorAll("[data-item].selected")).toHaveLength(0);
+  });
+
   it("duplicates all selected cards when opening their context menu", async () => {
     vi.spyOn(api, "copyItems").mockResolvedValue([
       { category: "character", id: "p-00000001", from: "first" },

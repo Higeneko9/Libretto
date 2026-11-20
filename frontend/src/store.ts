@@ -12,6 +12,7 @@ import { create } from "zustand";
 import { api, setApiLibrary, setApiLocale, type Graph } from "./api";
 import { resolveLanguage, setLanguage, t } from "./i18n";
 import { pickName, translatedName, type Tag } from "./tags";
+import { sceneDestination, scopeExists } from "./showOutline";
 import {
   COLORS,
   DEFAULT_CATEGORIES,
@@ -24,6 +25,9 @@ import {
   type Profile,
   type Run,
   type SceneMeta,
+  type Show,
+  type OutputScope,
+  type OrganizationHistory,
 } from "./types";
 
 export type LbNode = Node<GraphNodeData>;
@@ -60,6 +64,7 @@ export function sameCategory(aType: string | undefined, aData: GraphNodeData, bT
 
 export interface UiPrefs {
   resultsW: number;
+  explorerH: number;
   inspectorW: number;
   libraryH: number;
   propsOpen: boolean;
@@ -76,6 +81,7 @@ export interface UiPrefs {
 
 const defaultUi: UiPrefs = {
   resultsW: 380,
+  explorerH: 260,
   inspectorW: 340,
   libraryH: 320,
   propsOpen: false,
@@ -188,6 +194,15 @@ interface State {
   setPresetClip: (clip: PresetClip | null) => void;
   ui: UiPrefs;
   scenes: SceneMeta[];
+  shows: Show[];
+  outputScope: OutputScope;
+  setOutputScope: (scope: OutputScope) => void;
+  refreshOrganization: () => Promise<void>;
+  organize: <T>(action: () => Promise<T>) => Promise<T>;
+  organizationHistory: OrganizationHistory;
+  organizationBusy: boolean;
+  undoOrganization: () => Promise<void>;
+  redoOrganization: () => Promise<void>;
   activeId: string | null;
   sceneReady: boolean;
   onNodesChange: (changes: NodeChange<LbNode>[]) => void;
@@ -313,11 +328,23 @@ const sceneName = (scenes: SceneMeta[], id: string | null) => scenes.find((s) =>
 
 // ---- autosave of the active scene ------------------------------------
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let saveInFlight: Promise<unknown> | null = null;
 
 async function saveNow() {
   const { activeId, sceneReady, toGraph } = useStore.getState();
   if (!activeId || !sceneReady) return;
-  await api.saveScene(activeId, { graph: toGraph() });
+  const graph = toGraph();
+  const previous = saveInFlight;
+  const write = (async () => {
+    if (previous) await previous;
+    await api.saveScene(activeId, { graph });
+  })();
+  saveInFlight = write;
+  try {
+    await write;
+  } finally {
+    if (saveInFlight === write) saveInFlight = null;
+  }
 }
 
 export async function flushSave() {
@@ -326,6 +353,7 @@ export async function flushSave() {
     saveTimer = null;
     await saveNow();
   }
+  if (saveInFlight) await saveInFlight;
 }
 
 export const useStore = create<State>((set, get) => {
@@ -376,6 +404,56 @@ export const useStore = create<State>((set, get) => {
     setPresetClip: (presetClip) => set({ presetClip }),
     ui: initialUi,
     scenes: [],
+    shows: [],
+    outputScope: { kind: "all" },
+    organizationHistory: { undo: 0, redo: 0, revision: 0 },
+    organizationBusy: false,
+    setOutputScope: (outputScope) => set({ outputScope }),
+    refreshOrganization: async () => {
+      const [scenes, shows, organizationHistory] = await Promise.all([api.scenes(), api.shows(), api.organizationHistory()]);
+      let outputScope = get().outputScope;
+      if (outputScope.kind === "act") {
+        const actId = outputScope.id;
+        const parent = shows.find((show) => show.items.some((item) => item.kind === "act" && item.id === actId));
+        if (parent) outputScope = { ...outputScope, show_id: parent.id };
+      }
+      if (!scopeExists(outputScope, shows, scenes)) outputScope = { kind: "all" };
+      set({ scenes, shows, outputScope, organizationHistory });
+      const { activeId, ui } = get();
+      const open = ui.openScenes.filter((id) => scenes.some((scene) => scene.id === id));
+      if (activeId && !scenes.some((scene) => scene.id === activeId)) {
+        const next = open[0] ?? scenes[0]?.id ?? null;
+        if (next && !open.includes(next)) open.push(next);
+        const ready = get().sceneReady;
+        set({ activeId: null, sceneReady: false });
+        persistOpen(open, null);
+        const graph = next ? (await api.scene(next)).graph : emptyGraph(get().library);
+        set({ activeId: next });
+        await applyGraph(graph, false, false);
+        persistOpen(open, next);
+        set({ sceneReady: ready });
+      } else if (open.length !== ui.openScenes.length) {
+        persistOpen(open, activeId);
+      }
+    },
+    organize: async (action) => {
+      if (get().organizationBusy) throw new Error(t("showExplorer.busy"));
+      set({ organizationBusy: true });
+      try {
+        await flushSave();
+        const result = await action();
+        await get().refreshOrganization();
+        return result;
+      } finally {
+        set({ organizationBusy: false });
+      }
+    },
+    undoOrganization: async () => {
+      await get().organize(() => api.undoOrganization(get().organizationHistory.revision));
+    },
+    redoOrganization: async () => {
+      await get().organize(() => api.redoOrganization(get().organizationHistory.revision));
+    },
     activeId: null,
     sceneReady: false,
     canUndo: false,
@@ -521,7 +599,7 @@ export const useStore = create<State>((set, get) => {
       } catch {
         // the server copy is a convenience; the local copy still works
       }
-      await Promise.all([get().refreshLibraries(), get().refreshProfiles()]);
+      await Promise.all([get().refreshLibraries(), get().refreshProfiles(), get().refreshOrganization()]);
       let scenes = await api.scenes();
       if (scenes.length === 0) {
         // first run with scenes: carry over the graph that used to live in localStorage
@@ -552,6 +630,7 @@ export const useStore = create<State>((set, get) => {
       set({ sceneReady: true });
     },
     openScene: async (id) => {
+      set({ outputScope: { kind: "scene", id } });
       if (id === get().activeId) return;
       await flushSave();
       const scene = await api.scene(id);
@@ -577,10 +656,8 @@ export const useStore = create<State>((set, get) => {
       await applyGraph(scene.graph);
     },
     newScene: async (name, graph) => {
-      await flushSave();
-      const created = await api.createScene(name || t("store.sceneN", { n: get().scenes.length + 1 }), graph ?? emptyGraph(get().library));
-      const scenes = await api.scenes();
-      set({ scenes, activeId: created.id });
+      const created = await get().organize(() => api.createScene(name || t("store.sceneN", { n: get().scenes.length + 1 }), graph ?? emptyGraph(get().library), sceneDestination(get().outputScope, get().scenes)));
+      set({ activeId: created.id, outputScope: { kind: "scene", id: created.id } });
       persistOpen([...get().ui.openScenes, created.id], created.id);
       await applyGraph(created.graph);
     },
@@ -591,22 +668,16 @@ export const useStore = create<State>((set, get) => {
       return applyGraph({ ...graph, nodes }, true, false);
     },
     focusRun: null,
-    showRun: (id) => set({ focusRun: { id, n: (get().focusRun?.n ?? 0) + 1 } }),
+    showRun: (id) => {
+      const sceneId = get().runs.find((r) => r.id === id)?.scene_id;
+      const outputScope: OutputScope = sceneId && get().scenes.some((s) => s.id === sceneId) ? { kind: "scene", id: sceneId } : { kind: "all" };
+      set({ outputScope, focusRun: { id, n: (get().focusRun?.n ?? 0) + 1 } });
+    },
     renameScene: async (id, name, names) => {
-      await api.saveScene(id, { name, names });
-      set({ scenes: await api.scenes() });
+      await get().organize(() => api.saveScene(id, { name, names }));
     },
     deleteScene: async (id) => {
-      if (id === get().activeId) {
-        await get().closeScene(id);
-      } else {
-        persistOpen(
-          get().ui.openScenes.filter((s) => s !== id),
-          get().activeId,
-        );
-      }
-      await api.deleteScene(id);
-      set({ scenes: await api.scenes() });
+      await get().organize(() => api.deleteScene(id));
     },
   };
 });

@@ -1,4 +1,4 @@
-import type { AppSettings, BackupInfo, Category, CategoryConfig, CategoryKindInfo, LibraryInfo, Preset, Profile, Run, SceneMeta, SceneSnapList, Snapshot, WorkflowFile } from "./types";
+import type { Act, Show, ShowOutputLayout, ShowOutputPreview, ScenePlace, OrganizationHistory, AppSettings, BackupInfo, Category, CategoryConfig, CategoryKindInfo, LibraryInfo, Preset, Profile, Run, SceneMeta, SceneSnapList, Snapshot, WorkflowFile } from "./types";
 import type { Tag } from "./tags";
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
@@ -107,9 +107,26 @@ export const api = {
   thumbnailUrl: (category: Category, id: string, profile?: string, bust?: number, library?: string) =>
     lib(`/api/library/${category}/${id}/thumbnail?${profile ? `profile=${profile}&` : ""}v=${bust ?? 0}`, library),
   scenes: () => call<SceneMeta[]>("/api/scenes"),
+  organizationHistory: () => call<OrganizationHistory>("/api/organization/history"),
+  undoOrganization: (revision: number) => call<OrganizationHistory>("/api/organization/history/undo", json("POST", { revision })),
+  redoOrganization: (revision: number) => call<OrganizationHistory>("/api/organization/history/redo", json("POST", { revision })),
+  shows: () => call<Show[]>("/api/shows"),
+  createShow: (name: string) => call<Show>("/api/shows", json("POST", { name })),
+  renameShow: (id: string, name: string) => call<Show>(`/api/shows/${id}`, json("PATCH", { name })),
+  saveShowSettings: (id: string, output_layout: ShowOutputLayout) =>
+    call<Show>(`/api/shows/${id}/settings`, json("PATCH", { output_layout })),
+  showOutputPreview: (id: string, layout: ShowOutputLayout) =>
+    call<ShowOutputPreview>(`/api/shows/${id}/output-preview?layout=${layout}`),
+  placeShow: (id: string, index: number) => call<Show>(`/api/shows/${id}/place`, json("POST", { index })),
+  deleteShow: (id: string) => call<unknown>(`/api/shows/${id}`, { method: "DELETE" }),
+  createAct: (show: string, name: string) => call<Act>(`/api/shows/${show}/acts`, json("POST", { name })),
+  renameAct: (show: string, id: string, name: string) => call<Act>(`/api/shows/${show}/acts/${id}`, json("PATCH", { name })),
+  deleteAct: (show: string, id: string) => call<unknown>(`/api/shows/${show}/acts/${id}`, { method: "DELETE" }),
+  placeScene: (id: string, body: ScenePlace) => call<{ id: string }>(`/api/scenes/${id}/place`, json("POST", body)),
+  placeAct: (show: string, id: string, body: ScenePlace) => call<Act>(`/api/shows/${show}/acts/${id}/place`, json("POST", body)),
   scene: (id: string) => call<{ id: string; name: string; graph: Graph }>(`/api/scenes/${id}`),
-  createScene: (name: string, graph?: Graph) =>
-    call<{ id: string; name: string; graph: Graph }>("/api/scenes", json("POST", { name, graph })),
+  createScene: (name: string, graph?: Graph, place?: ScenePlace) =>
+    call<{ id: string; name: string; graph: Graph }>("/api/scenes", json("POST", { name, graph, ...place })),
   saveScene: (id: string, body: { name?: string; names?: Record<string, string>; graph?: Graph }) =>
     call<unknown>(`/api/scenes/${id}`, { ...json("PUT", body), keepalive: true }),
   deleteScene: (id: string) => call<unknown>(`/api/scenes/${id}`, { method: "DELETE" }),
@@ -132,7 +149,7 @@ export const api = {
     call<unknown>(`/api/scenes/${sceneId}/snaps/${version}`, { method: "DELETE" }),
   setSceneSnapMax: (sceneId: string, max: number) =>
     call<SceneSnapList>(`/api/scenes/${sceneId}/snap-settings`, json("PUT", { max })),
-  runs: () => call<Run[]>("/api/runs?limit=1000"),
+  runs: () => call<Run[]>("/api/runs?limit=0"),
   snapshot: (id: string) => call<Snapshot>(`/api/runs/${id}/snapshot`),
   cancelAll: () => call<{ cancelled: string[] }>("/api/queue/cancel", { method: "POST" }),
   requeue: (id: string) => call<Run>(`/api/runs/${id}/requeue`, { method: "POST" }),

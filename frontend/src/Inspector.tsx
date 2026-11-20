@@ -443,6 +443,10 @@ function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
   const t = useT();
   const update = useStore((s) => s.updateNode);
   const profiles = useStore((s) => s.profiles);
+  const outputShow = useStore((s) => {
+    const scene = s.scenes.find((item) => item.id === s.activeId);
+    return s.shows.find((item) => item.id === scene?.show_id);
+  });
   const defaults = profiles.find((p) => p.id === data.profile)?.defaults ?? {};
   const d = (key: string) => (defaults[key] !== undefined ? String(defaults[key]) : "");
   return (
@@ -513,6 +517,10 @@ function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
         placeholder={t("inspector.outputPrefixPlaceholder")}
         onChange={(v) => update(id, { output_prefix: v })}
       />
+      {outputShow?.output_layout && outputShow.output_layout !== "workflow" &&
+        <p className="muted">{t(data.output_prefix?.trim() ? "showExplorer.outputOverride" : "showExplorer.outputInherited", {
+          name: outputShow.name, layout: t(`showExplorer.layout_${outputShow.output_layout}`),
+        })}</p>}
       <p className="muted">
         {t("inspector.outputNote")}
       </p>

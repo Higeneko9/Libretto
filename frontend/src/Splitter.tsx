@@ -10,9 +10,10 @@ interface Props {
   direction: 1 | -1;
   onChange: (value: number) => void;
   className?: string;
+  label?: string;
 }
 
-export function Splitter({ axis, value, min, max, direction, onChange, className = "" }: Props) {
+export function Splitter({ axis, value, min, max, direction, onChange, className = "", label }: Props) {
   // Mouse events on window instead of pointer capture: capture was unreliable in Electron on Ubuntu,
   // and window listeners keep working when the cursor leaves the thin splitter.
   const onMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -38,5 +39,23 @@ export function Splitter({ axis, value, min, max, direction, onChange, className
     window.addEventListener("mouseup", onUp);
   };
 
-  return <div className={`splitter ${axis} ${className}`} onMouseDown={onMouseDown} />;
+  return <div
+    className={`splitter ${axis} ${className}`}
+    role="separator"
+    aria-label={label}
+    aria-orientation={axis === "x" ? "vertical" : "horizontal"}
+    aria-valuemin={min}
+    aria-valuemax={max}
+    aria-valuenow={value}
+    tabIndex={0}
+    onMouseDown={onMouseDown}
+    onKeyDown={(event) => {
+      const decrement = axis === "x" ? "ArrowLeft" : "ArrowUp";
+      const increment = axis === "x" ? "ArrowRight" : "ArrowDown";
+      if (event.key !== decrement && event.key !== increment) return;
+      event.preventDefault();
+      const delta = (event.key === increment ? 1 : -1) * direction * (event.shiftKey ? 50 : 10);
+      onChange(Math.min(max, Math.max(min, value + delta)));
+    }}
+  />;
 }

@@ -3,6 +3,9 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import copy
+import threading
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,41 +13,75 @@ from .i18n import normalize_names
 from .ids import new_id
 
 _ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+OUTPUT_LAYOUTS = ("workflow", "show_scene", "show_act_scene")
 
 
 def _check(scene_id: str) -> None:
-    if not _ID_RE.match(scene_id or ""):
+    if not isinstance(scene_id, str) or not _ID_RE.fullmatch(scene_id):
         raise ValueError(f"invalid scene id: {scene_id!r}")
 
 
 class Scenes:
     """A scene is a saved node graph (its own library, prompt additions and nodes), one JSON file each."""
 
-    def __init__(self, root: Path, seed: Path | None = None):
+    def __init__(self, root: Path, seed: Path | None = None, shows_root: Path | None = None,
+                 snapshots_root: Path | None = None):
         self.root = root
+        self.shows_root = shows_root if shows_root is not None else root.parent / "shows"
+        self.snapshots_root = snapshots_root
+        self._lock = threading.RLock()
+        self._undo: list[tuple[dict, dict]] = []
+        self._redo: list[tuple[dict, dict]] = []
+        self._revision = 0
         # only a brand-new data folder gets the sample scenes, so deleting them stays deleted
         if seed is not None and seed.is_dir() and not root.exists():
             shutil.copytree(seed, root)
 
     def _file(self, scene_id: str) -> Path:
         _check(scene_id)
-        return self.root / f"{scene_id}.json"
+        matches = [p for p in [self.root / f"{scene_id}.json", *self.shows_root.glob(f"*/{scene_id}.scene.json")] if p.is_file()]
+        if len(matches) > 1:
+            raise ValueError(f"duplicate scene id: {scene_id}")
+        return matches[0] if matches else self.root / f"{scene_id}.json"
 
     def get(self, scene_id: str) -> dict:
-        path = self._file(scene_id)
-        if not path.exists():
-            raise FileNotFoundError(scene_id)
-        return json.loads(path.read_text(encoding="utf-8"))
+        with self._lock:
+            path = self._file(scene_id)
+            if not path.exists():
+                raise FileNotFoundError(scene_id)
+            return json.loads(path.read_text(encoding="utf-8"))
 
     def list(self) -> list[dict]:
-        if not self.root.exists():
-            return []
+        with self._lock:
+            return self._list()
+
+    def _list(self) -> list[dict]:
+        shows = {s["id"]: s for s in self.list_shows()}
         scenes = []
-        for path in self.root.glob("*.json"):
+        ids = set()
+        for path in [*self.root.glob("*.json"), *self.shows_root.glob("*/*.scene.json")]:
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
+            except (OSError, ValueError) as exc:
+                if path.parent != self.root:
+                    raise ValueError(f"cannot read scene file: {path.name}") from exc
                 continue
+            if path.parent != self.root and (not isinstance(data, dict) or data.get("id") != path.name.removesuffix(".scene.json")):
+                raise ValueError(f"scene id does not match filename: {path.name}")
+            if data.get("order") is not None and type(data["order"]) is not int:
+                raise ValueError(f"invalid scene order: {path.name}")
+            if data["id"] in ids:
+                raise ValueError(f"duplicate scene id: {data['id']}")
+            ids.add(data["id"])
+            show_id = path.parent.name if path.parent != self.root else None
+            act_id = None
+            if show_id:
+                if show_id not in shows:
+                    raise ValueError(f"missing outline for show: {show_id}")
+                act_id = next(
+                    (i["id"] for i in shows[show_id]["items"] if i["kind"] == "act" and data["id"] in i["scene_ids"]),
+                    None,
+                )
             scenes.append(
                 {
                     "id": data["id"],
@@ -53,21 +90,46 @@ class Scenes:
                     "updated_at": data.get("updated_at", ""),
                     # shipped example scenes carry a `starter` number: they open as tabs, in that order, on a first run
                     "starter": data.get("starter"),
+                    "show_id": show_id,
+                    "act_id": act_id,
+                    "order": data.get("order"),
                 }
             )
         return sorted(scenes, key=lambda s: s["updated_at"], reverse=True)
 
-    def _write(self, scene: dict) -> dict:
-        self.root.mkdir(parents=True, exist_ok=True)
+    def _write(self, scene: dict, record: bool = True) -> dict:
         scene["updated_at"] = datetime.now(timezone.utc).isoformat()
-        self._file(scene["id"]).write_text(json.dumps(scene, indent=2, ensure_ascii=False), encoding="utf-8")
+        self._commit({self._file(scene["id"]): scene}, record=record)
         return scene
 
-    def create(self, name: str, graph: dict | None = None) -> dict:
-        scene_id = new_id("s", lambda candidate: self._file(candidate).exists())
-        return self._write({"id": scene_id, "name": name or "Scene", "graph": graph or {"nodes": [], "edges": []}})
+    def create(self, name: str, graph: dict | None = None, show_id: str | None = None, act_id: str | None = None) -> dict:
+        with self._lock:
+            scene_id = new_id("s", lambda candidate: self._file(candidate).exists())
+            if act_id and not show_id:
+                raise ValueError("an act must belong to a show")
+            if show_id:
+                with self._changes() as changes:
+                    show = self.get_show(show_id)
+                    if act_id:
+                        self._act(show, act_id)["scene_ids"].append(scene_id)
+                    else:
+                        show["items"].append({"kind": "scene", "id": scene_id})
+                    scene = {"id": scene_id, "name": name or "Scene", "graph": graph or {"nodes": [], "edges": []},
+                             "updated_at": datetime.now(timezone.utc).isoformat()}
+                    changes[self.shows_root / show_id / f"{scene_id}.scene.json"] = scene
+                    changes[self._outline(show_id)] = show
+                return scene
+            scene = {"id": scene_id, "name": name or "Scene", "graph": graph or {"nodes": [], "edges": []}}
+            ordered = [s["order"] for s in self._list() if not s["show_id"] and s["order"] is not None]
+            if ordered:
+                scene["order"] = min(ordered) - 1
+            return self._write(scene)
 
     def update(self, scene_id: str, name: str | None = None, graph: dict | None = None, names: dict | None = None) -> dict:
+        with self._lock:
+            return self._update(scene_id, name, graph, names)
+
+    def _update(self, scene_id: str, name: str | None, graph: dict | None, names: dict | None) -> dict:
         scene = self.get(scene_id)
         if name is not None:
             scene["name"] = name
@@ -79,10 +141,413 @@ class Scenes:
                 scene.pop("names", None)
         if graph is not None:
             scene["graph"] = graph
-        return self._write(scene)
+        return self._write(scene, record=name is not None or names is not None)
 
     def delete(self, scene_id: str) -> None:
-        path = self._file(scene_id)
-        if not path.exists():
-            raise FileNotFoundError(scene_id)
-        path.unlink()
+        with self._lock:
+            path = self._file(scene_id)
+            if not path.exists():
+                raise FileNotFoundError(scene_id)
+            changes = {path: None}
+            if path.parent != self.root:
+                show = self.get_show(path.parent.name)
+                self._remove_scene(show, scene_id)
+                changes[self._outline(show["id"])] = show
+            self._commit(changes)
+
+    def _outline(self, show_id: str) -> Path:
+        _check(show_id)
+        return self.shows_root / show_id / "show-outline.json"
+
+    def get_show(self, show_id: str) -> dict:
+        path = self._outline(show_id)
+        with self._lock:
+            if not path.is_file():
+                raise FileNotFoundError(show_id)
+            show = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(show, dict) or show.get("version") != 1 or show.get("id") != show_id or not isinstance(show.get("items"), list) or not isinstance(show.get("name"), str):
+                raise ValueError(f"invalid show outline: {show_id}")
+            if "order" in show and type(show["order"]) is not int:
+                raise ValueError(f"invalid show order: {show_id}")
+            if show.get("output_layout", "workflow") not in OUTPUT_LAYOUTS:
+                raise ValueError(f"invalid show output layout: {show_id}")
+            seen = set()
+            for item in show["items"]:
+                if not isinstance(item, dict):
+                    raise ValueError("invalid outline item")
+                _check(item.get("id"))
+                if item["id"] in seen or item.get("kind") not in ("act", "scene"):
+                    raise ValueError(f"invalid or duplicate outline item: {item['id']}")
+                seen.add(item["id"])
+                if item["kind"] == "act":
+                    if not isinstance(item.get("name"), str) or not isinstance(item.get("scene_ids"), list):
+                        raise ValueError("invalid act")
+                    for scene_id in item["scene_ids"]:
+                        _check(scene_id)
+                        if scene_id in seen:
+                            raise ValueError(f"duplicate outline item: {scene_id}")
+                        seen.add(scene_id)
+            return show
+
+    def list_shows(self) -> list[dict]:
+        with self._lock:
+            shows = [self.get_show(p.parent.name) for p in sorted(self.shows_root.glob("*/show-outline.json"))]
+            return sorted(shows, key=lambda s: s.get("order", 0))
+
+    @contextmanager
+    def _changes(self):
+        """Serialize edits and roll back ordinary I/O failures across affected files."""
+        with self._lock:
+            changes = {}
+            yield changes
+            self._commit(changes)
+
+    def _scene_id(self, path: Path) -> str | None:
+        if path.parent == self.root and path.suffix == ".json":
+            return path.stem
+        if path.parent.parent == self.shows_root and path.name.endswith(".scene.json"):
+            return path.name.removesuffix(".scene.json")
+        return None
+
+    def _metadata(self, path: Path, content: bytes | None):
+        if content is not None and self._scene_id(path):
+            return {k: v for k, v in json.loads(content).items() if k not in ("graph", "updated_at")}
+        return content
+
+    def history(self) -> dict:
+        with self._lock:
+            return {"undo": len(self._undo), "redo": len(self._redo), "revision": self._revision}
+
+    def clear_history(self) -> None:
+        with self._lock:
+            self._undo.clear()
+            self._redo.clear()
+            self._revision += 1
+
+    def step_history(self, redo: bool, revision: int) -> dict:
+        with self._lock:
+            if revision != self._revision:
+                raise ValueError("Show Outline history changed; refresh the outline and try again")
+            source, target = (self._redo, self._undo) if redo else (self._undo, self._redo)
+            if not source:
+                raise ValueError("nothing to redo" if redo else "nothing to undo")
+            expected, desired = source[-1]
+            changes = {}
+            for path, content in desired.items():
+                current = path.read_bytes() if path.exists() else None
+                scene_id = self._scene_id(path)
+                deleting_snapshot = content is None and self.snapshots_root is not None and path.is_relative_to(self.snapshots_root)
+                if not deleting_snapshot and self._metadata(path, current) != self._metadata(path, expected[path]):
+                    raise ValueError(f"cannot restore Show Outline: {path.name} changed on disk")
+                if scene_id:
+                    actual = self._file(scene_id)
+                    expected_path = next((p for p, data in expected.items() if self._scene_id(p) == scene_id and data is not None), None)
+                    if actual.exists() and actual != expected_path:
+                        raise ValueError(f"cannot restore Show Outline: scene {scene_id} has another location")
+                    if content is not None and expected_path is not None:
+                        # Reorganizing must not roll back edits made in the scene editor.
+                        live = self.get(scene_id)
+                        restored = json.loads(content)
+                        for key in ("graph", "updated_at"):
+                            if key in live:
+                                restored[key] = live[key]
+                            else:
+                                restored.pop(key, None)
+                        content = json.dumps(restored, indent=2, ensure_ascii=False).encode("utf-8") + b"\n"
+                if path.name == "show-outline.json" and content is None:
+                    if any(desired.get(p, b"") is not None for p in path.parent.glob("*.scene.json")):
+                        raise ValueError("cannot remove a show containing scenes added outside this history")
+                changes[path] = content
+            for path, content in changes.items():
+                if content is not None and self._scene_id(path) and path.parent != self.root:
+                    outline = path.parent / "show-outline.json"
+                    if changes.get(outline, b"" if outline.exists() else None) is None:
+                        raise ValueError("cannot restore a scene whose show is missing")
+            previous, following = self._commit(changes, record=False)
+            source.pop()
+            target.append((following, previous))
+            self._revision += 1
+            return self.history()
+
+    def _commit(self, changes: dict, record: bool = True) -> tuple[dict, dict]:
+        changes = dict(changes)
+        if self.snapshots_root is not None:
+            remaining = {self._scene_id(p) for p, data in changes.items() if data is not None}
+            for path, data in list(changes.items()):
+                scene_id = self._scene_id(path)
+                if data is None and scene_id and scene_id not in remaining:
+                    for snapshot in (self.snapshots_root / scene_id).rglob("*"):
+                        if snapshot.is_file():
+                            changes[snapshot] = None
+        previous = {p: p.read_bytes() if p.exists() else None for p in changes}
+        following = {
+            p: data if data is None or isinstance(data, bytes) else
+            (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+            for p, data in changes.items()
+        }
+        changed = record and any(self._metadata(p, previous[p]) != self._metadata(p, data) for p, data in following.items())
+        try:
+            for path, data in following.items():
+                if data is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    temp = path.with_suffix(path.suffix + ".tmp")
+                    try:
+                        temp.write_bytes(data)
+                        temp.replace(path)
+                    finally:
+                        temp.unlink(missing_ok=True)
+        except OSError:
+            for path, content in previous.items():
+                if content is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    path.write_bytes(content)
+            raise
+        if changed:
+            self._undo.append((following, previous))
+            del self._undo[:-100]
+            self._redo.clear()
+            self._revision += 1
+        return previous, following
+
+    def create_show(self, name: str) -> dict:
+        with self._changes() as changes:
+            show_id = new_id("show", lambda i: (self.shows_root / i).exists())
+            order = max((s.get("order", 0) for s in self.list_shows()), default=-1) + 1
+            show = {"version": 1, "id": show_id, "name": self._name(name), "items": [], "order": order}
+            changes[self._outline(show_id)] = show
+        return show
+
+    def place_show(self, show_id: str, index: int) -> dict:
+        with self._changes() as changes:
+            show = self.get_show(show_id)
+            shows = [s for s in self.list_shows() if s["id"] != show_id]
+            self._insert(shows, show, index)
+            for position, item in enumerate(shows):
+                if item.get("order") != position:
+                    item["order"] = position
+                    changes[self._outline(item["id"])] = item
+        return show
+
+    @staticmethod
+    def _name(name: str) -> str:
+        if not name.strip():
+            raise ValueError("name must not be empty")
+        return name.strip()
+
+    def rename_show(self, show_id: str, name: str) -> dict:
+        with self._changes() as changes:
+            show = self.get_show(show_id)
+            show["name"] = self._name(name)
+            changes[self._outline(show_id)] = show
+        return show
+
+    def set_output_layout(self, show_id: str, layout: str) -> dict:
+        if layout not in OUTPUT_LAYOUTS:
+            raise ValueError("invalid show output layout")
+        with self._changes() as changes:
+            show = self.get_show(show_id)
+            if layout == "workflow":
+                show.pop("output_layout", None)
+            else:
+                show["output_layout"] = layout
+            changes[self._outline(show_id)] = show
+        return show
+
+    @staticmethod
+    def _output_name(name: str, fallback: str) -> str:
+        # Preserve Unicode, but keep names literal and portable to Windows/ComfyUI.
+        part = re.sub(r'[<>:"/\\|?*%{}\x00-\x1f]', "-", name.strip())
+        part = re.sub(r"[-\s]+", "-", part).strip(" .-").lower() or fallback
+        if re.fullmatch(r"(con|prn|aux|nul|com[0-9\u00b9\u00b2\u00b3]|lpt[0-9\u00b9\u00b2\u00b3])(\..*)?", part):
+            part = "_" + part
+        return part
+
+    def output_preview(self, show_id: str, layout: str | None = None) -> dict:
+        with self._lock:
+            show = self.get_show(show_id)
+            layout = layout if layout is not None else show.get("output_layout", "workflow")
+            if layout not in OUTPUT_LAYOUTS:
+                raise ValueError("invalid show output layout")
+            scenes = {s["id"]: s for s in self._list() if s["show_id"] == show_id}
+            listed = {sid for item in show["items"] for sid in (item["scene_ids"] if item["kind"] == "act" else [item["id"]])}
+            items = [*show["items"], *({"kind": "scene", "id": sid} for sid in scenes if sid not in listed)]
+            root = self._output_name(show["name"], show_id)
+            examples = []
+            act_index = direct_index = global_index = 0
+            for item in items:
+                is_act = item["kind"] == "act"
+                if is_act:
+                    act_index += 1
+                else:
+                    direct_index += 1
+                for index, sid in enumerate(item["scene_ids"] if is_act else [item["id"]], 1):
+                    global_index += 1
+                    if sid not in scenes:
+                        continue
+                    scene = scenes[sid]
+                    parts = [root]
+                    number = global_index
+                    if layout == "show_act_scene":
+                        number = index if is_act else direct_index
+                        if is_act:
+                            parts.append(f"{act_index:02}-{self._output_name(item['name'], item['id'])}")
+                    parts.append(f"{number:02}-{self._output_name(scene['name'], sid)}")
+                    examples.append({"scene_id": sid, "name": scene["name"],
+                                     "prefix": None if layout == "workflow" else "/".join(parts)})
+            return {"examples": examples}
+
+    def output_prefix(self, scene_id: str) -> str | None:
+        with self._lock:
+            path = self._file(scene_id)
+            # Unsaved and standalone scenes retain the workflow's existing behavior.
+            if path.parent == self.root:
+                return None
+            show = self.get_show(path.parent.name)
+            if show.get("output_layout", "workflow") == "workflow":
+                return None
+            return next(item["prefix"] for item in self.output_preview(show["id"])["examples"]
+                        if item["scene_id"] == scene_id)
+
+    @staticmethod
+    def _act(show: dict, act_id: str) -> dict:
+        _check(act_id)
+        act = next((i for i in show["items"] if i["kind"] == "act" and i["id"] == act_id), None)
+        if act is None:
+            raise FileNotFoundError(act_id)
+        return act
+
+    def create_act(self, show_id: str, name: str) -> dict:
+        with self._changes() as changes:
+            show = self.get_show(show_id)
+            act = {"kind": "act", "id": new_id("act", lambda i: any(a["id"] == i for s in self.list_shows() for a in s["items"])), "name": self._name(name), "scene_ids": []}
+            show["items"].append(act)
+            changes[self._outline(show_id)] = show
+        return act
+
+    def rename_act(self, show_id: str, act_id: str, name: str) -> dict:
+        with self._changes() as changes:
+            show = self.get_show(show_id)
+            act = self._act(show, act_id)
+            act["name"] = self._name(name)
+            changes[self._outline(show_id)] = show
+        return act
+
+    @staticmethod
+    def _remove_scene(show: dict, scene_id: str) -> None:
+        show["items"] = [i for i in show["items"] if not (i["kind"] == "scene" and i["id"] == scene_id)]
+        for item in show["items"]:
+            if item["kind"] == "act":
+                item["scene_ids"] = [i for i in item["scene_ids"] if i != scene_id]
+
+    @staticmethod
+    def _insert(items: list, item, index: int | None) -> None:
+        if index is not None and not 0 <= index <= len(items):
+            raise ValueError("invalid destination position")
+        items.insert(len(items) if index is None else index, item)
+
+    def _include_unlisted_scenes(self, show: dict) -> None:
+        listed = {sid for i in show["items"] for sid in (i["scene_ids"] if i["kind"] == "act" else [i["id"]])}
+        for scene in self._list():
+            if scene["show_id"] == show["id"] and scene["id"] not in listed:
+                show["items"].append({"kind": "scene", "id": scene["id"]})
+
+    def _order_standalone(self, changes: dict, scene: dict, index: int) -> None:
+        items = [s for s in self._list() if not s["show_id"] and s["id"] != scene["id"]]
+        items.sort(key=lambda s: s["order"] if s["order"] is not None else 0)
+        self._insert(items, scene, index)
+        for position, item in enumerate(items):
+            data = scene if item["id"] == scene["id"] else self.get(item["id"])
+            if data.get("order") != position:
+                data["order"] = position
+                changes[self.root / f"{data['id']}.json"] = data
+
+    def place_scene(self, scene_id: str, show_id: str | None = None, act_id: str | None = None,
+                    index: int | None = None, copy_scene: bool = False, name: str | None = None) -> dict:
+        with self._changes() as changes:
+            return self._place_scene(changes, scene_id, show_id, act_id, index, copy_scene, name)
+
+    def _place_scene(self, changes: dict, scene_id: str, show_id: str | None, act_id: str | None,
+                     index: int | None, copy_scene: bool, name: str | None) -> dict:
+        source_path = self._file(scene_id)
+        scene = self.get(scene_id)
+        if act_id and not show_id:
+            raise ValueError("an act must belong to a show")
+        target = None
+        if show_id:
+            outline = self._outline(show_id)
+            target = changes.get(outline) or self.get_show(show_id)
+            self._include_unlisted_scenes(target)
+        if not copy_scene and source_path.parent != self.root:
+            source_id = source_path.parent.name
+            source_outline = self._outline(source_id)
+            source = target if source_id == show_id else (changes.get(source_outline) or self.get_show(source_id))
+            self._remove_scene(source, scene_id)
+            changes[source_outline] = source
+        if copy_scene:
+            scene = copy.deepcopy(scene)
+            scene["id"] = new_id("s", lambda i: self._file(i).exists() or any(p.name == f"{i}.scene.json" for p in changes))
+            scene.pop("starter", None)
+        if name is not None:
+            scene["name"] = self._name(name)
+            if copy_scene:
+                scene.pop("names", None)
+        dest_id = scene["id"]
+        if target is not None:
+            if act_id:
+                self._insert(self._act(target, act_id)["scene_ids"], dest_id, index)
+            else:
+                self._insert(target["items"], {"kind": "scene", "id": dest_id}, index)
+            changes[self._outline(show_id)] = target
+        dest = self.shows_root / show_id / f"{dest_id}.scene.json" if show_id else self.root / f"{dest_id}.json"
+        if not copy_scene and dest != source_path:
+            changes[source_path] = None
+        if copy_scene:
+            scene["updated_at"] = datetime.now(timezone.utc).isoformat()
+        if copy_scene or name is not None:
+            changes[dest] = scene
+        elif dest != source_path:
+            changes[dest] = source_path.read_bytes()
+        if not show_id and index is not None:
+            self._order_standalone(changes, scene, index)
+        return scene
+
+    def place_act(self, source_id: str, act_id: str, show_id: str | None, index: int | None = None,
+                  copy_act: bool = False, name: str | None = None) -> dict:
+        if not show_id:
+            raise ValueError("an act must belong to a show")
+        with self._changes() as changes:
+            source = self.get_show(source_id)
+            target = source if source_id == show_id else self.get_show(show_id)
+            self._include_unlisted_scenes(target)
+            act = copy.deepcopy(self._act(source, act_id))
+            if not copy_act:
+                source["items"] = [i for i in source["items"] if i["id"] != act_id]
+            else:
+                act["id"] = new_id("act", lambda i: any(a["id"] == i for s in self.list_shows() for a in s["items"]))
+            if name is not None:
+                act["name"] = self._name(name)
+            scene_ids = act["scene_ids"]
+            act["scene_ids"] = []
+            self._insert(target["items"], act, index)
+            changes[self._outline(source_id)] = source
+            changes[self._outline(show_id)] = target
+            for sid in scene_ids:
+                self._place_scene(changes, sid, show_id, act["id"], None, copy_act, None)
+        return act
+
+    def delete_group(self, show_id: str, act_id: str | None = None) -> None:
+        with self._changes() as changes:
+            show = self.get_show(show_id)
+            if act_id:
+                act = self._act(show, act_id)
+                if act["scene_ids"]:
+                    raise ValueError("move or delete the act's scenes first")
+                show["items"].remove(act)
+                changes[self._outline(show_id)] = show
+            else:
+                if show["items"] or any(self._outline(show_id).parent.glob("*.scene.json")):
+                    raise ValueError("move or delete the show's contents first")
+                changes[self._outline(show_id)] = None

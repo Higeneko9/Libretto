@@ -103,6 +103,79 @@ Scenes autosave. Right-click a scene tab to rename, duplicate, export, close,
 or delete it. Use **Export scene** and **Import scene** in the Toolbar to
 exchange scene JSON files.
 
+### Organize shows, acts, and scenes
+
+The left sidebar has **Show Outline** above the **Results browser**. Drag their
+divider to resize them; the layout is remembered. Select a show or act to see
+results from all its scenes, or select a scene to open it and see only its results.
+**All outputs** also includes older results whose scene is unknown.
+
+Right-click a show, act, scene, or empty space in **Show Outline** to create and
+manage items. The menu applies to the item you right-clicked, not the scene open
+in the editor. Existing scenes remain under **Standalone Scenes** until you move
+them yourself. Scene and act menus include **Copy to…** and
+**Duplicate**. Drag shows, acts, and scenes to reorder them: a line indicates
+insertion before or after a row, and a highlighted show or act accepts the item
+inside it. Drag a scene onto **Standalone Scenes** to move it out of a show.
+Shows cannot be nested, and acts cannot contain other acts. Moving and reordering
+use drag-and-drop; use Shift+F10 to open a focused item's context menu.
+Moves retain IDs, generation results, and history;
+copies receive new IDs and start without results or history. Shows and acts
+must be empty before they can be deleted.
+
+Double-click a show, act, or scene name, choose **Rename**, or press **F2** on the
+selected item while the pointer is over Show Outline to edit its name in place.
+**Enter** or clicking elsewhere saves; **Escape** cancels. Blank names are rejected.
+Scene inline editing changes only the display name for the current UI language.
+Use **Edit original / translated names…** in a scene's context menu to edit its
+original name and translation together. Renaming is undoable, and dragging is
+disabled while a name is being edited.
+
+Right-click a **show** and choose **Show settings…** to configure its output layout:
+**Workflow default**, **Show / Scene**, or **Show / Act / Scene**. A live example
+uses the saved scene's original name; select another example scene to check its
+path. For example, `my-show/01-opening/02-arrival` is a filename prefix relative
+to ComfyUI's output folder; the workflow adds its counter and image extension.
+Scene numbers span the show in **Show / Scene**. With act folders, act numbers
+follow act order, scene numbers restart within each act, and direct scenes use
+their own numbering without an act folder. Names are normalized for file paths
+while preserving Unicode; identically normalized show names share a directory.
+
+An explicit Generate-node output prefix takes precedence over the show's layout;
+leave it blank to inherit. The Inspector indicates inheritance or an override.
+The default remains the imported workflow's behavior, including for standalone
+scenes. Settings are saved in `show-outline.json` and support organization undo.
+Only future generations use changed layouts, names, and ordering: existing images
+are not moved, and requeuing a result still uses its exact saved workflow.
+
+Use **Undo organization** / **Redo organization** in the context menu, or
+Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z (also Ctrl/Cmd+Y) while the pointer is over Show Outline.
+Creation, renaming, copying, deletion, moves, and reordering are undoable.
+Scene-content edits have separate undo history and are not reverted by organization
+undo. Restoring a deleted scene also restores its saved scene history.
+The last 100 organization changes are kept for the running server session,
+including across page reloads, and reset on app restart or backup restore.
+Conflicting external file changes are reported rather than overwritten.
+
+Panel shortcuts follow the mouse pointer, not keyboard focus. **Delete** removes
+the selected Show Outline item only when the pointer is over the outline; node
+deletion and scene undo/redo apply only over the scene editor. Selection shortcuts
+in Results and scene history, plus Library selection and clipboard shortcuts, are
+likewise limited to their own panels. Text fields retain native editing shortcuts, and open dialogs and
+menus block background panel actions.
+
+Each show is a shareable folder: `ugc/shows/<show-id>/show-outline.json` stores
+its name, acts, and ordering, with `<scene-id>.scene.json` files alongside it.
+Standalone scenes remain in `ugc/scenes/<scene-id>.json`; nothing is automatically
+relocated. Generated images and local history remain outside show folders.
+Sharing a show folder does not include referenced libraries, ComfyUI workflows,
+or models. Right-click and choose **Refresh shows and scenes from disk** after
+adding or editing show folders externally. Show order is stored in each outline;
+standalone scene order is stored in the scene files, without a global registry.
+Backups include shows; if a merge restore would recreate a scene at an old
+location, it is rejected. Use **Replace all** to restore the complete layout
+(a safety backup is taken first).
+
 ### Work with presets and prompts
 
 The **Inspector** edits nodes in the current scene. **Preset properties**, on
@@ -110,6 +183,13 @@ the right of the Library browser, edits reusable library presets and autosaves
 those changes. Toggle Preset properties with **N** while the pointer is over
 the Library browser, or use its edge button. Editing a node does not
 automatically change its source preset; save it back explicitly when needed.
+
+Double-click a positive or negative prompt node's text to edit it in place.
+You can also select the node and press **F2** while the pointer is over the scene
+editor, or choose **Edit prompt** in its context menu. **Enter** or clicking
+elsewhere saves; **Shift+Enter** inserts a new line; **Escape** cancels.
+Empty prompts are allowed. Saved edits autosave with the scene and support its
+undo/redo; typing uses normal text-editing shortcuts without moving or deleting nodes.
 
 Use the Library browser's management button to create, copy, import/export,
 or delete libraries. Category settings let you add, rename, color, and reorder
@@ -302,7 +382,8 @@ generation history uses SQLite with per-run snapshot directories.
 | `LB_COMFY_URL` | `http://127.0.0.1:8188` | ComfyUI URL when no URL is saved in Settings |
 | `LB_UGC_ROOT` | `ugc` | Parent of user-generated content and `settings.json` |
 | `LB_LIBRARIES_ROOT` | `ugc/libraries` | Presets and thumbnails, one folder per library |
-| `LB_SCENES_ROOT` | `ugc/scenes` | Saved scene graphs |
+| `LB_SCENES_ROOT` | `ugc/scenes` | Standalone scene graphs |
+| `LB_SHOWS_ROOT` | `ugc/shows` | Show folders containing outlines and scene graphs |
 | `LB_PROFILES_ROOT` | `profiles` | Built-in profiles and workflow templates |
 | `LB_USER_PROFILES_ROOT` | `ugc/profiles` | Imported and edited profiles |
 | `LB_DATA_ROOT` | `ugc/data` | SQLite history, snapshots, and collection state |

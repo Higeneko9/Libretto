@@ -4,7 +4,7 @@ Use the names below consistently in documentation, issue reports, and discussion
 about the interface. These names describe the existing UI; they do not introduce
 new controls.
 
-![Numbered Libretto layout: Toolbar across the top; Results browser on the left; Scene tabs above the Graph editor and Inspector; Library browser below them, with optional Preset properties on its right. Scene history is inside the Inspector.](images/ui-overview.svg)
+![Numbered Libretto layout: Toolbar across the top; Show Outline above Results browser on the left; Scene tabs above the Graph editor and Inspector; Library browser below them, with optional Preset properties on its right. Scene history is inside the Inspector.](images/ui-overview.svg)
 
 *Layout schematic, not a screenshot. Panel sizes vary, and Preset properties can
 be hidden. The numbers identify areas in this guide, not controls in the app.*
@@ -15,10 +15,11 @@ be hidden. The numbers identify areas in this guide, not controls in the app.*
 |---|---|---|---|
 | 1 | **Toolbar** | Across the top | Shows the app version and connection status; opens ComfyUI workflows, Backups, and Settings; imports/exports scenes and starts generation. |
 | 2 | **Scene tabs** | Above the Graph editor and Inspector | Switches between scenes. The **+** button creates, imports, or reopens scenes; a tab's context menu includes rename, duplicate, export, close, and delete. |
-| 3 | **Results browser** | Left side, below the Toolbar | Displays generation entries, including queued/running runs and completed images. Select and delete entries, resize thumbnails, or open a result for a larger view and reproduction actions. |
+| 3 | **Results browser** | Left side, below Show Outline | Displays generation entries for the selected show, act, or scene, including queued/running runs and completed images. All outputs includes results without known scene ownership. Select and delete entries, resize thumbnails, or open a result for a larger view and reproduction actions. |
 | 4 | **Graph editor** | Center | Arranges the active scene's nodes. Drag presets from the Library browser here and select nodes to edit their properties in the Inspector. Connection lines and ports are hidden; added and pasted nodes still connect to Generate automatically, and existing scene connections are preserved. |
 | 5 | **Inspector** | Right of the Graph editor | Edits selected node properties and scene-wide prompts. Also contains Scene history and the Prompt preview. Selecting the Generate node exposes its generation and output settings here. |
 | 6 | **Library browser** | Below the Graph editor and Inspector | Switches and manages libraries, filters presets by category, tags, or search text, and supplies preset, Collection, and Prompt nodes for the Graph editor. |
+| 9 | **Show Outline** | Left side, above the Results browser | Browses shows, acts, and scenes; opens scenes and filters results. Right-click items or empty space to create, rename, move, copy, duplicate, refresh, or delete. Drag rows to reorder or move them between containers; insertion lines and container highlights show the destination. Existing scenes remain under Standalone Scenes. |
 
 ## Nested areas and controls
 
@@ -31,7 +32,7 @@ be hidden. The numbers identify areas in this guide, not controls in the app.*
 | - | **Generation bar** | Bottom of the Graph editor | Starts generation, sets the batch count, shows running/queued counts, and cancels runs. |
 | - | **Canvas navigation controls** | Lower corners of the Graph editor | Provides zoom/fit controls and a minimap for navigating the graph. |
 | - | **Library toolbar** | Top of the Library browser | Contains the library selector, management actions, search, thumbnail sizing, and preset actions. Category and tag filter rows appear below it. |
-| - | **Panel splitters** | Resizable panel edges | Changes the Results browser width, Inspector width, Library browser height, or Preset properties width. |
+| - | **Panel splitters** | Resizable panel edges | Changes the left sidebar width, Show Outline height, Inspector width, Library browser height, or Preset properties width. Splitters also support arrow keys when focused. |
 
 ## Naming conventions
 
@@ -120,6 +121,7 @@ For contributors, these user-facing names map to the following source files:
 |---|---|
 | Toolbar, Graph editor, Prompt order controls, Generation bar | `frontend/src/App.tsx`: `Toolbar`, `Canvas`, `OrderToggle`, `GenerateBar` |
 | Scene tabs | `frontend/src/SceneTabs.tsx` |
+| Show Outline | `frontend/src/ShowExplorer.tsx` |
 | Results browser and Result viewer | `frontend/src/Results.tsx` |
 | Inspector and Prompt preview | `frontend/src/Inspector.tsx` |
 | Library browser | `frontend/src/Palette.tsx` |

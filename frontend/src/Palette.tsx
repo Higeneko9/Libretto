@@ -11,6 +11,7 @@ import { beginPaletteDrag, type DragPayload } from "./paletteDrag";
 import { COLORS, NEGATIVE_COLOR, Thumb } from "./nodes";
 import { useT } from "./i18n/useT";
 import { PresetPane, type PaneItem } from "./PresetPane";
+import { usePanelShortcuts } from "./panelShortcuts";
 import { Splitter } from "./Splitter";
 import { libraryName, useStore } from "./store";
 import { useWheelResize } from "./wheelResize";
@@ -87,25 +88,12 @@ export function Palette() {
   const redoStack = useRef<DeletedItems[]>([]);
   const [history, setHistory] = useState({ undo: 0, redo: 0 });
   const syncHistory = () => setHistory({ undo: undoStack.current.length, redo: redoStack.current.length });
-  const hover = useRef(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useWheelResize(wrapRef, "libThumb", 40, 180);
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
-  // N toggles the property pane while the pointer is over the library
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!hover.current || e.ctrlKey || e.metaKey || e.altKey || e.key.toLowerCase() !== "n") return;
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      setUi({ propsOpen: !useStore.getState().ui.propsOpen });
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [setUi]);
 
   const [editCats, setEditCats] = useState(false);
   const categoryList = useStore((s) => s.categories);
@@ -235,22 +223,22 @@ export function Palette() {
     await deleteItems([...selection.selected].map(splitItem));
   };
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.target as HTMLElement).tagName === "INPUT") return;
+  usePanelShortcuts(wrapRef, (e) => {
+    if (e.altKey) return;
     const mod = e.ctrlKey || e.metaKey;
     const key = e.key.toLowerCase();
     const redo = mod && ((key === "z" && e.shiftKey) || key === "y");
     const undo = mod && key === "z" && !e.shiftKey;
-    // only claim the shortcut when there is something to undo here; otherwise the canvas undo runs
-    if (undo && undoStack.current.length) (e.preventDefault(), e.stopPropagation(), void undoDelete());
-    else if (redo && redoStack.current.length) (e.preventDefault(), e.stopPropagation(), void redoDelete());
+    if (undo) { e.preventDefault(); if (undoStack.current.length) void undoDelete(); }
+    else if (redo) { e.preventDefault(); if (redoStack.current.length) void redoDelete(); }
     else if (mod && key === "a") (e.preventDefault(), setSelection(selectAll(ids)));
     else if (mod && key === "c") (e.preventDefault(), copySelected(false));
     else if (mod && key === "x") (e.preventDefault(), copySelected(true));
     else if (mod && key === "v") (e.preventDefault(), void pasteClip());
-    else if (e.key === "Delete") void deleteSelected();
-    else if (e.key === "Escape") clear();
-  };
+    else if (e.key === "Delete") { e.preventDefault(); if (!e.repeat) void deleteSelected(); }
+    else if (e.key === "Escape") { e.preventDefault(); clear(); }
+    else if (!mod && key === "n") { e.preventDefault(); setUi({ propsOpen: !useStore.getState().ui.propsOpen }); }
+  });
 
   const openMenu = (e: React.MouseEvent, key?: string) => {
     e.preventDefault();
@@ -360,7 +348,7 @@ export function Palette() {
   const paneKey = `${library}/${paneItems.map((i) => itemKey(i.category, i.id)).sort().join(",")}`;
 
   return (
-    <div ref={wrapRef} className="palette-wrap" onMouseEnter={() => (hover.current = true)} onMouseLeave={() => (hover.current = false)}>
+    <div ref={wrapRef} className="palette-wrap" data-shortcut-panel="library">
       <Splitter axis="y" className="edge-top" value={ui.libraryH} min={150} max={900} direction={-1} onChange={(v) => setUi({ libraryH: v })} />
       <section className="lib-main">
         <div className="row wrap lib-bar">
@@ -481,7 +469,6 @@ export function Palette() {
         <div
           className={`lib-scroll ${selecting ? "selecting" : ""}`}
           tabIndex={0}
-          onKeyDown={onKeyDown}
           onContextMenu={(e) => openMenu(e)}
           onPointerDown={(e) => (emptyDown.current = isEmptyArea(e.target))}
           onClick={(e) => {
@@ -621,7 +608,7 @@ export function Palette() {
         )}
       </section>
       {ui.propsOpen ? (
-        <aside className="lib-props" style={{ width: ui.propsW }}>
+        <aside className="lib-props" data-shortcut-panel="preset-properties" style={{ width: ui.propsW }}>
           <Splitter axis="x" className="edge-left" value={ui.propsW} min={220} max={700} direction={-1} onChange={(v) => setUi({ propsW: v })} />
           <div className="lib-props-head">
             <strong>{t("palette.presetProperties")}</strong>

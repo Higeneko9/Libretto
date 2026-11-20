@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Callable
 
 _ID_RE = re.compile(r"^[0-9]{8}-[0-9]{6}(-[0-9]+)?$")
-SECTIONS = ("libraries", "scenes", "profiles")
+SECTIONS = ("libraries", "scenes", "shows", "profiles")
 HISTORY_SECTION = "snapshots"
 RUNS_FILE = "runs.json"
 MANIFEST = "manifest.json"
@@ -176,6 +176,8 @@ class Backups:
         restored = {name: 0 for name in SECTIONS}
         restored["snapshots"] = 0
         with zipfile.ZipFile(path) as archive:
+            if mode == "merge":
+                self._check_scene_locations(archive)
             if mode == "replace":
                 for name, folder in self.roots.items():
                     shutil.rmtree(folder, ignore_errors=True)
@@ -196,6 +198,32 @@ class Backups:
             if history and RUNS_FILE in archive.namelist():
                 runs = self._runs_import(json.loads(archive.read(RUNS_FILE)), mode == "replace")
         return {"restored": restored, "runs": runs, "safety_backup": safety["id"]}
+
+    def _check_scene_locations(self, archive: zipfile.ZipFile) -> None:
+        # A merge must not resurrect the same stable scene ID at a previous location.
+        current = {}
+        for section in ("scenes", "shows"):
+            root = self.roots.get(section)
+            if root is None:
+                continue
+            for path in root.glob("*.json" if section == "scenes" else "*/*.scene.json"):
+                scene_id = path.name.removesuffix(".scene.json") if section == "shows" else path.stem
+                current.setdefault(scene_id, set()).add(path.resolve())
+        incoming = {}
+        for member in archive.infolist():
+            parts = member.filename.split("/")
+            is_scene = (len(parts) == 2 and parts[0] == "scenes" and parts[-1].endswith(".json")
+                        or len(parts) == 3 and parts[0] == "shows" and parts[-1].endswith(".scene.json"))
+            if not is_scene:
+                continue
+            target = self._target(member.filename)
+            if target is None:
+                continue
+            scene_id = parts[-1].removesuffix(".scene.json") if parts[0] == "shows" else Path(parts[-1]).stem
+            locations = incoming.setdefault(scene_id, set(current.get(scene_id, set())))
+            locations.add(target.resolve())
+            if len(locations) > 1:
+                raise ValueError(f"scene {scene_id} exists at another location; use Replace all to restore this backup")
 
     def auto_backup(self, keep: int = 10, min_age: timedelta = timedelta(hours=24)) -> dict | None:
         """Take a daily automatic backup (settings only) and prune old automatic ones."""

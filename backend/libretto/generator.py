@@ -15,6 +15,7 @@ from .libraries import DEFAULT_LIBRARY, Libraries
 from .library import Library, slugify
 from .profiles import load_workflow_template
 from .scene_snaps import SceneSnaps
+from .scenes import Scenes
 from .store import RunStore
 from .workflow import apply_output_prefix, build_workflow
 
@@ -62,8 +63,10 @@ class Generator:
         comfy: ComfyClient,
         store: RunStore,
         scene_snaps: SceneSnaps | None = None,
+        scenes: Scenes | None = None,
     ):
         self.scene_snaps = scene_snaps
+        self.scenes = scenes
         self.settings = settings
         self.libraries = libraries
         self.profiles = profiles
@@ -188,6 +191,8 @@ class Generator:
         defaults = profile.get("defaults", {})
         params = {k: options.get(k) if options.get(k) not in (None, "") else defaults.get(k) for k in PARAM_KEYS}
         output_prefix = resolve_output_prefix(options.get("output_prefix"), graph, profile_id)
+        if output_prefix is None and scene_id and self.scenes is not None:
+            output_prefix = self.scenes.output_prefix(scene_id)
         output_dir = (options.get("output_dir") or "").strip() or None
         environment = self._environment()
         rng = random.SystemRandom()
@@ -222,6 +227,7 @@ class Generator:
                     "workflow": workflow,
                     "parent_id": None,
                     "scene": scene,
+                    "scene_id": scene_id,
                     "prompt_id": None,
                     "images": [],
                 }
@@ -279,6 +285,7 @@ class Generator:
             "seed": snapshot["params"].get("seed"),
             "positive": snapshot["prompt"]["positive"],
             "parent_id": snapshot.get("parent_id"),
+            "scene_id": snapshot.get("scene_id") or (snapshot.get("scene") or {}).get("id"),
         }
         self.store.insert(run)
         if error:

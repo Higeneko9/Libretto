@@ -23,6 +23,11 @@ class LB_Settings:
     BackupsRoot: Path | None = None
     SceneSnapMax: int = 30
     SettingsFile: Path | None = None
+    ShowsRoot: Path | None = None
+
+    @property
+    def EffectiveShowsRoot(self) -> Path:
+        return self.ShowsRoot if self.ShowsRoot is not None else self.ScenesRoot.parent / "shows"
 
     @property
     def SceneSnapsRoot(self) -> Path:
@@ -90,6 +95,7 @@ def LB_LoadSettings() -> LB_Settings:
         UserProfilesRoot=Path(os.environ.get("LB_USER_PROFILES_ROOT", ugc / "profiles")),
         DataRoot=Path(os.environ.get("LB_DATA_ROOT", ugc / "data")),
         ScenesRoot=Path(os.environ.get("LB_SCENES_ROOT", ugc / "scenes")),
+        ShowsRoot=Path(os.environ.get("LB_SHOWS_ROOT", ugc / "shows")),
         ModelsRoot=Path(models) if models else None,
         BackupsRoot=Path(os.environ.get("LB_BACKUP_ROOT", ugc.parent / "backups")),
         SceneSnapMax=max(1, int(os.environ.get("LB_SCENE_SNAP_MAX", "30"))),

@@ -167,4 +167,32 @@ data/              # SQLite DB, history images, snapshots
 
 ## Libraries and scenes (v1.1)
 
-Libraries live in `ugc/libraries/<id>/<category>/` and are selected per scene (`?lib=` on library routes). Scenes (named node graphs, called *scenes* to avoid confusion with ComfyUI workflows) live in `ugc/scenes/<id>.json` and carry `library`, `scene_prompt` and `scene_negative`. Output overrides: `output_prefix` rewrites SaveImage `filename_prefix`; `output_dir` receives a local copy.
+Libraries live in `ugc/libraries/<id>/<category>/` and are selected per scene (`?lib=` on library routes). Standalone scenes (named node graphs, called *scenes* to avoid confusion with ComfyUI workflows) live in `ugc/scenes/<id>.json` and carry `library`, `scene_prompt` and `scene_negative`. Output overrides: `output_prefix` rewrites SaveImage `filename_prefix`; `output_dir` receives a local copy.
+
+Shows live in `ugc/shows/<show-id>/`. Each folder contains `show-outline.json`
+and `<scene-id>.scene.json` files, with no scene or act subfolders. The version-1
+outline has `id`, `name`, and an ordered `items` array: scene entries have
+`kind: "scene"` and `id`; act entries have `kind: "act"`, `id`, `name`, and an
+ordered `scene_ids` array. An optional integer `order` on each outline stores
+show ordering; standalone scene files can also carry `order`. These fields are
+preserved through edits and backups, without a global organization file.
+Files not referenced by the outline appear directly under their show without
+rewriting it; explicit reordering includes them in the outline. Scene IDs are unique across standalone
+scenes and shows; conflicting imported IDs are reported rather than merged.
+
+The Scenes service resolves IDs across both locations, preserving existing
+scene URLs and local history. Changes within a show only rewrite its outline;
+cross-show moves relocate scene files without changing their IDs or content.
+Copies have fresh scene/act IDs and no copied history. Organization edits are
+serialized within the server, JSON files are replaced atomically, and ordinary
+I/O failures roll back affected files. Multi-file moves are not crash-atomic.
+Existing standalone scenes are not migrated.
+
+Runs and generation snapshots record `scene_id` independently of automatic
+scene-history capture. Older runs can recover explicit IDs from their saved
+snapshot references; unknown ownership is never guessed. The Results browser
+filters by the current scene membership, so outputs follow scene moves without
+relocating images. All outputs retains orphaned and unassigned runs. Show
+folders are included in backups but exclude local generated images and history.
+Merge restores reject conflicting physical locations for the same scene ID;
+replace restores recover the complete saved organization.
