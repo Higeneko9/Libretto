@@ -119,6 +119,11 @@ insertion before or after a row, and a highlighted show or act accepts the item
 inside it. Drag a scene onto **Standalone Scenes** to move it out of a show.
 Shows cannot be nested, and acts cannot contain other acts. Moving and reordering
 use drag-and-drop; use Shift+F10 to open a focused item's context menu.
+Ctrl-click (Cmd-click on macOS) selects items from anywhere in the outline for
+dragging together; Shift-click selects a visible range. The selection moves in
+outline order as one undoable change. Selected descendants move with their parent,
+and every selected item must be compatible with the destination. Other menu
+actions apply to the individual right-clicked item; select one item before deleting.
 Moves retain IDs, generation results, and history;
 copies receive new IDs and start without results or history. Shows and acts
 must be empty before they can be deleted.

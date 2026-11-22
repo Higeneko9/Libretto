@@ -20,11 +20,11 @@ beforeEach(async () => {
   previous = useStore.getState();
   vi.spyOn(api, "scene").mockImplementation(async (id) => ({ id, name: "One", graph: { nodes: [], edges: [] } }));
   vi.spyOn(api, "saveUi").mockResolvedValue({});
-  vi.spyOn(api, "organizationHistory").mockResolvedValue({ undo: 0, redo: 0, revision: 0 });
+  vi.spyOn(api, "organizationHistory").mockResolvedValue({ undo: 0, redo: 0, revision: 0, history_id: "session" });
   useStore.setState({
     sceneReady: false, activeId: null, focusRun: null,
     outputScope: { kind: "all" },
-    organizationHistory: { undo: 0, redo: 0, revision: 0 },
+    organizationHistory: { undo: 0, redo: 0, revision: 0, history_id: "session" },
     organizationBusy: false,
     ui: { ...previous.ui, locale: "en-US", openScenes: [] },
     shows: [{ version: 1, id: "show1", name: "The Show", items: [
@@ -929,4 +929,79 @@ it("persists show ordering and rejects dragging an act into its descendant", asy
   const invalid = await drag("act:act1", "scene:s1", 0.05);
   expect(invalid.over.defaultPrevented).toBe(false);
   expect(api.placeAct).not.toHaveBeenCalled();
+});
+
+it("selects scenes from different containers and moves them together in outline order", async () => {
+  const second = { version: 1 as const, id: "show2", name: "Second", items: [] };
+  await act(async () => useStore.setState((s) => ({ shows: [...s.shows, second] })));
+  const move = vi.spyOn(api, "moveOutline").mockResolvedValue({ undo: 1, redo: 0, revision: 1 });
+  mockOrganizationRefresh();
+  await click("Three");
+  await act(async () => row("scene:s2").dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
+  await act(async () => row("scene:s1").dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
+  expect(useStore.getState().activeId).toBe("s3");
+  expect(container.querySelectorAll(".move-selected")).toHaveLength(3);
+  expect(row("scene:s1").getAttribute("aria-description")).toBe("Selected for moving");
+  const result = await drag("scene:s1", "show:show2", 0.5);
+  expect(result.over.defaultPrevented).toBe(true);
+  expect(move).toHaveBeenCalledWith([
+    { kind: "scene", id: "s3", show_id: null, act_id: null },
+    { kind: "scene", id: "s1", show_id: "show1", act_id: "act1" },
+    { kind: "scene", id: "s2", show_id: "show1", act_id: null },
+  ], { kind: "show", id: "show2" }, "inside", 0, "session");
+});
+
+it("selects a visible range and toggles items without changing the active result scope", async () => {
+  await click("First Act");
+  await act(async () => row("scene:s2").dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true })));
+  expect(useStore.getState().outputScope).toEqual({ kind: "act", id: "act1", show_id: "show1" });
+  expect(container.querySelectorAll(".move-selected")).toHaveLength(3);
+  await act(async () => row("scene:s1").dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
+  expect(container.querySelectorAll(".move-selected")).toHaveLength(2);
+  expect(row("scene:s1").className).not.toContain("move-selected");
+});
+
+it("moves a selected parent and child only once and rejects incompatible selections", async () => {
+  const second = { version: 1 as const, id: "show2", name: "Second", items: [] };
+  await act(async () => useStore.setState((s) => ({ shows: [...s.shows, second] })));
+  const move = vi.spyOn(api, "moveOutline");
+  const placeAct = vi.spyOn(api, "placeAct").mockResolvedValue({ kind: "act", id: "act1", name: "First Act", scene_ids: ["s1"] });
+  mockOrganizationRefresh();
+  await click("First Act");
+  await act(async () => row("scene:s1").dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
+  await drag("scene:s1", "show:show2", 0.5);
+  expect(placeAct).toHaveBeenCalledOnce();
+  expect(placeAct).toHaveBeenCalledWith("show1", "act1", { show_id: "show2" });
+  expect(move).not.toHaveBeenCalled();
+  await click("The Show");
+  await act(async () => row("scene:s3").dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
+  const invalid = await drag("show:show1", "show:show2", 0.05);
+  expect(invalid.over.defaultPrevented).toBe(false);
+  expect(move).not.toHaveBeenCalled();
+});
+
+it("reports a failed multi-item move without clearing the selection", async () => {
+  const second = { version: 1 as const, id: "show2", name: "Second", items: [] };
+  await act(async () => useStore.setState((s) => ({ shows: [...s.shows, second] })));
+  vi.spyOn(api, "moveOutline").mockRejectedValue(new Error("Show Outline history changed"));
+  await click("Three");
+  await act(async () => row("scene:s2").dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
+  await drag("scene:s2", "show:show2", 0.5);
+  expect(container.querySelector(".explorer-error")?.textContent).toBe("Show Outline history changed");
+  expect(container.querySelectorAll(".move-selected")).toHaveLength(2);
+});
+
+it("prevents single-item delete actions while multiple selected items are targeted", async () => {
+  const confirm = vi.spyOn(ask, "askConfirm");
+  await click("The Show");
+  await act(async () => row("act:act1").dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true })));
+  hover(row("show:show1"));
+  await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Delete" })));
+  expect(confirm).not.toHaveBeenCalled();
+  expect(container.querySelector(".explorer-error")?.textContent).toContain("Select one item before deleting");
+  await contextMenu("show:show1");
+  const deleteButtons = [...container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
+    .filter((button) => ["Delete…", "Delete hierarchy"].includes(button.textContent ?? ""));
+  expect(deleteButtons).toHaveLength(2);
+  expect(deleteButtons.every((button) => button.disabled)).toBe(true);
 });

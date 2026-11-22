@@ -678,3 +678,124 @@ def test_show_reorder_endpoint(env):
     assert client.post(f"/api/shows/{two['id']}/place", json={"index": 0}).status_code == 200
     assert [s["id"] for s in client.get("/api/shows").json()] == [two["id"], one["id"]]
     assert client.post(f"/api/shows/{one['id']}/place", json={"index": -1}).status_code == 422
+
+
+def test_move_multiple_outline_items_is_one_undoable_change(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    root = scenes.create("Root")
+    one = scenes.create_show("One")
+    act = scenes.create_act(one["id"], "Act")
+    child = scenes.create("Child", graph(), one["id"], act["id"])
+    direct = scenes.create("Direct", graph(), one["id"])
+    two = scenes.create_show("Two")
+    anchor = scenes.create_act(two["id"], "Anchor")
+    scenes.clear_history()
+    before = {p: p.read_bytes() for p in tmp_path.rglob("*.json")}
+    items = [
+        {"kind": "scene", "id": root["id"], "show_id": None, "act_id": None},
+        {"kind": "act", "id": act["id"], "show_id": one["id"], "act_id": None},
+        {"kind": "scene", "id": child["id"], "show_id": one["id"], "act_id": act["id"]},
+        {"kind": "scene", "id": direct["id"], "show_id": one["id"], "act_id": None},
+    ]
+    target = {"kind": "act", "id": anchor["id"], "show_id": two["id"], "act_id": None}
+    scenes.move_outline(items, target, "before", scenes.history()["revision"])
+    assert [i["id"] for i in scenes.get_show(two["id"])["items"]] == [
+        root["id"], act["id"], direct["id"], anchor["id"]]
+    assert scenes.get_show(two["id"])["items"][1]["scene_ids"] == [child["id"]]
+    assert scenes.get_show(one["id"])["items"] == []
+    assert all(scenes._file(sid).parent.name == two["id"] for sid in (root["id"], child["id"], direct["id"]))
+    assert scenes.history()["undo"] == 1
+    step(scenes)
+    assert {p: p.read_bytes() for p in tmp_path.rglob("*.json")} == before
+    step(scenes, redo=True)
+    assert [i["id"] for i in scenes.get_show(two["id"])["items"]] == [
+        root["id"], act["id"], direct["id"], anchor["id"]]
+
+
+def test_move_scenes_across_acts_and_standalone_keeps_order(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    one = scenes.create_show("One")
+    act = scenes.create_act(one["id"], "Act")
+    a = scenes.create("A", graph(), one["id"], act["id"])
+    b = scenes.create("B", graph(), one["id"])
+    root = scenes.create("Root")
+    scenes.clear_history()
+    items = [
+        {"kind": "scene", "id": a["id"], "show_id": one["id"], "act_id": act["id"]},
+        {"kind": "scene", "id": b["id"], "show_id": one["id"], "act_id": None},
+    ]
+    scenes.move_outline(items, {"kind": "standalone", "id": None}, "inside", scenes.history()["revision"])
+    order = sorted((s for s in scenes.list() if not s["show_id"]), key=lambda s: s["order"])
+    assert [s["id"] for s in order] == [root["id"], a["id"], b["id"]]
+    step(scenes)
+    assert scenes.get_show(one["id"])["items"][0]["scene_ids"] == [a["id"]]
+    assert scenes._file(b["id"]).parent.name == one["id"]
+
+
+def test_move_outline_validates_revision_destinations_and_source_membership(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    first, second, third = [scenes.create_show(name) for name in ("First", "Second", "Third")]
+    act = scenes.create_act(first["id"], "Act")
+    child = scenes.create("Child", graph(), first["id"], act["id"])
+    scenes.clear_history()
+    show_items = [{"kind": "show", "id": show["id"]} for show in (first, third)]
+    target = {"kind": "show", "id": second["id"]}
+    revision = scenes.history()["revision"]
+    before = {p: p.read_bytes() for p in tmp_path.rglob("*.json")}
+    with pytest.raises(ValueError, match="history changed"):
+        scenes.move_outline(show_items, target, "after", revision - 1)
+    with pytest.raises(ValueError, match="own selection"):
+        scenes.move_outline(show_items, {"kind": "scene", "id": child["id"],
+                                        "show_id": first["id"], "act_id": act["id"]}, "before", revision)
+    with pytest.raises(ValueError, match="outline changed"):
+        scenes.move_outline([{"kind": "scene", "id": child["id"], "show_id": second["id"], "act_id": None}],
+                            target, "inside", revision)
+    assert {p: p.read_bytes() for p in tmp_path.rglob("*.json")} == before
+    scenes.move_outline(show_items, target, "after", revision)
+    assert [s["id"] for s in scenes.list_shows()] == [second["id"], first["id"], third["id"]]
+    step(scenes)
+    assert [s["id"] for s in scenes.list_shows()] == [first["id"], second["id"], third["id"]]
+
+
+def test_move_outline_endpoint_rejects_stale_revision(env):
+    client, _, _ = env
+    one = client.post("/api/shows", json={"name": "One"}).json()
+    two = client.post("/api/shows", json={"name": "Two"}).json()
+    revision = client.get("/api/organization/history").json()["revision"]
+    history_id = client.get("/api/organization/history").json()["history_id"]
+    body = {"items": [{"kind": "show", "id": one["id"]}], "target": {"kind": "show", "id": two["id"]},
+            "position": "after", "revision": revision - 1, "history_id": history_id}
+    assert client.post("/api/organization/move", json=body).status_code == 400
+    body["revision"] = revision
+    body["history_id"] = "previous-server"
+    assert client.post("/api/organization/move", json=body).status_code == 400
+    body["history_id"] = history_id
+    assert client.post("/api/organization/move", json=body).status_code == 200
+    assert [s["id"] for s in client.get("/api/shows").json()] == [two["id"], one["id"]]
+
+
+def test_move_multiple_scenes_into_act_preserves_order_and_later_edits(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    one = scenes.create_show("One")
+    source = scenes.create_act(one["id"], "Source")
+    a = scenes.create("A", graph(), one["id"], source["id"])
+    b = scenes.create("B", graph(), one["id"])
+    two = scenes.create_show("Two")
+    destination = scenes.create_act(two["id"], "Destination")
+    anchor = scenes.create("Anchor", graph(), two["id"], destination["id"])
+    scenes.clear_history()
+    items = [
+        {"kind": "scene", "id": a["id"], "show_id": one["id"], "act_id": source["id"]},
+        {"kind": "scene", "id": b["id"], "show_id": one["id"], "act_id": None},
+    ]
+    target = {"kind": "scene", "id": anchor["id"], "show_id": two["id"], "act_id": destination["id"]}
+    scenes.move_outline(items, target, "before", scenes.history()["revision"])
+    assert scenes.get_show(two["id"])["items"][0]["scene_ids"] == [a["id"], b["id"], anchor["id"]]
+    edited = {**graph(), "scene_prompt": "Keep this edit"}
+    scenes.update(a["id"], graph=edited)
+    step(scenes)
+    assert scenes.get(a["id"])["graph"] == edited
+    assert scenes.get_show(one["id"])["items"][0]["scene_ids"] == [a["id"]]
+    step(scenes, redo=True)
+    assert scenes.get(a["id"])["graph"] == edited
+    assert scenes.get_show(two["id"])["items"][0]["scene_ids"] == [a["id"], b["id"], anchor["id"]]

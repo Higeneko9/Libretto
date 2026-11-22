@@ -218,7 +218,7 @@ class Scenes:
 
     def history(self) -> dict:
         with self._lock:
-            return {"undo": len(self._undo), "redo": len(self._redo), "revision": self._revision}
+            return {"undo": len(self._undo), "redo": len(self._redo), "revision": self._revision, "history_id": self._history_id}
 
     def clear_history(self) -> None:
         with self._lock:
@@ -332,6 +332,157 @@ class Scenes:
                     item["order"] = position
                     changes[self._outline(item["id"])] = item
         return show
+
+    def move_outline(self, items: list[dict], target: dict, position: str, revision: int, history_id: str | None = None) -> dict:
+        with self._changes() as changes:
+            if revision != self._revision or (history_id is not None and history_id != self._history_id):
+                raise ValueError("Show Outline history changed; refresh the outline and try again")
+            shows = self.list_shows()
+            raw_shows = {s["id"]: copy.deepcopy(s) for s in shows}
+            show_by_id = {s["id"]: s for s in shows}
+            scene_by_id = {s["id"]: s for s in self._list()}
+            standalone = sorted((s["id"] for s in scene_by_id.values() if not s["show_id"]),
+                                key=lambda sid: scene_by_id[sid]["order"] or 0)
+            for show in shows:
+                listed = {sid for item in show["items"] for sid in
+                          (item["scene_ids"] if item["kind"] == "act" else [item["id"]])}
+                show["items"].extend({"kind": "scene", "id": s["id"]} for s in scene_by_id.values()
+                                     if s["show_id"] == show["id"] and s["id"] not in listed)
+            original = {s["id"]: copy.deepcopy(s) for s in shows}
+
+            def validate(ref: dict, container: bool = False):
+                kind, item_id = ref["kind"], ref.get("id")
+                if kind in ("all", "standalone") and container and item_id is None:
+                    return
+                _check(item_id)
+                if kind == "show" and item_id in show_by_id:
+                    return
+                if kind == "act" and ref.get("show_id") in show_by_id:
+                    self._act(show_by_id[ref["show_id"]], item_id)
+                    return
+                if kind == "scene" and item_id in scene_by_id:
+                    scene = scene_by_id[item_id]
+                    if scene["show_id"] == ref.get("show_id") and scene["act_id"] == ref.get("act_id"):
+                        return
+                raise ValueError("outline changed; refresh the outline and try again")
+
+            if not items:
+                raise ValueError("no outline items selected")
+            validate(target, True)
+            for item in items:
+                validate(item)
+            keys = [(i["kind"], i["id"]) for i in items]
+            if len(set(keys)) != len(keys):
+                raise ValueError("duplicate outline selection")
+            selected = set(keys)
+            selected_shows = {i["id"] for i in items if i["kind"] == "show"}
+            selected_acts = {(i["show_id"], i["id"]) for i in items if i["kind"] == "act"}
+
+            def covered(ref: dict) -> bool:
+                return ((ref["kind"], ref.get("id")) in selected
+                        or ref.get("show_id") in selected_shows
+                        or (ref.get("show_id"), ref.get("act_id")) in selected_acts)
+
+            if covered(target):
+                raise ValueError("cannot move an item into its own selection")
+            moving = [i for i in items if not (
+                i["kind"] != "show" and i.get("show_id") in selected_shows
+                or i["kind"] == "scene" and (i.get("show_id"), i.get("act_id")) in selected_acts)]
+            kinds = {i["kind"] for i in moving}
+            if "show" in kinds and len(kinds) != 1:
+                raise ValueError("shows and other items cannot share a destination")
+
+            if target["kind"] == "all" and position == "inside" and kinds == {"show"}:
+                destination = shows
+            elif target["kind"] == "show" and position in ("before", "after") and kinds == {"show"}:
+                destination = shows
+            elif target["kind"] == "standalone" and position == "inside" and kinds == {"scene"}:
+                destination = standalone
+            elif target["kind"] == "show" and position == "inside" and "show" not in kinds:
+                destination = show_by_id[target["id"]]["items"]
+            elif target["kind"] == "act" and position == "inside" and kinds == {"scene"}:
+                destination = self._act(show_by_id[target["show_id"]], target["id"])["scene_ids"]
+            elif target["kind"] in ("act", "scene") and position in ("before", "after") and "show" not in kinds:
+                if target["kind"] == "act":
+                    destination = show_by_id[target["show_id"]]["items"]
+                elif target["act_id"]:
+                    destination = self._act(show_by_id[target["show_id"]], target["act_id"])["scene_ids"]
+                elif target["show_id"]:
+                    destination = show_by_id[target["show_id"]]["items"]
+                else:
+                    destination = standalone
+                if "act" in kinds and (target["kind"] == "scene" and (not target["show_id"] or target["act_id"])):
+                    raise ValueError("acts must belong directly to a show")
+            else:
+                raise ValueError("invalid outline destination")
+
+            moved = []
+            scene_destinations = {}
+            for item in moving:
+                kind, item_id = item["kind"], item["id"]
+                if kind == "show":
+                    value = show_by_id[item_id]
+                    shows.remove(value)
+                elif kind == "act":
+                    source = show_by_id[item["show_id"]]
+                    value = self._act(source, item_id)
+                    for sid in value["scene_ids"]:
+                        if sid not in scene_by_id or scene_by_id[sid]["show_id"] != item["show_id"]:
+                            raise ValueError(f"cannot move act: scene {sid} is missing from the show")
+                    source["items"].remove(value)
+                else:
+                    value = item_id
+                    if item["act_id"]:
+                        self._act(show_by_id[item["show_id"]], item["act_id"])["scene_ids"].remove(item_id)
+                    elif item["show_id"]:
+                        source = show_by_id[item["show_id"]]["items"]
+                        source.remove(next(i for i in source if i["kind"] == "scene" and i["id"] == item_id))
+                    else:
+                        standalone.remove(item_id)
+                moved.append((item, value))
+
+            if position == "inside":
+                index = len(destination)
+            else:
+                anchor = target["id"]
+                index = next((n for n, value in enumerate(destination)
+                              if (value if isinstance(value, str) else value["id"]) == anchor), -1)
+                if index < 0:
+                    raise ValueError("outline destination changed; refresh the outline and try again")
+                index += position == "after"
+            for offset, (item, value) in enumerate(moved):
+                if item["kind"] == "scene" and destination is not standalone and destination is not shows:
+                    if target["kind"] == "show" or target["kind"] == "act" and position != "inside" or (
+                            target["kind"] == "scene" and target["show_id"] and not target["act_id"]):
+                        value = {"kind": "scene", "id": value}
+                destination.insert(index + offset, value)
+                if item["kind"] == "scene":
+                    scene_destinations[item["id"]] = (
+                        None if destination is standalone else target["id"] if target["kind"] == "show" else target["show_id"])
+                elif item["kind"] == "act":
+                    dest_show = target["id"] if target["kind"] == "show" else target["show_id"]
+                    scene_destinations.update({sid: dest_show for sid in value["scene_ids"]})
+
+            for sid, dest_show in scene_destinations.items():
+                source_path = self._file(sid)
+                dest_path = self.shows_root / dest_show / f"{sid}.scene.json" if dest_show else self.root / f"{sid}.json"
+                if source_path != dest_path:
+                    changes[source_path] = None
+                    changes[dest_path] = source_path.read_bytes()
+            if any(not scene_by_id[sid]["show_id"] or dest is None for sid, dest in scene_destinations.items()):
+                for order, sid in enumerate(standalone):
+                    scene = self.get(sid)
+                    if scene.get("order") != order or sid in scene_destinations:
+                        scene["order"] = order
+                        changes[self.root / f"{sid}.json"] = scene
+            for order, show in enumerate(shows):
+                if kinds == {"show"} and show.get("order") != order:
+                    show["order"] = order
+                if show != original[show["id"]]:
+                    if show["items"] == original[show["id"]]["items"]:
+                        show = {**raw_shows[show["id"]], "order": show["order"]}
+                    changes[self._outline(show["id"])] = show
+        return self.history()
 
     @staticmethod
     def _name(name: str) -> str:

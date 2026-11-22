@@ -38,6 +38,33 @@ export type OutlineDrop =
 export const standaloneScenes = (scenes: SceneMeta[]) =>
   scenes.filter((s) => !s.show_id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
+export function outlineItems(shows: Show[], scenes: SceneMeta[], collapsed = new Set<string>()): OutlineItem[] {
+  const items: OutlineItem[] = collapsed.has("standalone") ? [] : standaloneScenes(scenes).map((scene) => ({ kind: "scene", id: scene.id }));
+  for (const show of shows) {
+    items.push({ kind: "show", id: show.id });
+    if (collapsed.has(show.id)) continue;
+    for (const item of showItems(show, scenes)) {
+      if (item.kind === "scene") items.push({ kind: "scene", id: item.id });
+      else {
+        items.push({ kind: "act", id: item.id, show_id: show.id });
+        if (!collapsed.has(item.id)) items.push(...item.scene_ids.map((id): OutlineItem => ({ kind: "scene", id })));
+      }
+    }
+  }
+  return items.filter((item) => scopeExists(item, shows, scenes));
+}
+
+export function topLevelSelection(items: OutlineItem[], scenes: SceneMeta[]): OutlineItem[] {
+  const shows = new Set(items.filter((i) => i.kind === "show").map((i) => i.id));
+  const acts = new Set(items.filter((i) => i.kind === "act").map((i) => `${i.show_id}:${i.id}`));
+  return items.filter((item) => {
+    if (item.kind === "show") return true;
+    if (item.kind === "act") return !shows.has(item.show_id);
+    const scene = scenes.find((s) => s.id === item.id);
+    return !scene?.show_id || !shows.has(scene.show_id) && (!scene.act_id || !acts.has(`${scene.show_id}:${scene.act_id}`));
+  });
+}
+
 export function showItems(show: Show, scenes: SceneMeta[]): Show["items"] {
   const referenced = new Set(show.items.flatMap((i) => i.kind === "scene" ? [i.id] : i.scene_ids));
   return [...show.items, ...scenes.filter((s) => s.show_id === show.id && !referenced.has(s.id))

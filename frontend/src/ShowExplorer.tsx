@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
-import { api } from "./api";
+import { api, type OutlineMoveRef } from "./api";
 import { askConfirm, askNames, askText } from "./ask";
 import { backdropClose } from "./backdropClose";
 import { useT } from "./i18n/useT";
 import { usePanelShortcuts } from "./panelShortcuts";
 import { ShowSettings } from "./ShowSettings";
-import { outlineDrop, outlineSiblings, sceneDestination, showItems, standaloneScenes, type DropPosition, type OutlineDrop, type OutlineItem } from "./showOutline";
+import { outlineDrop, outlineItems, outlineSiblings, sceneDestination, showItems, standaloneScenes, topLevelSelection, type DropPosition, type OutlineDrop, type OutlineItem } from "./showOutline";
 import { useStore } from "./store";
 import { translatedName, withName } from "./tags";
 import type { OutputScope, ScenePlace, Show } from "./types";
@@ -52,6 +52,9 @@ export function ShowExplorer() {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuOrigin = useRef<HTMLElement | null>(null);
   const dragSource = useRef<OutlineItem | null>(null);
+  const dragSources = useRef<OutlineItem[]>([]);
+  const [moveSelection, setMoveSelection] = useState<Set<string>>(new Set());
+  const selectionAnchor = useRef<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ key: string; position: DropPosition } | null>(null);
   const [copyTarget, setCopyTarget] = useState<OutputScope | null>(null);
   const [settingsTarget, setSettingsTarget] = useState<Show | null>(null);
@@ -85,6 +88,14 @@ export function ShowExplorer() {
   useEffect(() => {
     if (deletedHierarchy && (history.revision !== deletedHierarchy.revision || !history.undo)) setDeletedHierarchy(null);
   }, [deletedHierarchy, history]);
+
+  useEffect(() => {
+    const available = new Set(outlineItems(shows, scenes).map(itemKey));
+    setMoveSelection((previous) => {
+      const next = new Set([...previous].filter((key) => available.has(key)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [shows, scenes]);
 
   useEffect(() => {
     if (editingKey) {
@@ -121,7 +132,10 @@ export function ShowExplorer() {
     }
     if (event.key === "Delete" && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
-      if (!editing && !copyTarget && !busy && actionable && !event.repeat) menuAction(remove);
+      if (!editing && !copyTarget && !busy && actionable && !event.repeat) {
+        if (moveSelection.size > 1) setError(t("showExplorer.singleDeleteOnly"));
+        else menuAction(remove);
+      }
       return;
     }
     if (!(event.ctrlKey || event.metaKey)) return;
@@ -295,8 +309,37 @@ export function ShowExplorer() {
   };
   const finishDrag = () => {
     dragSource.current = null;
+    dragSources.current = [];
     setDropTarget(null);
   };
+  const selectForMove = (target: OutlineItem, event: MouseEvent<HTMLElement>) => {
+    const key = itemKey(target);
+    if (event.shiftKey && selectionAnchor.current) {
+      const visible = outlineItems(shows, scenes, collapsed);
+      const first = visible.findIndex((item) => itemKey(item) === selectionAnchor.current);
+      const last = visible.findIndex((item) => itemKey(item) === key);
+      if (first >= 0 && last >= 0) {
+        setMoveSelection(new Set(visible.slice(Math.min(first, last), Math.max(first, last) + 1).map(itemKey)));
+        return;
+      }
+    }
+    if (event.ctrlKey || event.metaKey) {
+      setMoveSelection((previous) => {
+        const next = new Set(previous);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    } else setMoveSelection(new Set([key]));
+    selectionAnchor.current = key;
+  };
+  const moveRef = (item: OutputScope): OutlineMoveRef => {
+    if (item.kind !== "scene") return item;
+    const scene = scenes.find((entry) => entry.id === item.id);
+    return { ...item, show_id: scene?.show_id ?? null, act_id: scene?.act_id ?? null };
+  };
+  const validDrop = (target: OutputScope, position: DropPosition) =>
+    dragSources.current.length > 0 && dragSources.current.every((source) => outlineDrop(source, target, position, shows, scenes));
   const dropPosition = (event: DragEvent<HTMLElement>, target: OutputScope): DropPosition => {
     if (target.kind === "all" || target.kind === "standalone") return "inside";
     const rect = event.currentTarget.getBoundingClientRect();
@@ -304,8 +347,13 @@ export function ShowExplorer() {
     if (dragSource.current?.kind !== "show" && (target.kind === "show" || target.kind === "act") && fraction > 0.25 && fraction < 0.75) return "inside";
     return fraction < 0.5 ? "before" : "after";
   };
-  const executeDrop = async (drop: OutlineDrop) => {
+  const executeDrop = async (drop: OutlineDrop, sources: OutlineItem[], target: OutputScope, position: DropPosition) => {
     await organize(async () => {
+      if (sources.length > 1) {
+        if (!history.history_id) throw new Error(t("showExplorer.refreshBeforeMove"));
+        await api.moveOutline(sources.map(moveRef), moveRef(target), position, history.revision, history.history_id);
+        return;
+      }
       const { source } = drop;
       if (source.kind === "show" && "index" in drop) await api.placeShow(source.id, drop.index);
       else if ("place" in drop) {
@@ -328,7 +376,14 @@ export function ShowExplorer() {
     onDragStart: (event: DragEvent<HTMLElement>) => {
       event.stopPropagation();
       if (!("id" in target) || busy || editing) { event.preventDefault(); return; }
-      dragSource.current = target;
+      const selectedItems = moveSelection.has(itemKey(target))
+        ? outlineItems(shows, scenes).filter((item) => moveSelection.has(itemKey(item))) : [target];
+      dragSources.current = topLevelSelection(selectedItems, scenes);
+      dragSource.current = dragSources.current[0] ?? target;
+      if (!moveSelection.has(itemKey(target))) {
+        setMoveSelection(new Set([itemKey(target)]));
+        selectionAnchor.current = itemKey(target);
+      }
       setMenu(null);
       event.dataTransfer.effectAllowed = "move";
       event.dataTransfer.setData("application/x-libretto-outline", JSON.stringify(target));
@@ -337,7 +392,7 @@ export function ShowExplorer() {
     onDragOver: (event: DragEvent<HTMLElement>) => {
       event.stopPropagation();
       const position = dropPosition(event, target);
-      if (busy || editing || !dragSource.current || !outlineDrop(dragSource.current, target, position, shows, scenes)) {
+      if (busy || editing || !dragSource.current || !validDrop(target, position)) {
         setDropTarget(null);
         return;
       }
@@ -354,7 +409,8 @@ export function ShowExplorer() {
     onDrop: (event: DragEvent<HTMLElement>) => {
       event.stopPropagation();
       const position = dropPosition(event, target);
-      const drop = dragSource.current && outlineDrop(dragSource.current, target, position, shows, scenes);
+      const sources = dragSources.current;
+      const drop = validDrop(target, position) && sources.length ? outlineDrop(sources[0], target, position, shows, scenes) : null;
       finishDrag();
       if (!drop || busy || editing) return;
       event.preventDefault();
@@ -364,13 +420,14 @@ export function ShowExplorer() {
         next.delete("id" in target ? target.id : target.kind);
         return next;
       });
-      void perform(() => executeDrop(drop));
+      void perform(() => executeDrop(drop, sources, target, position));
     },
   });
   const dropClass = (target: OutputScope) => dropTarget?.key === itemKey(target) ? ` drop-${dropTarget.position}` : "";
   const itemButton = (target: OutputScope, name: string, type: string) => {
     if (target.kind === "all") return null;
-    const className = `explorer-item explorer-item-${target.kind} ${selected(target) ? "on" : ""}${dropClass(target)}`;
+    const moveSelected = moveSelection.has(itemKey(target)) && (moveSelection.size > 1 || !selected(target));
+    const className = `explorer-item explorer-item-${target.kind} ${selected(target) ? "on" : ""}${moveSelected ? " move-selected" : ""}${dropClass(target)}`;
     if (editing && editingKey === itemKey(target)) return (
       <div {...rowProps(target)} className={className}>
         <OutlineIcon kind={target.kind} />
@@ -395,7 +452,13 @@ export function ShowExplorer() {
     );
     return <button {...rowProps(target)} className={className} aria-pressed={selected(target)} disabled={mutationBusy}
       aria-label={type ? `${type}: ${name}` : name}
-      onClick={(event) => { if (event.detail < 2) choose(target); }} title={name}
+      aria-description={moveSelected ? t("showExplorer.selectedForMove") : undefined}
+      onClick={(event) => {
+        if (event.detail >= 2) return;
+        if ("id" in target) selectForMove(target, event);
+        else setMoveSelection(new Set());
+        if (!event.ctrlKey && !event.metaKey && !event.shiftKey) choose(target);
+      }} title={name}
       onDoubleClick={(event) => { event.preventDefault(); event.stopPropagation(); startRename(target, name); }}>
       <OutlineIcon kind={target.kind} /><span className="explorer-name">{name}</span>
     </button>;
@@ -425,7 +488,7 @@ export function ShowExplorer() {
       <div className="explorer-heading"><strong>{t("showExplorer.title")}</strong><span className="muted">{t("showExplorer.manageHint")}</span></div>
       <nav className={`explorer-tree${dropClass({ kind: "all" })}`} aria-label={t("showExplorer.title")}
         {...rowProps({ kind: "all" })} tabIndex={0}>
-        <button {...rowProps({ kind: "all" })} className={`explorer-item ${scope.kind === "all" ? "on" : ""}${dropClass({ kind: "all" })}`} aria-pressed={scope.kind === "all"} disabled={busy} onClick={() => choose({ kind: "all" })}>{t("showExplorer.allOutputs")}</button>
+        <button {...rowProps({ kind: "all" })} className={`explorer-item ${scope.kind === "all" ? "on" : ""}${dropClass({ kind: "all" })}`} aria-pressed={scope.kind === "all"} disabled={busy} onClick={() => { setMoveSelection(new Set()); choose({ kind: "all" }); }}>{t("showExplorer.allOutputs")}</button>
         <ul>
           <li>
             {groupButton({ kind: "standalone" }, t("showExplorer.standalone"), "standalone", "")}
@@ -475,9 +538,13 @@ export function ShowExplorer() {
               <button role="menuitem" onClick={startCopy}>{t("showExplorer.copy")}</button>
             </>}
             <hr />
-            <button role="menuitem" className="danger" onClick={() => menuAction(remove)}>{t("sceneTabs.delete")}</button>
+            <button role="menuitem" className="danger" disabled={moveSelection.size > 1 && moveSelection.has(itemKey(actionTarget))}
+              title={moveSelection.size > 1 && moveSelection.has(itemKey(actionTarget)) ? t("showExplorer.singleDeleteOnly") : undefined}
+              onClick={() => menuAction(remove)}>{t("sceneTabs.delete")}</button>
             {(actionTarget.kind === "show" || actionTarget.kind === "act") &&
-              <button role="menuitem" className="danger" onClick={() => menuAction(removeHierarchy)}>{t("showExplorer.deleteHierarchy")}</button>}
+              <button role="menuitem" className="danger" disabled={moveSelection.size > 1 && moveSelection.has(itemKey(actionTarget))}
+                title={moveSelection.size > 1 && moveSelection.has(itemKey(actionTarget)) ? t("showExplorer.singleDeleteOnly") : undefined}
+                onClick={() => menuAction(removeHierarchy)}>{t("showExplorer.deleteHierarchy")}</button>}
           </>}
           <hr />
           <button role="menuitem" disabled={busy || !history.undo} onClick={() => replay(false)} title={t("showExplorer.undoTip")}>{t("showExplorer.undo")}</button>

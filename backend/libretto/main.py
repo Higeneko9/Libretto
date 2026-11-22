@@ -125,6 +125,21 @@ class OrganizationHistoryBody(BaseModel):
     history_id: str | None = None
 
 
+class OutlineMoveItem(BaseModel):
+    kind: Literal["show", "act", "scene", "standalone", "all"]
+    id: str | None = None
+    show_id: str | None = None
+    act_id: str | None = None
+
+
+class OutlineMoveBody(BaseModel):
+    items: list[OutlineMoveItem]
+    target: OutlineMoveItem
+    position: Literal["before", "inside", "after"]
+    revision: int = Field(ge=0)
+    history_id: str
+
+
 class ShowSettingsBody(BaseModel):
     output_layout: Literal["workflow", "show_scene", "show_act_scene"]
 
@@ -502,6 +517,11 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
     @app.get("/api/organization/history")
     def organization_history():
         return scenes.history()
+
+    @app.post("/api/organization/move")
+    def move_outline(body: OutlineMoveBody):
+        return guard(lambda: scenes.move_outline(
+            [item.model_dump() for item in body.items], body.target.model_dump(), body.position, body.revision, body.history_id))
 
     @app.post("/api/organization/history/undo")
     def undo_organization(body: OrganizationHistoryBody):

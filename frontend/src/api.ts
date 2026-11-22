@@ -1,5 +1,7 @@
 import type { Act, Show, ShowOutputLayout, ShowOutputPreview, ScenePlace, OrganizationHistory, AppSettings, BackupInfo, Category, CategoryConfig, CategoryKindInfo, LibraryInfo, Preset, Profile, Run, SceneMeta, SceneSnapList, Snapshot, WorkflowFile } from "./types";
 import type { Tag } from "./tags";
+import type { DropPosition } from "./showOutline";
+import type { OutputScope } from "./types";
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -24,6 +26,7 @@ export interface Graph {
   scene_negative?: string;
 }
 
+export type OutlineMoveRef = OutputScope & { show_id?: string | null; act_id?: string | null };
 // The active library is a module-level setting so every library call (and thumbnail URL) is scoped to it.
 let activeLibrary = "default";
 export const setApiLibrary = (id: string) => {
@@ -108,6 +111,8 @@ export const api = {
     lib(`/api/library/${category}/${id}/thumbnail?${profile ? `profile=${profile}&` : ""}v=${bust ?? 0}`, library),
   scenes: () => call<SceneMeta[]>("/api/scenes"),
   organizationHistory: () => call<OrganizationHistory>("/api/organization/history"),
+  moveOutline: (items: OutlineMoveRef[], target: OutlineMoveRef, position: DropPosition, revision: number, history_id: string) =>
+    call<OrganizationHistory>("/api/organization/move", json("POST", { items, target, position, revision, history_id })),
   undoOrganization: (revision: number, history_id?: string) => call<OrganizationHistory>("/api/organization/history/undo", json("POST", { revision, history_id })),
   redoOrganization: (revision: number) => call<OrganizationHistory>("/api/organization/history/redo", json("POST", { revision })),
   shows: () => call<Show[]>("/api/shows"),

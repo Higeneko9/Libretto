@@ -49,6 +49,8 @@ header h1 { font-size: 16px; margin: 0; }
 .explorer-item-standalone { background: #30343b; font-weight: 600; }
 .explorer-item:hover { filter: brightness(1.16); }
 .explorer-item.on { background: #49372e; box-shadow: inset 3px 0 var(--accent); }
+.explorer-item.move-selected { box-shadow: inset 3px 0 #90c8ff, inset 0 0 0 1px #749bc7; background: #31465b; }
+.explorer-item.on.move-selected { box-shadow: inset 3px 0 var(--accent), inset 0 0 0 1px #749bc7; }
 .explorer-item:focus-visible, .explorer-toggle:focus-visible { outline: 2px solid #ffc08f; outline-offset: -2px; }
 .explorer-item[draggable="true"] { cursor: grab; }
 .explorer-item.drop-before::before, .explorer-item.drop-after::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--accent); pointer-events: none; z-index: 1; }

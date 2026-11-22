@@ -5,6 +5,7 @@ export interface OrganizationHistory {
   undo: number;
   redo: number;
   revision: number;
+  history_id?: string;
 }
 
 export interface AppSettings {
