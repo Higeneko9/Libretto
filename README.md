@@ -123,6 +123,12 @@ Moves retain IDs, generation results, and history;
 copies receive new IDs and start without results or history. Shows and acts
 must be empty before they can be deleted.
 
+To remove a show or act together with all of its descendants, choose **Delete
+hierarchy** from its context menu. This also removes the scenes'
+saved scene history, but keeps generated results and images. The whole deletion
+is one organization undo step during the current server session; the notification
+provides an immediate Undo action.
+
 Double-click a show, act, or scene name, choose **Rename**, or press **F2** on the
 selected item while the pointer is over Show Outline to edit its name in place.
 **Enter** or clicking elsewhere saves; **Escape** cancels. Blank names are rejected.

@@ -5,6 +5,7 @@ import re
 import shutil
 import copy
 import threading
+import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,7 @@ class Scenes:
         self._undo: list[tuple[dict, dict]] = []
         self._redo: list[tuple[dict, dict]] = []
         self._revision = 0
+        self._history_id = uuid.uuid4().hex
         # only a brand-new data folder gets the sample scenes, so deleting them stays deleted
         if seed is not None and seed.is_dir() and not root.exists():
             shutil.copytree(seed, root)
@@ -224,9 +226,9 @@ class Scenes:
             self._redo.clear()
             self._revision += 1
 
-    def step_history(self, redo: bool, revision: int) -> dict:
+    def step_history(self, redo: bool, revision: int, history_id: str | None = None) -> dict:
         with self._lock:
-            if revision != self._revision:
+            if revision != self._revision or (history_id is not None and history_id != self._history_id):
                 raise ValueError("Show Outline history changed; refresh the outline and try again")
             source, target = (self._redo, self._undo) if redo else (self._undo, self._redo)
             if not source:
@@ -551,3 +553,32 @@ class Scenes:
                 if show["items"] or any(self._outline(show_id).parent.glob("*.scene.json")):
                     raise ValueError("move or delete the show's contents first")
                 changes[self._outline(show_id)] = None
+
+    def delete_hierarchy(self, show_id: str, act_id: str | None = None,
+                         expected_scene_ids: list[str] | None = None,
+                         expected_act_ids: list[str] | None = None) -> None:
+        with self._changes() as changes:
+            show = self.get_show(show_id)
+            outline = self._outline(show_id)
+            if act_id:
+                act = self._act(show, act_id)
+                scene_ids = act["scene_ids"]
+                show["items"].remove(act)
+                changes[outline] = show
+            else:
+                # Include scene files not yet listed in the outline, as the explorer does.
+                scene_ids = [s["id"] for s in self._list() if s["show_id"] == show_id]
+                referenced = {sid for item in show["items"] for sid in
+                              (item["scene_ids"] if item["kind"] == "act" else [item["id"]])}
+                if referenced - set(scene_ids):
+                    raise ValueError("cannot delete hierarchy: show contains missing scenes")
+                changes[outline] = None
+            act_ids = [act_id] if act_id else [item["id"] for item in show["items"] if item["kind"] == "act"]
+            if ((expected_scene_ids is not None and set(scene_ids) != set(expected_scene_ids)) or
+                    (expected_act_ids is not None and set(act_ids) != set(expected_act_ids))):
+                raise ValueError("hierarchy changed; refresh the outline and confirm deletion again")
+            for scene_id in scene_ids:
+                path = self._file(scene_id)
+                if not path.is_file() or path.parent != outline.parent:
+                    raise ValueError(f"cannot delete hierarchy: scene {scene_id} is missing from the show")
+                changes[path] = None

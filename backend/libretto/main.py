@@ -122,10 +122,16 @@ class OrderBody(BaseModel):
 
 class OrganizationHistoryBody(BaseModel):
     revision: int = Field(ge=0)
+    history_id: str | None = None
 
 
 class ShowSettingsBody(BaseModel):
     output_layout: Literal["workflow", "show_scene", "show_act_scene"]
+
+
+class HierarchyDeleteBody(BaseModel):
+    scene_ids: list[str]
+    act_ids: list[str]
 
 
 class SnapPatch(BaseModel):
@@ -500,7 +506,7 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
     @app.post("/api/organization/history/undo")
     def undo_organization(body: OrganizationHistoryBody):
         with scene_snaps._lock:
-            return guard(lambda: scenes.step_history(False, body.revision))
+            return guard(lambda: scenes.step_history(False, body.revision, body.history_id))
 
     @app.post("/api/organization/history/redo")
     def redo_organization(body: OrganizationHistoryBody):
@@ -540,6 +546,12 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
         guard(lambda: scenes.delete_group(show_id))
         return {"deleted": show_id}
 
+    @app.delete("/api/shows/{show_id}/hierarchy")
+    def delete_show_hierarchy(show_id: str, body: HierarchyDeleteBody):
+        with scene_snaps._lock, scenes._lock:
+            guard(lambda: scenes.delete_hierarchy(show_id, expected_scene_ids=body.scene_ids, expected_act_ids=body.act_ids))
+            return {"deleted": show_id, "history": scenes.history(), "history_id": scenes._history_id}
+
     @app.post("/api/shows/{show_id}/acts")
     def create_act(show_id: str, body: RenameBody):
         return guard(lambda: scenes.create_act(show_id, body.name))
@@ -552,6 +564,12 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
     def delete_act(show_id: str, act_id: str):
         guard(lambda: scenes.delete_group(show_id, act_id))
         return {"deleted": act_id}
+
+    @app.delete("/api/shows/{show_id}/acts/{act_id}/hierarchy")
+    def delete_act_hierarchy(show_id: str, act_id: str, body: HierarchyDeleteBody):
+        with scene_snaps._lock, scenes._lock:
+            guard(lambda: scenes.delete_hierarchy(show_id, act_id, body.scene_ids, body.act_ids))
+            return {"deleted": act_id, "history": scenes.history(), "history_id": scenes._history_id}
 
     @app.post("/api/shows/{show_id}/acts/{act_id}/place")
     def place_act(show_id: str, act_id: str, body: PlaceBody):

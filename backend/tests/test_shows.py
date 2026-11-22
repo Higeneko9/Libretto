@@ -293,6 +293,129 @@ def test_delete_undo_restores_scene_and_snapshots_without_deleting_outputs(env):
     assert {p: p.read_bytes() for p in snapshot_root.iterdir()} == snapshots
 
 
+@pytest.mark.parametrize("kind", ["show", "act"])
+def test_delete_hierarchy_is_one_reversible_change_and_keeps_outputs(env, kind):
+    client, _, generator = env
+    show = client.post("/api/shows", json={"name": "Show"}).json()
+    act = client.post(f"/api/shows/{show['id']}/acts", json={"name": "Act"}).json()
+    first = client.post("/api/scenes", json={"name": "First", "graph": graph(), "show_id": show["id"], "act_id": act["id"]}).json()
+    second = client.post("/api/scenes", json={"name": "Direct", "graph": graph(), "show_id": show["id"]}).json()
+    run = client.post("/api/generate", json={"graph": graph(), "scene_id": first["id"]}).json()[0]
+    saved = generator.scene_snaps.root / first["id"]
+    before = {p: p.read_bytes() for p in saved.rglob("*") if p.is_file()}
+    assert before
+    other = client.post("/api/shows", json={"name": "Other"}).json()
+    other_scene = client.post("/api/scenes", json={"name": "Keep", "show_id": other["id"]}).json()
+    history = client.get("/api/organization/history").json()
+    endpoint = f"/api/shows/{show['id']}" + (f"/acts/{act['id']}" if kind == "act" else "") + "/hierarchy"
+    expected = {"scene_ids": [first["id"]] + ([second["id"]] if kind == "show" else []), "act_ids": [act["id"]]}
+    response = client.request("DELETE", endpoint, json=expected)
+    assert response.status_code == 200
+    assert response.json()["history"] == client.get("/api/organization/history").json()
+    history_id = response.json()["history_id"]
+    assert client.get("/api/organization/history").json()["undo"] == history["undo"] + 1
+    assert client.get(f"/api/scenes/{first['id']}").status_code == 404
+    assert client.get(f"/api/scenes/{second['id']}").status_code == (200 if kind == "act" else 404)
+    assert client.get(f"/api/scenes/{other_scene['id']}").status_code == 200
+    assert not [p for p in saved.rglob("*") if p.is_file()]
+    assert client.get(f"/api/runs/{run['id']}").json()["scene_id"] == first["id"]
+    assert generator.read_snapshot(run["id"])["scene_id"] == first["id"]
+    revision = client.get("/api/organization/history").json()["revision"]
+    assert client.post("/api/organization/history/undo", json={"revision": revision, "history_id": "previous-server"}).status_code == 400
+    assert client.post("/api/organization/history/undo", json={"revision": revision, "history_id": history_id}).status_code == 200
+    assert client.get(f"/api/scenes/{first['id']}").json()["graph"] == graph()
+    assert {p: p.read_bytes() for p in saved.rglob("*") if p.is_file()} == before
+    restored = client.get("/api/shows").json()
+    assert next(item for item in restored if item["id"] == show["id"]) == show | {
+        "items": [dict(act, scene_ids=[first["id"]]), {"kind": "scene", "id": second["id"]}]}
+    revision = client.get("/api/organization/history").json()["revision"]
+    assert client.post("/api/organization/history/redo", json={"revision": revision}).status_code == 200
+    assert client.get(f"/api/scenes/{first['id']}").status_code == 404
+    assert client.get(f"/api/runs/{run['id']}").status_code == 200
+
+
+def test_delete_show_hierarchy_includes_unlisted_scenes_but_keeps_other_files(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Show")
+    scene = scenes.create("Unlisted")
+    destination = scenes.shows_root / show["id"] / f"{scene['id']}.scene.json"
+    scenes._file(scene["id"]).replace(destination)
+    extra = destination.parent / "notes.txt"
+    extra.write_text("Keep", encoding="utf-8")
+    scenes.clear_history()
+    scenes.delete_hierarchy(show["id"])
+    assert not destination.exists()
+    assert extra.read_text(encoding="utf-8") == "Keep"
+    step(scenes)
+    assert scenes.get(scene["id"])["name"] == "Unlisted"
+    assert extra.read_text(encoding="utf-8") == "Keep"
+
+
+@pytest.mark.parametrize("kind", ["show", "act"])
+def test_delete_hierarchy_rejects_stale_confirmation(env, kind):
+    client, _, _ = env
+    show = client.post("/api/shows", json={"name": "Show"}).json()
+    act = client.post(f"/api/shows/{show['id']}/acts", json={"name": "Act"}).json()
+    endpoint = f"/api/shows/{show['id']}" + (f"/acts/{act['id']}" if kind == "act" else "") + "/hierarchy"
+    expected = {"scene_ids": [], "act_ids": [act["id"]]}
+    scene = client.post("/api/scenes", json={"name": "New", "show_id": show["id"], "act_id": act["id"]}).json()
+    history = client.get("/api/organization/history").json()
+    response = client.request("DELETE", endpoint, json=expected)
+    assert response.status_code == 400
+    assert "hierarchy changed" in response.json()["detail"]
+    assert client.get(f"/api/scenes/{scene['id']}").status_code == 200
+    assert client.get("/api/organization/history").json() == history
+    if kind == "show":
+        extra = client.post(f"/api/shows/{show['id']}/acts", json={"name": "New act"}).json()
+        expected["scene_ids"] = [scene["id"]]
+        assert client.request("DELETE", endpoint, json=expected).status_code == 400
+        assert any(i["id"] == extra["id"] for i in client.get("/api/shows").json()[0]["items"])
+
+
+@pytest.mark.parametrize("kind", ["show", "act"])
+def test_delete_hierarchy_refuses_missing_or_misplaced_scene_without_changes(tmp_path, kind):
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Show")
+    act = scenes.create_act(show["id"], "Act")
+    scene = scenes.create("Scene", show_id=show["id"], act_id=act["id"])
+    scenes.root.mkdir(parents=True, exist_ok=True)
+    scenes._file(scene["id"]).replace(scenes.root / f"{scene['id']}.json")
+    before = scenes._outline(show["id"]).read_bytes()
+    history = scenes.history()
+    with pytest.raises(ValueError, match="missing"):
+        scenes.delete_hierarchy(show["id"], act["id"] if kind == "act" else None)
+    assert scenes._outline(show["id"]).read_bytes() == before
+    assert scenes.get(scene["id"])["name"] == "Scene"
+    assert scenes.history() == history
+
+
+def test_delete_hierarchy_rolls_back_after_disk_error(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Show")
+    first = scenes.create("One", show_id=show["id"])
+    second = scenes.create("Two", show_id=show["id"])
+    before = {p: p.read_bytes() for p in tmp_path.rglob("*.json")}
+    history = scenes.history()
+    unlink = Path.unlink
+    failed = False
+
+    def fail_once(path, *args, **kwargs):
+        nonlocal failed
+        if path.name == f"{second['id']}.scene.json" and not failed:
+            failed = True
+            raise OSError("disk full")
+        return unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_once)
+    with pytest.raises(OSError, match="disk full"):
+        scenes.delete_hierarchy(show["id"])
+    assert {p: p.read_bytes() for p in tmp_path.rglob("*.json")} == before
+    assert scenes.get(first["id"])["name"] == "One"
+    assert scenes.history() == history
+
+
 def test_standalone_scenes_are_not_relocated_and_shows_are_self_contained(tmp_path):
     scenes = Scenes(tmp_path / "scenes")
     root = scenes.create("Standalone")

@@ -14,6 +14,16 @@ type Menu = { target: OutputScope; x: number; y: number };
 type InlineRename = { target: OutlineItem; original: string; value: string; locale: string };
 const itemKey = (item: OutputScope) => `${item.kind}:${"id" in item ? item.id : ""}`;
 
+function OutlineIcon({ kind }: { kind: "show" | "act" | "scene" | "standalone" }) {
+  return <svg className={`explorer-icon explorer-icon-${kind}`} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {kind === "show" ? <><path d="M3 4h18v16H3zM3 5c0 5 2 7 5 8l2-8M21 5c0 5-2 7-5 8l-2-8M3 20c2-3 4-4 6-4h6c2 0 4 1 6 4" /></>
+      : kind === "act" ? <><path d="M12 5c-2-2-5-2-9-1v14c4-1 7-1 9 1 2-2 5-2 9-1V4c-4-1-7-1-9 1zM12 5v14" /></>
+      : kind === "scene" ? <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4l3 5M15 4l3 5" /></>
+      : <><path d="M3 6h7l2 2h9v11H3z" /></>}
+  </svg>;
+}
+
 export function ShowExplorer() {
   const t = useT();
   const scenes = useStore((s) => s.scenes);
@@ -25,6 +35,7 @@ export function ShowExplorer() {
   const { setOutputScope, openScene, newScene, renameScene, deleteScene, organize, refreshOrganization, undoOrganization, redoOrganization } = useStore.getState();
   const [collapsed, setCollapsed] = useState(new Set<string>());
   const [error, setError] = useState("");
+  const [deletedHierarchy, setDeletedHierarchy] = useState<{ name: string; revision: number; historyId: string } | null>(null);
   const [working, setBusy] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const mutationBusy = working || organizationBusy;
@@ -70,6 +81,10 @@ export function ShowExplorer() {
   useEffect(() => {
     if (!settingsTarget) menuOrigin.current?.focus();
   }, [settingsTarget]);
+
+  useEffect(() => {
+    if (deletedHierarchy && (history.revision !== deletedHierarchy.revision || !history.undo)) setDeletedHierarchy(null);
+  }, [deletedHierarchy, history]);
 
   useEffect(() => {
     if (editingKey) {
@@ -122,6 +137,11 @@ export function ShowExplorer() {
     else next.add(id);
     return next;
   });
+  const expand = (...ids: string[]) => setCollapsed((previous) => {
+    const next = new Set(previous);
+    ids.forEach((id) => next.delete(id));
+    return next;
+  });
   const selected = (target: OutputScope) => scope.kind === target.kind && ("id" in scope && "id" in target ? scope.id === target.id : true);
   const choose = (target: OutputScope) => {
     if (busy || editing || opening.current) return;
@@ -150,12 +170,15 @@ export function ShowExplorer() {
       const created = await api.createAct(show.id, name);
       setOutputScope({ kind: "act", show_id: show.id, id: created.id });
     });
+    expand(show.id);
   };
   const createScene = async () => {
     const name = (await askText(t("sceneTabs.newScenePrompt"), t("sceneTabs.defaultSceneName", { n: scenes.length + 1 })))?.trim();
     if (name) {
+      const place = sceneDestination(actionTarget, scenes);
       setOutputScope(actionTarget);
       await newScene(name);
+      expand(...(place.show_id ? [place.show_id, ...(place.act_id ? [place.act_id] : [])] : ["standalone"]));
     }
   };
   const renameNames = async () => {
@@ -228,6 +251,26 @@ export function ShowExplorer() {
     if (selectedScene) await deleteScene(selectedScene.id);
     else if (actionTarget.kind === "act") await organize(() => api.deleteAct(actionTarget.show_id, actionTarget.id));
     else if (actionTarget.kind === "show") await organize(() => api.deleteShow(actionTarget.id));
+  };
+  const removeHierarchy = async () => {
+    if (actionTarget.kind !== "show" && actionTarget.kind !== "act") return;
+    const target = actionTarget;
+    const sceneIds = scenes.filter((scene) => target.kind === "show"
+      ? scene.show_id === target.id : scene.show_id === target.show_id && scene.act_id === target.id).map((scene) => scene.id);
+    const actIds = target.kind === "show" ? show?.items.filter((item) => item.kind === "act").map((item) => item.id) ?? [] : [target.id];
+    let deleted = false;
+    try {
+      const result = await organize(async () => {
+        const response = await (target.kind === "show"
+          ? api.deleteShowHierarchy(target.id, sceneIds, actIds) : api.deleteActHierarchy(target.show_id, target.id, sceneIds));
+        deleted = true;
+        return response;
+      });
+      setDeletedHierarchy({ name: label, revision: result.history.revision, historyId: result.history_id });
+    } catch (e) {
+      if (!deleted) throw e;
+      throw new Error(t("showExplorer.deletedRefreshFailed", { error: e instanceof Error ? e.message : String(e) }));
+    }
   };
   const closeMenu = () => {
     setMenu(null);
@@ -326,10 +369,11 @@ export function ShowExplorer() {
   });
   const dropClass = (target: OutputScope) => dropTarget?.key === itemKey(target) ? ` drop-${dropTarget.position}` : "";
   const itemButton = (target: OutputScope, name: string, type: string) => {
-    const className = `explorer-item ${selected(target) ? "on" : ""}${dropClass(target)}`;
+    if (target.kind === "all") return null;
+    const className = `explorer-item explorer-item-${target.kind} ${selected(target) ? "on" : ""}${dropClass(target)}`;
     if (editing && editingKey === itemKey(target)) return (
       <div {...rowProps(target)} className={className}>
-        <span className="muted">{type}</span>
+        <OutlineIcon kind={target.kind} />
         <input ref={renameInput} className="explorer-rename" value={editing.value} readOnly={mutationBusy}
           aria-label={t("showExplorer.editName", { name: editing.original })} aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined} title={t("showExplorer.inlineHint")}
@@ -350,9 +394,10 @@ export function ShowExplorer() {
       </div>
     );
     return <button {...rowProps(target)} className={className} aria-pressed={selected(target)} disabled={mutationBusy}
+      aria-label={type ? `${type}: ${name}` : name}
       onClick={(event) => { if (event.detail < 2) choose(target); }} title={name}
       onDoubleClick={(event) => { event.preventDefault(); event.stopPropagation(); startRename(target, name); }}>
-      <span className="muted">{type}</span><span className="explorer-name">{name}</span>
+      <OutlineIcon kind={target.kind} /><span className="explorer-name">{name}</span>
     </button>;
   };
   const sceneRow = (id: string) => {
@@ -360,11 +405,16 @@ export function ShowExplorer() {
     if (!scene) return <li key={id} className="error">{t("showExplorer.missingScene", { id })}</li>;
     const name = translatedName(scene.name, scene.names, locale) ?? scene.name;
     const target: OutputScope = { kind: "scene", id };
-    return <li key={id}>{itemButton(target, name, t("showExplorer.scene"))}</li>;
+    return <li key={id}><div className="explorer-group explorer-leaf">
+      <span className="explorer-toggle-spacer" aria-hidden="true" />
+      {itemButton(target, name, t("showExplorer.scene"))}
+    </div></li>;
   };
   const groupButton = (target: OutputScope, name: string, key: string, type: string) => (
     <div className="explorer-group" {...rowProps(target)}>
-      <button className="explorer-toggle" aria-label={t(collapsed.has(key) ? "showExplorer.expand" : "showExplorer.collapse", { name })} aria-expanded={!collapsed.has(key)} disabled={busy || !!editing} onClick={() => toggle(key)}>{collapsed.has(key) ? "▸" : "▾"}</button>
+      <button className="explorer-toggle" aria-label={t(collapsed.has(key) ? "showExplorer.expand" : "showExplorer.collapse", { name })} aria-expanded={!collapsed.has(key)} disabled={busy || !!editing} onClick={() => toggle(key)}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d={collapsed.has(key) ? "M6 3.5 10.5 8 6 12.5" : "M3.5 6 8 10.5 12.5 6"} /></svg>
+      </button>
       {itemButton(target, name, type)}
     </div>
   );
@@ -426,6 +476,8 @@ export function ShowExplorer() {
             </>}
             <hr />
             <button role="menuitem" className="danger" onClick={() => menuAction(remove)}>{t("sceneTabs.delete")}</button>
+            {(actionTarget.kind === "show" || actionTarget.kind === "act") &&
+              <button role="menuitem" className="danger" onClick={() => menuAction(removeHierarchy)}>{t("showExplorer.deleteHierarchy")}</button>}
           </>}
           <hr />
           <button role="menuitem" disabled={busy || !history.undo} onClick={() => replay(false)} title={t("showExplorer.undoTip")}>{t("showExplorer.undo")}</button>
@@ -435,6 +487,18 @@ export function ShowExplorer() {
         </div>
       </>}
       {error && <div id={errorId} className="error explorer-error" role="alert">{error}</div>}
+      {deletedHierarchy && history.undo > 0 && history.revision === deletedHierarchy.revision &&
+        <div className="explorer-notice" role="status">
+          <span>{t("showExplorer.hierarchyDeleted", { name: deletedHierarchy.name })}</span>
+          <button disabled={busy} onClick={() => {
+            const revision = deletedHierarchy.revision;
+            void perform(async () => {
+              await organize(() => api.undoOrganization(revision, deletedHierarchy.historyId));
+              setDeletedHierarchy(null);
+            });
+          }}>{t("showExplorer.undoAction")}</button>
+          <button disabled={busy} aria-label={t("showExplorer.dismissNotice")} onClick={() => setDeletedHierarchy(null)}>×</button>
+        </div>}
       {settingsTarget && <ShowSettings show={settingsTarget} onClose={() => setSettingsTarget(null)} />}
       {copyTarget && <div className="modal" {...backdropClose(() => !busy && setCopyTarget(null))}>
         <form className="modal-body explorer-transfer" onSubmit={(e) => {

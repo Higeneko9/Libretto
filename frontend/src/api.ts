@@ -108,7 +108,7 @@ export const api = {
     lib(`/api/library/${category}/${id}/thumbnail?${profile ? `profile=${profile}&` : ""}v=${bust ?? 0}`, library),
   scenes: () => call<SceneMeta[]>("/api/scenes"),
   organizationHistory: () => call<OrganizationHistory>("/api/organization/history"),
-  undoOrganization: (revision: number) => call<OrganizationHistory>("/api/organization/history/undo", json("POST", { revision })),
+  undoOrganization: (revision: number, history_id?: string) => call<OrganizationHistory>("/api/organization/history/undo", json("POST", { revision, history_id })),
   redoOrganization: (revision: number) => call<OrganizationHistory>("/api/organization/history/redo", json("POST", { revision })),
   shows: () => call<Show[]>("/api/shows"),
   createShow: (name: string) => call<Show>("/api/shows", json("POST", { name })),
@@ -119,9 +119,13 @@ export const api = {
     call<ShowOutputPreview>(`/api/shows/${id}/output-preview?layout=${layout}`),
   placeShow: (id: string, index: number) => call<Show>(`/api/shows/${id}/place`, json("POST", { index })),
   deleteShow: (id: string) => call<unknown>(`/api/shows/${id}`, { method: "DELETE" }),
+  deleteShowHierarchy: (id: string, scene_ids: string[], act_ids: string[]) =>
+    call<{ deleted: string; history: OrganizationHistory; history_id: string }>(`/api/shows/${id}/hierarchy`, json("DELETE", { scene_ids, act_ids })),
   createAct: (show: string, name: string) => call<Act>(`/api/shows/${show}/acts`, json("POST", { name })),
   renameAct: (show: string, id: string, name: string) => call<Act>(`/api/shows/${show}/acts/${id}`, json("PATCH", { name })),
   deleteAct: (show: string, id: string) => call<unknown>(`/api/shows/${show}/acts/${id}`, { method: "DELETE" }),
+  deleteActHierarchy: (show: string, id: string, scene_ids: string[]) =>
+    call<{ deleted: string; history: OrganizationHistory; history_id: string }>(`/api/shows/${show}/acts/${id}/hierarchy`, json("DELETE", { scene_ids, act_ids: [id] })),
   placeScene: (id: string, body: ScenePlace) => call<{ id: string }>(`/api/scenes/${id}/place`, json("POST", body)),
   placeAct: (show: string, id: string, body: ScenePlace) => call<Act>(`/api/shows/${show}/acts/${id}/place`, json("POST", body)),
   scene: (id: string) => call<{ id: string; name: string; graph: Graph }>(`/api/scenes/${id}`),

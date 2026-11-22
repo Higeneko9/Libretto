@@ -108,6 +108,28 @@ it("collapses containers without changing output scope", async () => {
   expect(collapse.getAttribute("aria-expanded")).toBe("false");
 });
 
+it("distinguishes outline item types while exposing their hierarchy and accessible names", async () => {
+  const show = container.querySelector<HTMLButtonElement>('[data-outline-key="show:show1"].explorer-item')!;
+  const actRow = container.querySelector<HTMLButtonElement>('[data-outline-key="act:act1"].explorer-item')!;
+  const scene = container.querySelector<HTMLButtonElement>('[data-outline-key="scene:s1"].explorer-item')!;
+  const direct = container.querySelector<HTMLButtonElement>('[data-outline-key="scene:s2"].explorer-item')!;
+  expect(show.getAttribute("aria-label")).toBe("Show: The Show");
+  expect(actRow.getAttribute("aria-label")).toBe("Act: First Act");
+  expect(scene.getAttribute("aria-label")).toBe("Scene: One");
+  expect(show.querySelector(".explorer-icon-show[aria-hidden=true]")).not.toBeNull();
+  expect(actRow.querySelector(".explorer-icon-act[aria-hidden=true]")).not.toBeNull();
+  expect(scene.querySelector(".explorer-icon-scene[aria-hidden=true]")).not.toBeNull();
+  expect(show.closest("li")?.querySelector("ul")?.contains(actRow)).toBe(true);
+  expect(actRow.closest("li")?.querySelector("ul")?.contains(scene)).toBe(true);
+  expect(actRow.closest("li")?.querySelector("ul")?.contains(direct)).toBe(false);
+  const toggle = container.querySelector<HTMLButtonElement>('[aria-label="Collapse First Act"]')!;
+  await act(async () => toggle.click());
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(toggle.getAttribute("aria-label")).toBe("Expand First Act");
+  expect(container.querySelector('[data-outline-key="scene:s1"]')).toBeNull();
+  expect(container.querySelector('[data-outline-key="scene:s2"]')).not.toBeNull();
+});
+
 it("resizes the vertical split with mouse and keyboard and persists its height", async () => {
   function Divider() {
     const height = useStore((s) => s.ui.explorerH);
@@ -719,6 +741,158 @@ it("creates scenes in the right-clicked container rather than the current select
   await menuClick("New scene");
   expect(newScene).toHaveBeenCalledWith("Created");
   expect(useStore.getState().outputScope).toEqual({ kind: "act", id: "act1", show_id: "show1" });
+});
+
+it.each([
+  { key: "show:show1", name: "The Show", kind: "show" },
+  { key: "act:act1", name: "First Act", kind: "act" },
+])("deletes the clicked $kind hierarchy without a confirmation and offers undo", async ({ key, name, kind }) => {
+  const confirm = vi.spyOn(ask, "askConfirm");
+  const history = { undo: 1, redo: 0, revision: 1 };
+  const deleteShow = vi.spyOn(api, "deleteShowHierarchy").mockResolvedValue({ deleted: "show1", history, history_id: "session" });
+  const deleteAct = vi.spyOn(api, "deleteActHierarchy").mockResolvedValue({ deleted: "act1", history, history_id: "session" });
+  mockOrganizationRefresh();
+  vi.mocked(api.organizationHistory).mockResolvedValue(history);
+  await click("Three");
+  await contextMenu(key);
+  await menuClick("Delete hierarchy");
+  expect(confirm).not.toHaveBeenCalled();
+  if (kind === "show") {
+    expect(deleteShow).toHaveBeenCalledWith("show1", ["s1", "s2"], ["act1"]);
+    expect(deleteAct).not.toHaveBeenCalled();
+  } else {
+    expect(deleteAct).toHaveBeenCalledWith("show1", "act1", ["s1"]);
+    expect(deleteShow).not.toHaveBeenCalled();
+  }
+  expect(useStore.getState().activeId).toBe("s3");
+  expect(container.querySelector(".explorer-notice")?.textContent).toContain(`Deleted “${name}” and its contents.`);
+  const undo = vi.spyOn(api, "undoOrganization").mockResolvedValue({ undo: 0, redo: 1, revision: 2 });
+  vi.mocked(api.organizationHistory).mockResolvedValue({ undo: 0, redo: 1, revision: 2 });
+  await act(async () => [...container.querySelectorAll<HTMLButtonElement>(".explorer-notice button")]
+    .find((button) => button.textContent === "Undo")!.click());
+  expect(undo).toHaveBeenCalledWith(1, "session");
+  expect(container.querySelector(".explorer-notice")).toBeNull();
+});
+
+it("offers hierarchy deletion only on shows and acts", async () => {
+  for (const key of ["scene:s2", "standalone:", "all:"]) {
+    await contextMenu(key);
+    expect(container.querySelector('[role="menu"]')?.textContent).not.toContain("Delete hierarchy");
+  }
+});
+
+it("reports hierarchy deletion failures", async () => {
+  vi.spyOn(api, "deleteActHierarchy").mockRejectedValue(new Error("Cannot delete hierarchy"));
+  await contextMenu("act:act1");
+  await menuClick("Delete hierarchy");
+  expect(container.querySelector(".explorer-error")?.textContent).toBe("Cannot delete hierarchy");
+  expect(useStore.getState().scenes).toHaveLength(3);
+  expect(container.querySelector(".explorer-notice")).toBeNull();
+});
+
+it("removes the undo notification when a newer organization change occurs", async () => {
+  const history = { undo: 1, redo: 0, revision: 1 };
+  vi.spyOn(api, "deleteShowHierarchy").mockResolvedValue({ deleted: "show1", history, history_id: "session" });
+  mockOrganizationRefresh();
+  vi.mocked(api.organizationHistory).mockResolvedValue(history);
+  await contextMenu("show:show1");
+  await menuClick("Delete hierarchy");
+  expect(container.querySelector(".explorer-notice")).not.toBeNull();
+  await act(async () => useStore.setState({ organizationHistory: { undo: 2, redo: 0, revision: 2 } }));
+  expect(container.querySelector(".explorer-notice")).toBeNull();
+  await act(async () => useStore.setState({ organizationHistory: history }));
+  expect(container.querySelector(".explorer-notice")).toBeNull();
+});
+
+it("surfaces stale undo errors without undoing a different change", async () => {
+  const history = { undo: 1, redo: 0, revision: 1 };
+  vi.spyOn(api, "deleteShowHierarchy").mockResolvedValue({ deleted: "show1", history, history_id: "old-session" });
+  vi.spyOn(api, "undoOrganization").mockRejectedValue(new Error("Show Outline history changed"));
+  mockOrganizationRefresh();
+  vi.mocked(api.organizationHistory).mockResolvedValue(history);
+  await contextMenu("show:show1");
+  await menuClick("Delete hierarchy");
+  await act(async () => [...container.querySelectorAll<HTMLButtonElement>(".explorer-notice button")]
+    .find((button) => button.textContent === "Undo")!.click());
+  expect(api.undoOrganization).toHaveBeenCalledWith(1, "old-session");
+  expect(container.querySelector(".explorer-error")?.textContent).toBe("Show Outline history changed");
+  expect(container.querySelector(".explorer-notice")).not.toBeNull();
+});
+
+it("reports when deletion succeeds but refreshing the outline fails", async () => {
+  const history = { undo: 1, redo: 0, revision: 1 };
+  vi.spyOn(api, "deleteShowHierarchy").mockResolvedValue({ deleted: "show1", history, history_id: "session" });
+  mockOrganizationRefresh();
+  vi.mocked(api.organizationHistory).mockRejectedValue(new Error("Network error"));
+  await contextMenu("show:show1");
+  await menuClick("Delete hierarchy");
+  expect(container.querySelector(".explorer-error")?.textContent).toBe("The hierarchy was deleted, but the outline could not be refreshed: Network error");
+  expect(container.querySelector(".explorer-notice")).toBeNull();
+});
+
+it("allows dismissing the undo notification", async () => {
+  const history = { undo: 1, redo: 0, revision: 1 };
+  vi.spyOn(api, "deleteShowHierarchy").mockResolvedValue({ deleted: "show1", history, history_id: "session" });
+  mockOrganizationRefresh();
+  vi.mocked(api.organizationHistory).mockResolvedValue(history);
+  await contextMenu("show:show1");
+  await menuClick("Delete hierarchy");
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Dismiss notification"]')!.click());
+  expect(container.querySelector(".explorer-notice")).toBeNull();
+});
+
+it("expands a collapsed show after creating an act", async () => {
+  vi.spyOn(ask, "askText").mockResolvedValue("New act");
+  const created = { kind: "act" as const, id: "act2", name: "New act", scene_ids: [] };
+  vi.spyOn(api, "createAct").mockResolvedValue(created);
+  mockOrganizationRefresh();
+  vi.mocked(api.shows).mockResolvedValue([{ ...useStore.getState().shows[0], items: [...useStore.getState().shows[0].items, created] }]);
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Collapse The Show"]')!.click());
+  await contextMenu("show:show1");
+  await menuClick("New act…");
+  expect(container.querySelector('[aria-label="Collapse The Show"]')).not.toBeNull();
+  expect(container.querySelector('[data-outline-key="act:act2"].explorer-item')).not.toBeNull();
+});
+
+it.each([
+  { target: "show:show1", collapse: "The Show", expected: "The Show", place: { show_id: "show1" } },
+  { target: "act:act1", collapse: "First Act", expected: "First Act", place: { show_id: "show1", act_id: "act1" } },
+  { target: "standalone:", collapse: "Standalone Scenes", expected: "Standalone Scenes", place: {} },
+  { target: "all:", collapse: "Standalone Scenes", expected: "Standalone Scenes", place: {} },
+])("expands $expected after creating a scene from $target", async ({ target, collapse, expected, place }) => {
+  vi.spyOn(ask, "askText").mockResolvedValue("Created");
+  const newScene = vi.fn().mockImplementation(async () => {
+    useStore.setState((s) => ({
+      scenes: [...s.scenes, { id: "new", name: "Created", updated_at: "", ...place }],
+      shows: s.shows.map((show) => ({
+        ...show,
+        items: place.show_id === show.id
+          ? place.act_id
+            ? show.items.map((item) => item.kind === "act" && item.id === place.act_id
+              ? { ...item, scene_ids: [...item.scene_ids, "new"] } : item)
+            : [...show.items, { kind: "scene" as const, id: "new" }]
+          : show.items,
+      })),
+    }));
+  });
+  await act(async () => useStore.setState({ newScene }));
+  await act(async () => container.querySelector<HTMLButtonElement>(`[aria-label="Collapse ${collapse}"]`)!.click());
+  await contextMenu(target);
+  await menuClick("New scene");
+  expect(newScene).toHaveBeenCalledWith("Created");
+  expect(container.querySelector(`[aria-label="Collapse ${expected}"]`)).not.toBeNull();
+  expect(container.querySelector('[data-outline-key="scene:new"].explorer-item')).not.toBeNull();
+});
+
+it.each(["cancel", "failure"])("keeps a show collapsed if creating an act ends in %s", async (result) => {
+  vi.spyOn(ask, "askText").mockResolvedValue(result === "cancel" ? null : "New act");
+  const createAct = vi.spyOn(api, "createAct").mockRejectedValue(new Error("Cannot create act"));
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Collapse The Show"]')!.click());
+  await contextMenu("show:show1");
+  await menuClick("New act…");
+  expect(container.querySelector('[aria-label="Expand The Show"]')).not.toBeNull();
+  expect(createAct).toHaveBeenCalledTimes(result === "failure" ? 1 : 0);
+  if (result === "failure") expect(container.querySelector(".explorer-error")?.textContent).toBe("Cannot create act");
 });
 
 it("drops a scene into an act with a container highlight and stable scene ID", async () => {
