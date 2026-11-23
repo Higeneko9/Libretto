@@ -65,7 +65,6 @@ header h1 { font-size: 16px; margin: 0; }
 .explorer-icon-scene { color: #b7c8e8; }
 .explorer-icon-standalone { color: #d1bd8e; }
 .explorer-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.explorer-rename { flex: 1; min-width: 0; width: 0; padding: 1px 4px; font: inherit; }
 .explorer-group { display: flex; align-items: stretch; gap: 2px; margin: 2px 0; min-width: 0; }
 .explorer-toggle, .explorer-toggle-spacer { width: 22px; flex: none; }
 .explorer-toggle { display: grid; place-items: center; border: 0; background: transparent; padding: 2px; color: #e6e8ee; }
@@ -291,7 +290,7 @@ body.lb-dragging .card-act { display: none !important; }
 .lib-bar .prompt-card { width: auto; flex: none; padding: 3px 12px; }
 
 .ask-back { z-index: 1099; }
-.ask-box { position: fixed; z-index: 1100; width: 340px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; box-shadow: 0 6px 20px #000a; display: flex; flex-direction: column; gap: 8px; }
+.ask-box { position: fixed; z-index: 1100; width: 340px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; box-shadow: 0 6px 20px #000a; display: flex; flex-direction: column; gap: 8px; }
 .ask-box label { font-size: 12px; color: var(--muted, #9aa); }
 .ask-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .owner-badge { font-size: 11px; color: #e5739b; margin-top: 2px; }

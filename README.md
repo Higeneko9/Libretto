@@ -141,12 +141,9 @@ is one organization undo step during the current server session; the notificatio
 provides an immediate Undo action.
 
 Double-click a show, act, or scene name, choose **Rename**, or press **F2** on the
-selected item while the pointer is over Show Outline to edit its name in place.
-**Enter** or clicking elsewhere saves; **Escape** cancels. Blank names are rejected.
-Inline editing changes only the display name for the current UI language.
-Use **Edit original / translated names…** in an item's context menu to edit its
-original name and translation together. Renaming is undoable, and dragging is
-disabled while a name is being edited.
+selected item while the pointer is over Show Outline. The dialog opens near the
+name and lets you edit the original name and current-language translation.
+Renaming is undoable, and dragging is disabled while editing.
 
 Right-click a **show** and choose **Show settings…** to configure its output layout:
 **Workflow default**, **Show / Scene**, or **Show / Act / Scene**. A live example

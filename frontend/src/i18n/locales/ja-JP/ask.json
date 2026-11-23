@@ -2,5 +2,6 @@
   "cancel": "キャンセル",
   "ok": "OK",
   "name": "名前",
-  "displayName": "表示名（{locale}）"
+  "displayName": "表示名 ({locale})",
+  "emptyName": "名前を入力してください。"
 }

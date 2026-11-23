@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { api, type OutlineMoveRef } from "./api";
-import { askConfirm, askNames, askText } from "./ask";
+import { askConfirm, askNames, askText, type AskAnchor } from "./ask";
 import { backdropClose } from "./backdropClose";
 import { useT } from "./i18n/useT";
 import { usePanelShortcuts } from "./panelShortcuts";
@@ -11,7 +11,6 @@ import { translatedName, withName } from "./tags";
 import type { OutputScope, ScenePlace, Show } from "./types";
 
 type Menu = { target: OutputScope; x: number; y: number };
-type InlineRename = { target: OutlineItem; original: string; value: string; locale: string };
 const itemKey = (item: OutputScope) => `${item.kind}:${"id" in item ? item.id : ""}`;
 const displayName = (item: { name: string; names?: Record<string, string> }, locale: string) =>
   translatedName(item.name, item.names, locale) ?? item.name;
@@ -44,12 +43,9 @@ export function ShowExplorer() {
   const busy = mutationBusy || navigating;
   const explorerRef = useRef<HTMLElement>(null);
   const opening = useRef(false);
-  const [editing, setEditing] = useState<InlineRename | null>(null);
-  const renameInput = useRef<HTMLInputElement>(null);
-  const renamePhase = useRef<"editing" | "saving" | null>(null);
+  const renameDialog = useRef(false);
   const renameFocus = useRef<OutlineItem | null>(null);
   const errorId = useId();
-  const editingKey = editing ? itemKey(editing.target) : null;
   const [menu, setMenu] = useState<Menu | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuOrigin = useRef<HTMLElement | null>(null);
@@ -101,14 +97,11 @@ export function ShowExplorer() {
   }, [shows, scenes]);
 
   useEffect(() => {
-    if (editingKey) {
-      renameInput.current?.focus();
-      renameInput.current?.select();
-    } else if (renameFocus.current) {
+    if (!mutationBusy && renameFocus.current) {
       explorerRef.current?.querySelector<HTMLButtonElement>(`button[data-outline-key="${itemKey(renameFocus.current)}"]`)?.focus();
       renameFocus.current = null;
     }
-  }, [editingKey]);
+  }, [mutationBusy]);
 
   const perform = async (action: () => Promise<unknown>) => {
     setBusy(true);
@@ -130,12 +123,12 @@ export function ShowExplorer() {
     if (event.altKey) return;
     if (event.key === "F2" && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
-      if (!event.repeat) startRename(actionTarget, label);
+      if (!event.repeat) startRename(actionTarget);
       return;
     }
     if (event.key === "Delete" && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
-      if (!editing && !copyTarget && !busy && actionable && !event.repeat) {
+      if (!copyTarget && !busy && actionable && !event.repeat) {
         if (moveSelection.size > 1) setError(t("showExplorer.singleDeleteOnly"));
         else menuAction(remove);
       }
@@ -146,7 +139,7 @@ export function ShowExplorer() {
     if (key !== "z" && key !== "y") return;
     event.preventDefault();
     const redo = key === "y" || event.shiftKey;
-    if (!editing && !copyTarget && !busy && (redo ? history.redo : history.undo)) replay(redo);
+    if (!copyTarget && !busy && (redo ? history.redo : history.undo)) replay(redo);
   });
   const toggle = (id: string) => setCollapsed((previous) => {
     const next = new Set(previous);
@@ -161,7 +154,7 @@ export function ShowExplorer() {
   });
   const selected = (target: OutputScope) => scope.kind === target.kind && ("id" in scope && "id" in target ? scope.id === target.id : true);
   const choose = (target: OutputScope) => {
-    if (busy || editing || opening.current) return;
+    if (busy || opening.current) return;
     if (target.kind === "scene") {
       opening.current = true;
       setNavigating(true);
@@ -198,66 +191,51 @@ export function ShowExplorer() {
       expand(...(place.show_id ? [place.show_id, ...(place.act_id ? [place.act_id] : [])] : ["standalone"]));
     }
   };
-  const renameNames = async () => {
-    if (!namedItem) return;
-    const names = await askNames(t("sceneTabs.rename"), namedItem.name, translatedName(namedItem.name, namedItem.names, locale) ?? "", locale);
-    if (!names?.name.trim()) return;
-    const original = names.name.trim();
-    const translations = withName(namedItem.names, locale, names.display);
-    if (actionTarget.kind === "scene") await renameScene(actionTarget.id, original, translations);
-    else if (actionTarget.kind === "act") await organize(() => api.renameAct(actionTarget.show_id, actionTarget.id, original, translations));
-    else if (actionTarget.kind === "show") await organize(() => api.renameShow(actionTarget.id, original, translations));
+  const renameNames = async (target: OutlineItem, item: { name: string; names?: Record<string, string> }, anchor?: AskAnchor) => {
+    const display = translatedName(item.name, item.names, locale) ?? "";
+    let draft = { name: item.name, display };
+    let error = "";
+    while (true) {
+      const names = await askNames(t("sceneTabs.rename"), draft.name, draft.display, locale, error || undefined, anchor);
+      if (!names?.name.trim()) return;
+      draft = names;
+      const original = names.name.trim();
+      if (original === item.name && names.display.trim() === display) return;
+      const translations = withName(item.names, locale, names.display);
+      try {
+        if (target.kind === "scene") await renameScene(target.id, original, translations);
+        else if (target.kind === "act") await organize(() => api.renameAct(target.show_id, target.id, original, translations));
+        else await organize(() => api.renameShow(target.id, original, translations));
+        return;
+      } catch (reason) {
+        error = reason instanceof Error ? reason.message : String(reason);
+      }
+    }
   };
-  const startRename = (target: OutputScope, name: string) => {
-    if (!("id" in target) || mutationBusy || editing || copyTarget) return;
+  const startRename = (target: OutputScope) => {
+    if (!("id" in target) || mutationBusy || copyTarget || renameDialog.current) return;
+    const row = [...(explorerRef.current?.querySelectorAll<HTMLButtonElement>("button.explorer-item") ?? [])]
+      .find((button) => button.dataset.outlineKey === itemKey(target));
+    const rect = (row?.querySelector(".explorer-name") ?? row)?.getBoundingClientRect();
+    const anchor = rect ? { left: rect.left, top: rect.top, bottom: rect.bottom } : undefined;
     closeMenu();
     finishDrag();
     setError("");
-    renamePhase.current = "editing";
-    setEditing({ target, original: name, value: name, locale });
-  };
-  const finishRename = (edit: InlineRename, restoreFocus: boolean) => {
-    renamePhase.current = null;
-    renameFocus.current = restoreFocus ? edit.target : null;
-    setEditing(null);
-    setError("");
-  };
-  const saveRename = async (restoreFocus: boolean) => {
-    if (!editing || renamePhase.current !== "editing") return;
-    const edit = editing;
-    const name = edit.value.trim();
-    if (!name) {
-      setError(t("showExplorer.emptyName"));
-      return;
+    let item: { name: string; names?: Record<string, string> } | undefined;
+    if (target.kind === "scene") {
+      item = scenes.find((scene) => scene.id === target.id);
+    } else {
+      const parent = shows.find((show) => show.id === (target.kind === "show" ? target.id : target.show_id));
+      item = target.kind === "show" ? parent
+        : parent?.items.filter((entry) => entry.kind === "act").find((entry) => entry.id === target.id);
     }
-    if (name === edit.original) {
-      finishRename(edit, restoreFocus);
-      return;
-    }
-    renamePhase.current = "saving";
-    try {
-      await perform(async () => {
-        const { target } = edit;
-        if (target.kind === "scene") {
-          const scene = useStore.getState().scenes.find((s) => s.id === target.id);
-          if (!scene) throw new Error(t("showExplorer.missingScene", { id: target.id }));
-          await renameScene(scene.id, scene.name, withName(scene.names, edit.locale, name));
-        } else {
-          await organize(async () => {
-            const parent = useStore.getState().shows.find((s) => s.id === (target.kind === "show" ? target.id : target.show_id));
-            const item = target.kind === "show" ? parent
-              : parent?.items.filter((entry) => entry.kind === "act").find((entry) => entry.id === target.id);
-            if (!item) throw new Error(t("showExplorer.missingItem", { id: target.id }));
-            const names = withName(item.names, edit.locale, name);
-            if (target.kind === "act") await api.renameAct(target.show_id, target.id, item.name, names);
-            else await api.renameShow(target.id, item.name, names);
-          });
-        }
-        finishRename(edit, restoreFocus);
-      });
-    } finally {
-      if (renamePhase.current === "saving") renamePhase.current = "editing";
-    }
+    if (!item) { setError(t(target.kind === "scene" ? "showExplorer.missingScene" : "showExplorer.missingItem", { id: target.id })); return; }
+    renameDialog.current = true;
+    const named = item;
+    void perform(async () => {
+      try { await renameNames(target, named, anchor); }
+      finally { renameDialog.current = false; renameFocus.current = target; }
+    });
   };
   const copyTo = async (destination: ScenePlace, name?: string) => {
     if (actionTarget.kind === "scene") {
@@ -305,7 +283,7 @@ export function ShowExplorer() {
   const openMenu = (event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>, target: OutputScope) => {
     event.preventDefault();
     event.stopPropagation();
-    if (busy || editing || copyTarget) return;
+    if (busy || copyTarget) return;
     menuOrigin.current = event.currentTarget;
     const rect = event.currentTarget.getBoundingClientRect();
     setMenu({ target, x: "clientX" in event ? event.clientX : rect.left + 20, y: "clientY" in event ? event.clientY : rect.bottom });
@@ -380,14 +358,14 @@ export function ShowExplorer() {
   const rowProps = (target: OutputScope) => ({
     "data-outline-key": itemKey(target),
     "aria-haspopup": "menu" as const,
-    draggable: !busy && !editing && "id" in target,
+    draggable: !busy && "id" in target,
     onContextMenu: (event: MouseEvent<HTMLElement>) => openMenu(event, target),
     onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
       if (event.key === "ContextMenu" || event.shiftKey && event.key === "F10") openMenu(event, target);
     },
     onDragStart: (event: DragEvent<HTMLElement>) => {
       event.stopPropagation();
-      if (!("id" in target) || busy || editing) { event.preventDefault(); return; }
+      if (!("id" in target) || busy) { event.preventDefault(); return; }
       const selectedItems = moveSelection.has(itemKey(target))
         ? outlineItems(shows, scenes).filter((item) => moveSelection.has(itemKey(item))) : [target];
       dragSources.current = topLevelSelection(selectedItems, scenes);
@@ -404,7 +382,7 @@ export function ShowExplorer() {
     onDragOver: (event: DragEvent<HTMLElement>) => {
       event.stopPropagation();
       const position = dropPosition(event, target);
-      if (busy || editing || !dragSource.current || !validDrop(target, position)) {
+      if (busy || !dragSource.current || !validDrop(target, position)) {
         setDropTarget(null);
         return;
       }
@@ -424,7 +402,7 @@ export function ShowExplorer() {
       const sources = dragSources.current;
       const drop = validDrop(target, position) && sources.length ? outlineDrop(sources[0], target, position, shows, scenes) : null;
       finishDrag();
-      if (!drop || busy || editing) return;
+      if (!drop || busy) return;
       event.preventDefault();
       explorerRef.current?.focus();
       if (position === "inside") setCollapsed((previous) => {
@@ -440,28 +418,6 @@ export function ShowExplorer() {
     if (target.kind === "all") return null;
     const moveSelected = moveSelection.has(itemKey(target)) && (moveSelection.size > 1 || !selected(target));
     const className = `explorer-item explorer-item-${target.kind} ${selected(target) ? "on" : ""}${moveSelected ? " move-selected" : ""}${dropClass(target)}`;
-    if (editing && editingKey === itemKey(target)) return (
-      <div {...rowProps(target)} className={className}>
-        <OutlineIcon kind={target.kind} />
-        <input ref={renameInput} className="explorer-rename" value={editing.value} readOnly={mutationBusy}
-          aria-label={t("showExplorer.editName", { name: editing.original })} aria-invalid={!!error}
-          aria-describedby={error ? errorId : undefined} title={t("showExplorer.inlineHint")}
-          onChange={(event) => {
-            if (renamePhase.current !== "editing") return;
-            setEditing({ ...editing, value: event.currentTarget.value });
-            setError("");
-          }}
-          onBlur={() => void saveRename(false)}
-          onClick={(event) => event.stopPropagation()}
-          onContextMenu={(event) => event.stopPropagation()}
-          onKeyDown={(event) => {
-            event.stopPropagation();
-            if (event.nativeEvent.isComposing || renamePhase.current !== "editing") return;
-            if (event.key === "Enter") { event.preventDefault(); void saveRename(true); }
-            else if (event.key === "Escape") { event.preventDefault(); finishRename(editing, true); }
-          }} />
-      </div>
-    );
     return <button {...rowProps(target)} className={className} aria-pressed={selected(target)} disabled={mutationBusy}
       aria-label={type ? `${type}: ${name}` : name}
       aria-description={moveSelected ? t("showExplorer.selectedForMove") : undefined}
@@ -471,7 +427,7 @@ export function ShowExplorer() {
         else setMoveSelection(new Set());
         if (!event.ctrlKey && !event.metaKey && !event.shiftKey) choose(target);
       }} title={name}
-      onDoubleClick={(event) => { event.preventDefault(); event.stopPropagation(); startRename(target, name); }}>
+      onDoubleClick={(event) => { event.preventDefault(); event.stopPropagation(); startRename(target); }}>
       <OutlineIcon kind={target.kind} /><span className="explorer-name">{name}</span>
     </button>;
   };
@@ -487,7 +443,7 @@ export function ShowExplorer() {
   };
   const groupButton = (target: OutputScope, name: string, key: string, type: string) => (
     <div className="explorer-group" {...rowProps(target)}>
-      <button className="explorer-toggle" aria-label={t(collapsed.has(key) ? "showExplorer.expand" : "showExplorer.collapse", { name })} aria-expanded={!collapsed.has(key)} disabled={busy || !!editing} onClick={() => toggle(key)}>
+      <button className="explorer-toggle" aria-label={t(collapsed.has(key) ? "showExplorer.expand" : "showExplorer.collapse", { name })} aria-expanded={!collapsed.has(key)} disabled={busy} onClick={() => toggle(key)}>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d={collapsed.has(key) ? "M6 3.5 10.5 8 6 12.5" : "M3.5 6 8 10.5 12.5 6"} /></svg>
       </button>
       {itemButton(target, name, type)}
@@ -539,12 +495,11 @@ export function ShowExplorer() {
           <button role="menuitem" onClick={() => menuAction(createScene)}>{t("sceneTabs.newScene")}</button>
           {actionable && <>
             <hr />
-            <button role="menuitem" onClick={() => startRename(actionTarget, label)}>{t("showExplorer.rename")}</button>
+            <button role="menuitem" onClick={() => startRename(actionTarget)}>{t("showExplorer.rename")}</button>
             {actionTarget.kind === "show" && show && <button role="menuitem" onClick={() => {
               setSettingsTarget(show);
               closeMenu();
             }}>{t("showExplorer.settings")}</button>}
-            {namedItem && <button role="menuitem" onClick={() => menuAction(renameNames)}>{t("showExplorer.renameNames")}</button>}
             {copyable && <>
               <button role="menuitem" onClick={() => menuAction(duplicate)}>{t("sceneTabs.duplicate")}</button>
               <button role="menuitem" onClick={startCopy}>{t("showExplorer.copy")}</button>

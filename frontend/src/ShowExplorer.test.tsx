@@ -199,26 +199,6 @@ async function menuClick(label: string) {
   await act(async () => button.click());
 }
 
-function renameInput() {
-  const field = container.querySelector<HTMLInputElement>(".explorer-rename");
-  if (!field) throw new Error("Missing inline rename input");
-  return field;
-}
-
-async function renameValue(value: string) {
-  await act(async () => {
-    const field = renameInput();
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, value);
-    field.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-}
-
-async function renameKey(key: string, options: KeyboardEventInit = {}) {
-  await act(async () => renameInput().dispatchEvent(new KeyboardEvent("keydown", {
-    bubbles: true, cancelable: true, key, ...options,
-  })));
-}
-
 async function doubleClick(key: string) {
   await act(async () => row(key).dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true })));
 }
@@ -420,6 +400,7 @@ async function drag(source: string, target: string, fraction: number) {
 it("keeps actions in right-click menus and applies them to the clicked item without opening it", async () => {
   expect(container.querySelector(".explorer-actions")).toBeNull();
   await click("Three");
+  vi.spyOn(ask, "askNames").mockResolvedValue({ name: "Renamed Show", display: "" });
   vi.spyOn(api, "renameShow").mockResolvedValue({ ...useStore.getState().shows[0], name: "Renamed Show" });
   mockOrganizationRefresh();
   await contextMenu("show:show1");
@@ -427,125 +408,33 @@ it("keeps actions in right-click menus and applies them to the clicked item with
   expect(useStore.getState().outputScope).toEqual({ kind: "scene", id: "s3" });
   expect(container.querySelector('[role="menuitem"]')).toBe(document.activeElement);
   await menuClick("Rename");
-  expect(renameInput().value).toBe("The Show");
-  await renameValue("Renamed Show");
-  await renameKey("Enter");
-  expect(api.renameShow).toHaveBeenCalledWith("show1", "The Show", { "en-US": "Renamed Show" });
+  expect(ask.askNames).toHaveBeenCalledWith("Rename", "The Show", "", "en-US", undefined, expect.any(Object));
+  expect(api.renameShow).toHaveBeenCalledWith("show1", "Renamed Show", {});
   expect(container.querySelector('[role="menu"]')).toBeNull();
   expect(useStore.getState().outputScope).toEqual({ kind: "scene", id: "s3" });
 });
 
-it.each(["act:act1", "scene:s2"])("edits %s inline and saves on blur", async (key) => {
-  vi.spyOn(api, "renameAct").mockResolvedValue({ kind: "act", id: "act1", name: "Updated", scene_ids: ["s1"] });
-  vi.spyOn(api, "saveScene").mockResolvedValue({});
-  mockOrganizationRefresh();
-  await doubleClick(key);
-  expect(renameInput()).toBe(document.activeElement);
-  expect(renameInput().selectionStart).toBe(0);
-  expect(renameInput().selectionEnd).toBe(renameInput().value.length);
-  expect(renameInput().closest("button")).toBeNull();
-  await renameValue("  Updated  ");
-  await act(async () => renameInput().blur());
-  if (key.startsWith("act:")) {
-    expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", "First Act", { "en-US": "Updated" });
-  } else {
-    expect(api.saveScene).toHaveBeenCalledWith("s2", { name: "Two", names: { "en-US": "Updated" } });
-  }
-  expect(container.querySelector(".explorer-rename")).toBeNull();
-});
-
-it("cancels inline editing on Escape without saving from the resulting blur", async () => {
-  const save = vi.spyOn(api, "renameShow");
-  await doubleClick("show:show1");
-  await renameValue("Discard this");
-  await act(async () => {
-    const field = renameInput();
-    field.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" }));
-    field.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
-  });
-  expect(save).not.toHaveBeenCalled();
-  expect(container.querySelector(".explorer-rename")).toBeNull();
-  expect(row("show:show1")).toBe(document.activeElement);
-});
-
-it("skips unchanged names instead of creating an undo step", async () => {
-  const save = vi.spyOn(api, "renameShow");
-  await doubleClick("show:show1");
-  await renameValue("  The Show  ");
-  await renameKey("Enter");
-  expect(save).not.toHaveBeenCalled();
-  expect(container.querySelector(".explorer-rename")).toBeNull();
-});
-
-it("rejects a blank name without losing the editor and accepts a correction", async () => {
-  vi.spyOn(api, "renameShow").mockResolvedValue({ ...useStore.getState().shows[0], name: "Corrected" });
-  mockOrganizationRefresh();
-  await doubleClick("show:show1");
-  await renameValue("   ");
-  await act(async () => renameInput().blur());
-  expect(api.renameShow).not.toHaveBeenCalled();
-  expect(renameInput().getAttribute("aria-invalid")).toBe("true");
-  expect(container.querySelector(".explorer-error")?.textContent).toBe("Name cannot be empty.");
-  await renameValue("Corrected");
-  await renameKey("Enter");
-  expect(api.renameShow).toHaveBeenCalledWith("show1", "The Show", { "en-US": "Corrected" });
-});
-
-it("retains a failed rename draft so it can be corrected or retried", async () => {
-  const save = vi.spyOn(api, "renameShow")
-    .mockRejectedValueOnce(new Error("Cannot write show outline"))
-    .mockResolvedValue({ ...useStore.getState().shows[0], name: "Retry" });
-  mockOrganizationRefresh();
-  await doubleClick("show:show1");
-  await renameValue("Retry");
-  await renameKey("Enter");
-  expect(renameInput().value).toBe("Retry");
-  expect(renameInput().readOnly).toBe(false);
-  expect(container.querySelector(".explorer-error")?.textContent).toBe("Cannot write show outline");
-  await renameKey("Enter");
-  expect(save).toHaveBeenCalledTimes(2);
-  expect(container.querySelector(".explorer-rename")).toBeNull();
-});
-
-it("commits only once when Enter is followed by blur while saving", async () => {
-  let finish!: (show: ReturnType<typeof useStore.getState>["shows"][number]) => void;
-  const pending = new Promise<ReturnType<typeof useStore.getState>["shows"][number]>((resolve) => { finish = resolve; });
-  vi.spyOn(api, "renameShow").mockReturnValue(pending);
-  mockOrganizationRefresh();
-  await doubleClick("show:show1");
-  await renameValue("Once");
-  await renameKey("Enter");
-  expect(renameInput().readOnly).toBe(true);
-  await act(async () => renameInput().blur());
-  expect(api.renameShow).toHaveBeenCalledOnce();
-  await act(async () => finish({ ...useStore.getState().shows[0], name: "Once" }));
-  expect(container.querySelector(".explorer-rename")).toBeNull();
-});
-
-it.each(["en-US", "ja-JP"] as const)("updates the %s scene display name without replacing its original or other translations", async (locale) => {
+it.each(["en-US", "ja-JP"] as const)("renames the scene and its %s translation without losing other translations", async (locale) => {
   await act(async () => useStore.setState((s) => ({
     ui: { ...s.ui, locale },
     scenes: s.scenes.map((scene) => scene.id === "s2"
       ? { ...scene, names: { "en-US": "Displayed", "ja-JP": "Other language" } } : scene),
   })));
+  vi.spyOn(ask, "askNames").mockResolvedValue({ name: "New original", display: "New display name" });
   vi.spyOn(api, "saveScene").mockResolvedValue({});
   mockOrganizationRefresh();
   await doubleClick("scene:s2");
-  expect(renameInput().value).toBe(locale === "en-US" ? "Displayed" : "Other language");
-  await renameValue("New display name");
-  await act(async () => useStore.setState((s) => ({
-    ui: { ...s.ui, locale: locale === "en-US" ? "ja-JP" : "en-US" },
-  })));
-  await renameKey("Enter");
+  expect(ask.askNames).toHaveBeenCalledWith(expect.any(String), "Two",
+    locale === "en-US" ? "Displayed" : "Other language", locale, undefined, expect.any(Object));
   expect(api.saveScene).toHaveBeenCalledWith("s2", {
-    name: "Two", names: { "en-US": "Displayed", "ja-JP": "Other language", [locale]: "New display name" },
+    name: "New original", names: { "en-US": "Displayed", "ja-JP": "Other language", [locale]: "New display name" },
   });
 });
 
 it.each([
   { key: "show:show1", original: "The Show", kind: "show" },
   { key: "act:act1", original: "First Act", kind: "act" },
-] as const)("edits the current-language $kind name without changing the original or other languages", async ({ key, original, kind }) => {
+] as const)("opens the multilingual dialog for $kind on double-click", async ({ key, original, kind }) => {
   await act(async () => useStore.setState((s) => ({
     ui: { ...s.ui, locale: "ja-JP" },
     shows: s.shows.map((show) => ({
@@ -556,67 +445,83 @@ it.each([
   })));
   vi.spyOn(api, "renameShow").mockResolvedValue(useStore.getState().shows[0]);
   vi.spyOn(api, "renameAct").mockResolvedValue({ kind: "act", id: "act1", name: original, scene_ids: ["s1"] });
+  vi.spyOn(ask, "askNames").mockResolvedValue({ name: "Changed original", display: "Changed Japanese" });
   mockOrganizationRefresh();
   await doubleClick(key);
-  expect(renameInput().value).toBe(kind === "show" ? "Show Japanese" : "Act Japanese");
-  await renameValue("Changed Japanese");
-  await act(async () => useStore.setState((s) => ({ ui: { ...s.ui, locale: "en-US" } })));
-  await renameKey("Enter");
-  const expected = { "en-US": kind === "show" ? "Show display" : "Act display", "ja-JP": "Changed Japanese" };
-  if (kind === "show") expect(api.renameShow).toHaveBeenCalledWith("show1", original, expected);
-  else expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", original, expected);
-});
-
-it("starts F2 renaming only over the outline and blocks dragging while editing", async () => {
-  await click("First Act");
-  hover(row("act:act1"));
-  await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "F2" })));
-  expect(renameInput().value).toBe("First Act");
-  expect(row("scene:s2").draggable).toBe(false);
-  const drag = new MouseEvent("dragstart", { bubbles: true, cancelable: true });
-  await act(async () => row("scene:s2").dispatchEvent(drag));
-  expect(drag.defaultPrevented).toBe(true);
-  await renameKey("Escape");
-  hover(container.querySelector(".results-wrap")!);
-  await act(async () => row("act:act1").dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "F2" })));
+  expect(ask.askNames).toHaveBeenCalledWith("名前を変更", original, kind === "show" ? "Show Japanese" : "Act Japanese", "ja-JP", undefined, expect.any(Object));
   expect(container.querySelector(".explorer-rename")).toBeNull();
+  const expected = { "en-US": kind === "show" ? "Show display" : "Act display", "ja-JP": "Changed Japanese" };
+  if (kind === "show") expect(api.renameShow).toHaveBeenCalledWith("show1", "Changed original", expected);
+  else expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", "Changed original", expected);
 });
 
-it("does not commit Enter used to finish IME composition", async () => {
-  vi.spyOn(api, "renameShow").mockResolvedValue({ ...useStore.getState().shows[0], name: "Composed" });
-  mockOrganizationRefresh();
-  await doubleClick("show:show1");
-  await renameValue("Composed");
-  await renameKey("Enter", { isComposing: true });
-  expect(api.renameShow).not.toHaveBeenCalled();
-  await renameKey("Enter");
-  expect(api.renameShow).toHaveBeenCalledOnce();
+it("starts scene F2 renaming only over the outline and blocks dragging while editing", async () => {
+  let finish!: (value: { name: string; display: string } | null) => void;
+  vi.spyOn(ask, "askNames").mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  await click("Two");
+  hover(row("scene:s2"));
+  await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "F2" })));
+  expect(ask.askNames).toHaveBeenCalledWith("Rename", "Two", "", "en-US", undefined, expect.any(Object));
+  expect(row("show:show1").draggable).toBe(false);
+  const drag = new MouseEvent("dragstart", { bubbles: true, cancelable: true });
+  await act(async () => row("show:show1").dispatchEvent(drag));
+  expect(drag.defaultPrevented).toBe(true);
+  await act(async () => finish(null));
+  hover(container.querySelector(".results-wrap")!);
+  await act(async () => row("scene:s2").dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "F2" })));
+  expect(ask.askNames).toHaveBeenCalledOnce();
 });
 
 it("allows double-click renaming while the first scene click is still opening it", async () => {
   let finish!: (scene: Awaited<ReturnType<typeof api.scene>>) => void;
   vi.mocked(api.scene).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  vi.spyOn(ask, "askNames").mockResolvedValue(null);
   await act(async () => row("scene:s2").click());
   expect(row("scene:s2").disabled).toBe(false);
   expect(row("scene:s2").draggable).toBe(false);
   await contextMenu("scene:s2");
   expect(container.querySelector('[role="menu"]')).toBeNull();
   await doubleClick("scene:s2");
-  expect(renameInput().value).toBe("Two");
-  expect(renameInput().readOnly).toBe(false);
-  await renameKey("Escape");
+  expect(ask.askNames).toHaveBeenCalledWith("Rename", "Two", "", "en-US", undefined, expect.any(Object));
   await act(async () => finish({ id: "s2", name: "Two", graph: { nodes: [], edges: [] } }));
   expect(useStore.getState().activeId).toBe("s2");
 });
 
-it("keeps the original and translated scene-name dialog available", async () => {
+it("opens the names dialog for scene rename in the context menu", async () => {
   vi.spyOn(ask, "askNames").mockResolvedValue({ name: "Original", display: "Translated" });
   vi.spyOn(api, "saveScene").mockResolvedValue({});
   mockOrganizationRefresh();
   await contextMenu("scene:s2");
-  await menuClick("Edit original / translated names…");
-  expect(ask.askNames).toHaveBeenCalledWith("Rename", "Two", "", "en-US");
+  expect(container.querySelector('[role="menu"]')?.textContent).not.toContain("Edit original / translated names…");
+  await menuClick("Rename");
+  expect(ask.askNames).toHaveBeenCalledWith("Rename", "Two", "", "en-US", undefined, expect.any(Object));
   expect(api.saveScene).toHaveBeenCalledWith("s2", { name: "Original", names: { "en-US": "Translated" } });
+});
+
+it.each([
+  { method: "double-click", top: 200, expectedTop: 224 },
+  { method: "context menu", top: 200, expectedTop: 224 },
+  { method: "F2", top: 700, expectedTop: 516 },
+] as const)("positions the $method rename dialog near the scene label", async ({ method, top, expectedTop }) => {
+  await act(async () => root.render(<><ShowExplorer /><Results /><ask.AskHost /></>));
+  const label = row("scene:s2").querySelector<HTMLElement>(".explorer-name")!;
+  vi.spyOn(label, "getBoundingClientRect").mockReturnValue(new DOMRect(100, top, 80, 20));
+  const originalRect = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    return this.classList.contains("ask-box") ? new DOMRect(0, 0, 340, 180) : originalRect.call(this);
+  });
+  if (method === "double-click") await doubleClick("scene:s2");
+  else if (method === "context menu") { await contextMenu("scene:s2"); await menuClick("Rename"); }
+  else {
+    await click("Two");
+    hover(row("scene:s2"));
+    await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "F2" })));
+  }
+  const form = container.querySelector<HTMLFormElement>(".ask-box")!;
+  expect(form.style.left).toBe("100px");
+  expect(form.style.top).toBe(`${expectedTop}px`);
+  await act(async () => form.querySelector<HTMLButtonElement>('button[type="button"]')!.click());
+  expect(row("scene:s2")).toBe(document.activeElement);
 });
 
 it.each([
@@ -635,11 +540,85 @@ it.each([
   vi.spyOn(api, "renameAct").mockResolvedValue({ kind: "act", id: "act1", name: original, scene_ids: ["s1"] });
   mockOrganizationRefresh();
   await contextMenu(key);
-  await menuClick("Edit original / translated names…");
-  expect(ask.askNames).toHaveBeenCalledWith("Rename", original, kind === "show" ? "Show display" : "Act display", "en-US");
+  expect(container.querySelector('[role="menu"]')?.textContent).not.toContain("Edit original / translated names…");
+  await menuClick("Rename");
+  expect(ask.askNames).toHaveBeenCalledWith("Rename", original, kind === "show" ? "Show display" : "Act display", "en-US", undefined, expect.any(Object));
   const expected = { "ja-JP": kind === "show" ? "Show Japanese" : "Act Japanese" };
   if (kind === "show") expect(api.renameShow).toHaveBeenCalledWith("show1", "New original", expected);
   else expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", "New original", expected);
+});
+
+it.each([
+  { key: "show:show1", label: "The Show" },
+  { key: "act:act1", label: "First Act" },
+])("opens the names dialog for $key with F2 and cancels without saving", async ({ key, label }) => {
+  let finish!: (value: { name: string; display: string } | null) => void;
+  vi.spyOn(ask, "askNames").mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  const renameShow = vi.spyOn(api, "renameShow");
+  const renameAct = vi.spyOn(api, "renameAct");
+  await click(label);
+  hover(row(key));
+  await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "F2" })));
+  expect(ask.askNames).toHaveBeenCalledWith("Rename", label, "", "en-US", undefined, expect.any(Object));
+  expect(row("scene:s2").draggable).toBe(false);
+  await act(async () => finish(null));
+  expect(renameShow).not.toHaveBeenCalled();
+  expect(renameAct).not.toHaveBeenCalled();
+});
+
+it("does not save an unchanged show name from the dialog", async () => {
+  vi.spyOn(ask, "askNames").mockResolvedValue({ name: "  The Show  ", display: "" });
+  const save = vi.spyOn(api, "renameShow");
+  await doubleClick("show:show1");
+  expect(save).not.toHaveBeenCalled();
+});
+
+it("keeps the multilingual dialog open when the original name is blank", async () => {
+  vi.spyOn(api, "renameAct").mockResolvedValue({ kind: "act", id: "act1", name: "Revised", scene_ids: ["s1"] });
+  mockOrganizationRefresh();
+  await act(async () => root.render(<><ShowExplorer /><Results /><ask.AskHost /></>));
+  await doubleClick("act:act1");
+  const form = container.querySelector<HTMLFormElement>(".ask-box")!;
+  const input = form.querySelector<HTMLInputElement>("input")!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "   ");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  expect(form.querySelector('[role="alert"]')?.textContent).toBe("Name cannot be empty.");
+  expect(api.renameAct).not.toHaveBeenCalled();
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "Revised");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", "Revised", {});
+});
+
+it("keeps a failed show rename draft in the dialog for retry", async () => {
+  vi.spyOn(api, "renameShow")
+    .mockRejectedValueOnce(new Error("Cannot write show outline"))
+    .mockResolvedValue(useStore.getState().shows[0]);
+  mockOrganizationRefresh();
+  await act(async () => root.render(<><ShowExplorer /><Results /><ask.AskHost /></>));
+  await doubleClick("show:show1");
+  let form = container.querySelector<HTMLFormElement>(".ask-box")!;
+  let fields = form.querySelectorAll<HTMLInputElement>("input");
+  await act(async () => {
+    for (const [field, value] of [[fields[0], "Revised"], [fields[1], "Translation"]] as const) {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, value);
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  form = container.querySelector<HTMLFormElement>(".ask-box")!;
+  fields = form.querySelectorAll("input");
+  expect(fields[0].value).toBe("Revised");
+  expect(fields[1].value).toBe("Translation");
+  expect(form.querySelector('[role="alert"]')?.textContent).toBe("Cannot write show outline");
+  await act(async () => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  expect(api.renameShow).toHaveBeenCalledTimes(2);
+  expect(container.querySelector(".ask-box")).toBeNull();
 });
 
 it("uses translated show and act names throughout the outline, results, settings and copy destinations", async () => {

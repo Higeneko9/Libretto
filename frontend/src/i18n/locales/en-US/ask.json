@@ -2,5 +2,6 @@
   "cancel": "Cancel",
   "ok": "OK",
   "name": "Name",
-  "displayName": "Display name ({locale})"
+  "displayName": "Display name ({locale})",
+  "emptyName": "Name cannot be empty."
 }
