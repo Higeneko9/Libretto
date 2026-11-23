@@ -204,6 +204,7 @@ export interface Act {
   kind: "act";
   id: string;
   name: string;
+  names?: Record<string, string>;
   scene_ids: string[];
 }
 
@@ -217,6 +218,7 @@ export interface Show {
   version: 1;
   id: string;
   name: string;
+  names?: Record<string, string>;
   order?: number;
   output_layout?: ShowOutputLayout;
   items: (Act | { kind: "scene"; id: string })[];

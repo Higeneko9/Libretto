@@ -543,11 +543,11 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
 
     @app.post("/api/shows")
     def create_show(body: RenameBody):
-        return guard(lambda: scenes.create_show(body.name))
+        return guard(lambda: scenes.create_show(body.name, body.names))
 
     @app.patch("/api/shows/{show_id}")
     def rename_show(show_id: str, body: RenameBody):
-        return guard(lambda: scenes.rename_show(show_id, body.name))
+        return guard(lambda: scenes.rename_show(show_id, body.name, body.names))
 
     @app.patch("/api/shows/{show_id}/settings")
     def show_settings(show_id: str, body: ShowSettingsBody):
@@ -574,11 +574,11 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
 
     @app.post("/api/shows/{show_id}/acts")
     def create_act(show_id: str, body: RenameBody):
-        return guard(lambda: scenes.create_act(show_id, body.name))
+        return guard(lambda: scenes.create_act(show_id, body.name, body.names))
 
     @app.patch("/api/shows/{show_id}/acts/{act_id}")
     def rename_act(show_id: str, act_id: str, body: RenameBody):
-        return guard(lambda: scenes.rename_act(show_id, act_id, body.name))
+        return guard(lambda: scenes.rename_act(show_id, act_id, body.name, body.names))
 
     @app.delete("/api/shows/{show_id}/acts/{act_id}")
     def delete_act(show_id: str, act_id: str):

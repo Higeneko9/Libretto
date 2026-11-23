@@ -234,10 +234,12 @@ export function Results() {
   const shows = useStore((s) => s.shows);
   const locale = useStore((s) => s.ui.locale);
   const scopeScene = scope.kind === "scene" ? scenes.find((s) => s.id === scope.id) : undefined;
+  const scopeGroup = scope.kind === "show" ? shows.find((s) => s.id === scope.id)
+    : scope.kind === "act" ? shows.find((s) => s.id === scope.show_id)?.items.filter((i) => i.kind === "act").find((i) => i.id === scope.id)
+    : undefined;
   const scopeName = scope.kind === "all" ? t("showExplorer.allOutputs") : scope.kind === "standalone" ? t("showExplorer.standalone")
     : scope.kind === "scene" ? scopeScene && (translatedName(scopeScene.name, scopeScene.names, locale) ?? scopeScene.name)
-    : scope.kind === "show" ? shows.find((s) => s.id === scope.id)?.name
-    : shows.find((s) => s.id === scope.show_id)?.items.filter((i) => i.kind === "act").find((i) => i.id === scope.id)?.name;
+    : scopeGroup && (translatedName(scopeGroup.name, scopeGroup.names, locale) ?? scopeGroup.name);
   const runs = useMemo(() => scopedRuns(allRuns, scope, scenes), [allRuns, scope, scenes]);
   const refresh = useStore((s) => s.refreshRuns);
   const [openId, setOpenId] = useState<string | null>(null);

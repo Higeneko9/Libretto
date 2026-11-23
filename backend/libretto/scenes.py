@@ -135,12 +135,7 @@ class Scenes:
         scene = self.get(scene_id)
         if name is not None:
             scene["name"] = name
-        if names is not None:
-            cleaned = normalize_names(names)
-            if cleaned:
-                scene["names"] = cleaned
-            else:
-                scene.pop("names", None)
+        self._set_names(scene, names)
         if graph is not None:
             scene["graph"] = graph
         return self._write(scene, record=name is not None or names is not None)
@@ -314,11 +309,21 @@ class Scenes:
             self._revision += 1
         return previous, following
 
-    def create_show(self, name: str) -> dict:
+    @staticmethod
+    def _set_names(item: dict, names: dict | None) -> None:
+        if names is not None:
+            cleaned = normalize_names(names)
+            if cleaned:
+                item["names"] = cleaned
+            else:
+                item.pop("names", None)
+
+    def create_show(self, name: str, names: dict | None = None) -> dict:
         with self._changes() as changes:
             show_id = new_id("show", lambda i: (self.shows_root / i).exists())
             order = max((s.get("order", 0) for s in self.list_shows()), default=-1) + 1
             show = {"version": 1, "id": show_id, "name": self._name(name), "items": [], "order": order}
+            self._set_names(show, names)
             changes[self._outline(show_id)] = show
         return show
 
@@ -490,10 +495,11 @@ class Scenes:
             raise ValueError("name must not be empty")
         return name.strip()
 
-    def rename_show(self, show_id: str, name: str) -> dict:
+    def rename_show(self, show_id: str, name: str, names: dict | None = None) -> dict:
         with self._changes() as changes:
             show = self.get_show(show_id)
             show["name"] = self._name(name)
+            self._set_names(show, names)
             changes[self._outline(show_id)] = show
         return show
 
@@ -572,19 +578,21 @@ class Scenes:
             raise FileNotFoundError(act_id)
         return act
 
-    def create_act(self, show_id: str, name: str) -> dict:
+    def create_act(self, show_id: str, name: str, names: dict | None = None) -> dict:
         with self._changes() as changes:
             show = self.get_show(show_id)
             act = {"kind": "act", "id": new_id("act", lambda i: any(a["id"] == i for s in self.list_shows() for a in s["items"])), "name": self._name(name), "scene_ids": []}
+            self._set_names(act, names)
             show["items"].append(act)
             changes[self._outline(show_id)] = show
         return act
 
-    def rename_act(self, show_id: str, act_id: str, name: str) -> dict:
+    def rename_act(self, show_id: str, act_id: str, name: str, names: dict | None = None) -> dict:
         with self._changes() as changes:
             show = self.get_show(show_id)
             act = self._act(show, act_id)
             act["name"] = self._name(name)
+            self._set_names(act, names)
             changes[self._outline(show_id)] = show
         return act
 
@@ -682,6 +690,8 @@ class Scenes:
                 act["id"] = new_id("act", lambda i: any(a["id"] == i for s in self.list_shows() for a in s["items"]))
             if name is not None:
                 act["name"] = self._name(name)
+                if copy_act:
+                    act.pop("names", None)
             scene_ids = act["scene_ids"]
             act["scene_ids"] = []
             self._insert(target["items"], act, index)

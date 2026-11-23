@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { api } from "./api";
 import { backdropClose } from "./backdropClose";
 import { useT } from "./i18n/useT";
+import { translatedName } from "./tags";
 import { useStore } from "./store";
 import { SHOW_OUTPUT_LAYOUTS, type Show, type ShowOutputLayout, type ShowOutputPreview } from "./types";
 
@@ -14,6 +15,7 @@ export function ShowSettings({ show, onClose }: { show: Show; onClose: () => voi
   const t = useT();
   const titleId = useId();
   const busy = useStore((s) => s.organizationBusy);
+  const locale = useStore((s) => s.ui.locale);
   const [layout, setLayout] = useState<ShowOutputLayout>(show.output_layout ?? "workflow");
   const [sceneId, setSceneId] = useState(useStore.getState().activeId);
   const [preview, setPreview] = useState<Preview>({ status: "loading" });
@@ -65,7 +67,7 @@ export function ShowSettings({ show, onClose }: { show: Show; onClose: () => voi
         setSaving(false);
       }
     }}>
-      <h2 id={titleId}>{t("showExplorer.settingsTitle", { name: show.name })}</h2>
+      <h2 id={titleId}>{t("showExplorer.settingsTitle", { name: translatedName(show.name, show.names, locale) ?? show.name })}</h2>
       <label className="field">
         <span>{t("showExplorer.outputLayout")}</span>
         <select autoFocus value={layout} disabled={saving || busy} onChange={(event) => {

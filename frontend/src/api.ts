@@ -117,7 +117,7 @@ export const api = {
   redoOrganization: (revision: number) => call<OrganizationHistory>("/api/organization/history/redo", json("POST", { revision })),
   shows: () => call<Show[]>("/api/shows"),
   createShow: (name: string) => call<Show>("/api/shows", json("POST", { name })),
-  renameShow: (id: string, name: string) => call<Show>(`/api/shows/${id}`, json("PATCH", { name })),
+  renameShow: (id: string, name: string, names?: Record<string, string>) => call<Show>(`/api/shows/${id}`, json("PATCH", { name, names })),
   saveShowSettings: (id: string, output_layout: ShowOutputLayout) =>
     call<Show>(`/api/shows/${id}/settings`, json("PATCH", { output_layout })),
   showOutputPreview: (id: string, layout: ShowOutputLayout) =>
@@ -127,7 +127,7 @@ export const api = {
   deleteShowHierarchy: (id: string, scene_ids: string[], act_ids: string[]) =>
     call<{ deleted: string; history: OrganizationHistory; history_id: string }>(`/api/shows/${id}/hierarchy`, json("DELETE", { scene_ids, act_ids })),
   createAct: (show: string, name: string) => call<Act>(`/api/shows/${show}/acts`, json("POST", { name })),
-  renameAct: (show: string, id: string, name: string) => call<Act>(`/api/shows/${show}/acts/${id}`, json("PATCH", { name })),
+  renameAct: (show: string, id: string, name: string, names?: Record<string, string>) => call<Act>(`/api/shows/${show}/acts/${id}`, json("PATCH", { name, names })),
   deleteAct: (show: string, id: string) => call<unknown>(`/api/shows/${show}/acts/${id}`, { method: "DELETE" }),
   deleteActHierarchy: (show: string, id: string, scene_ids: string[]) =>
     call<{ deleted: string; history: OrganizationHistory; history_id: string }>(`/api/shows/${show}/acts/${id}/hierarchy`, json("DELETE", { scene_ids, act_ids: [id] })),

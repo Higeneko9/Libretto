@@ -44,6 +44,59 @@ def test_show_output_settings_persist_and_support_undo_without_moving_files(tmp_
     assert scenes.output_prefix(one["id"]) is None
 
 
+def test_show_and_act_translations_persist_and_are_undoable_without_changing_output_paths(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Original Show", {"ja_jp": " ショー ", "en-US": "Show Display"})
+    act = scenes.create_act(show["id"], "Original Act", {"ja_jp": " 幕 ", "en-US": "Act Display"})
+    scene = scenes.create("Scene", graph(), show["id"], act["id"])
+    scenes.set_output_layout(show["id"], "show_act_scene")
+    scenes.clear_history()
+    before = scenes.output_prefix(scene["id"])
+    assert before == "original-show/01-original-act/01-scene"
+    scenes.rename_show(show["id"], "Original Show", {"ja-JP": "新しいショー", "en-US": "Show Display"})
+    scenes.rename_act(show["id"], act["id"], "Original Act", {"ja-JP": "新しい幕", "en-US": "Act Display"})
+    reopened = Scenes(scenes.root)
+    persisted = reopened.get_show(show["id"])
+    assert persisted["names"] == {"ja-JP": "新しいショー", "en-US": "Show Display"}
+    assert persisted["items"][0]["names"] == {"ja-JP": "新しい幕", "en-US": "Act Display"}
+    assert scenes.output_prefix(scene["id"]) == before
+    step(scenes)
+    assert scenes.get_show(show["id"])["items"][0]["names"]["ja-JP"] == "幕"
+    step(scenes)
+    assert scenes.get_show(show["id"])["names"]["ja-JP"] == "ショー"
+    step(scenes, redo=True)
+    step(scenes, redo=True)
+    assert scenes.get_show(show["id"]) == persisted
+    scenes.rename_show(show["id"], "New original")
+    assert scenes.get_show(show["id"])["names"] == persisted["names"]
+    scenes.rename_act(show["id"], act["id"], "New original", {})
+    assert "names" not in scenes.get_show(show["id"])["items"][0]
+
+
+def test_act_copy_preserves_translations_unless_given_a_new_original_name(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Show")
+    act = scenes.create_act(show["id"], "Act", {"ja-JP": "幕"})
+    copied = scenes.place_act(show["id"], act["id"], show["id"], copy_act=True)
+    renamed = scenes.place_act(show["id"], act["id"], show["id"], copy_act=True, name="New Act")
+    assert copied["names"] == {"ja-JP": "幕"}
+    assert "names" not in renamed
+    assert scenes.get_show(show["id"])["items"][0]["names"] == {"ja-JP": "幕"}
+
+
+def test_show_and_act_name_api_normalizes_and_preserves_omitted_translations(env):
+    client, _, _ = env
+    show = client.post("/api/shows", json={"name": "Show", "names": {"ja_jp": " ショー "}}).json()
+    act = client.post(f"/api/shows/{show['id']}/acts", json={"name": "Act", "names": {"ja_jp": " 幕 "}}).json()
+    assert show["names"] == {"ja-JP": "ショー"}
+    assert act["names"] == {"ja-JP": "幕"}
+    assert client.patch(f"/api/shows/{show['id']}", json={"name": "New Show"}).json()["names"] == {"ja-JP": "ショー"}
+    response = client.patch(f"/api/shows/{show['id']}/acts/{act['id']}",
+                            json={"name": "Act", "names": {"en_us": " Display ", "ja-JP": ""}})
+    assert response.json()["names"] == {"en-US": "Display"}
+    assert client.patch(f"/api/shows/{show['id']}", json={"name": "New Show", "names": {}}).json().get("names") is None
+
+
 def test_show_output_names_are_literal_portable_and_keep_unicode(tmp_path):
     scenes = Scenes(tmp_path / "scenes")
     show = scenes.create_show("CON.")

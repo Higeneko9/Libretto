@@ -137,14 +137,14 @@ provides an immediate Undo action.
 Double-click a show, act, or scene name, choose **Rename**, or press **F2** on the
 selected item while the pointer is over Show Outline to edit its name in place.
 **Enter** or clicking elsewhere saves; **Escape** cancels. Blank names are rejected.
-Scene inline editing changes only the display name for the current UI language.
-Use **Edit original / translated names…** in a scene's context menu to edit its
+Inline editing changes only the display name for the current UI language.
+Use **Edit original / translated names…** in an item's context menu to edit its
 original name and translation together. Renaming is undoable, and dragging is
 disabled while a name is being edited.
 
 Right-click a **show** and choose **Show settings…** to configure its output layout:
 **Workflow default**, **Show / Scene**, or **Show / Act / Scene**. A live example
-uses the saved scene's original name; select another example scene to check its
+uses the original show, act and scene names; select another example scene to check its
 path. For example, `my-show/01-opening/02-arrival` is a filename prefix relative
 to ComfyUI's output folder; the workflow adds its counter and image extension.
 Scene numbers span the show in **Show / Scene**. With act folders, act numbers

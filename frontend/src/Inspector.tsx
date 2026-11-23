@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
-import { parseTags, presetTitle, tagChoices } from "./tags";
+import { parseTags, presetTitle, tagChoices, translatedName } from "./tags";
 import { useTags } from "./useTags";
 import { canBelong, categoryInfo, characterLabel, isCharacterNode, useStore, type LbNode } from "./store";
 import { SceneHistory } from "./SceneHistory";
@@ -441,6 +441,7 @@ function PromptOrder({ id, data, defaultOrder }: { id: string; data: GraphNodeDa
 
 function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
   const t = useT();
+  const locale = useStore((s) => s.ui.locale);
   const update = useStore((s) => s.updateNode);
   const profiles = useStore((s) => s.profiles);
   const outputShow = useStore((s) => {
@@ -519,7 +520,7 @@ function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
       />
       {outputShow?.output_layout && outputShow.output_layout !== "workflow" &&
         <p className="muted">{t(data.output_prefix?.trim() ? "showExplorer.outputOverride" : "showExplorer.outputInherited", {
-          name: outputShow.name, layout: t(`showExplorer.layout_${outputShow.output_layout}`),
+          name: translatedName(outputShow.name, outputShow.names, locale) ?? outputShow.name, layout: t(`showExplorer.layout_${outputShow.output_layout}`),
         })}</p>}
       <p className="muted">
         {t("inspector.outputNote")}

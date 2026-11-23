@@ -400,7 +400,7 @@ it("keeps actions in right-click menus and applies them to the clicked item with
   expect(renameInput().value).toBe("The Show");
   await renameValue("Renamed Show");
   await renameKey("Enter");
-  expect(api.renameShow).toHaveBeenCalledWith("show1", "Renamed Show");
+  expect(api.renameShow).toHaveBeenCalledWith("show1", "The Show", { "en-US": "Renamed Show" });
   expect(container.querySelector('[role="menu"]')).toBeNull();
   expect(useStore.getState().outputScope).toEqual({ kind: "scene", id: "s3" });
 });
@@ -417,7 +417,7 @@ it.each(["act:act1", "scene:s2"])("edits %s inline and saves on blur", async (ke
   await renameValue("  Updated  ");
   await act(async () => renameInput().blur());
   if (key.startsWith("act:")) {
-    expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", "Updated");
+    expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", "First Act", { "en-US": "Updated" });
   } else {
     expect(api.saveScene).toHaveBeenCalledWith("s2", { name: "Two", names: { "en-US": "Updated" } });
   }
@@ -458,7 +458,7 @@ it("rejects a blank name without losing the editor and accepts a correction", as
   expect(container.querySelector(".explorer-error")?.textContent).toBe("Name cannot be empty.");
   await renameValue("Corrected");
   await renameKey("Enter");
-  expect(api.renameShow).toHaveBeenCalledWith("show1", "Corrected");
+  expect(api.renameShow).toHaveBeenCalledWith("show1", "The Show", { "en-US": "Corrected" });
 });
 
 it("retains a failed rename draft so it can be corrected or retried", async () => {
@@ -512,6 +512,31 @@ it.each(["en-US", "ja-JP"] as const)("updates the %s scene display name without 
   });
 });
 
+it.each([
+  { key: "show:show1", original: "The Show", kind: "show" },
+  { key: "act:act1", original: "First Act", kind: "act" },
+] as const)("edits the current-language $kind name without changing the original or other languages", async ({ key, original, kind }) => {
+  await act(async () => useStore.setState((s) => ({
+    ui: { ...s.ui, locale: "ja-JP" },
+    shows: s.shows.map((show) => ({
+      ...show, names: { "en-US": "Show display", "ja-JP": "Show Japanese" },
+      items: show.items.map((item) => item.kind === "act"
+        ? { ...item, names: { "en-US": "Act display", "ja-JP": "Act Japanese" } } : item),
+    })),
+  })));
+  vi.spyOn(api, "renameShow").mockResolvedValue(useStore.getState().shows[0]);
+  vi.spyOn(api, "renameAct").mockResolvedValue({ kind: "act", id: "act1", name: original, scene_ids: ["s1"] });
+  mockOrganizationRefresh();
+  await doubleClick(key);
+  expect(renameInput().value).toBe(kind === "show" ? "Show Japanese" : "Act Japanese");
+  await renameValue("Changed Japanese");
+  await act(async () => useStore.setState((s) => ({ ui: { ...s.ui, locale: "en-US" } })));
+  await renameKey("Enter");
+  const expected = { "en-US": kind === "show" ? "Show display" : "Act display", "ja-JP": "Changed Japanese" };
+  if (kind === "show") expect(api.renameShow).toHaveBeenCalledWith("show1", original, expected);
+  else expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", original, expected);
+});
+
 it("starts F2 renaming only over the outline and blocks dragging while editing", async () => {
   await click("First Act");
   hover(row("act:act1"));
@@ -562,6 +587,65 @@ it("keeps the original and translated scene-name dialog available", async () => 
   await menuClick("Edit original / translated names…");
   expect(ask.askNames).toHaveBeenCalledWith("Rename", "Two", "", "en-US");
   expect(api.saveScene).toHaveBeenCalledWith("s2", { name: "Original", names: { "en-US": "Translated" } });
+});
+
+it.each([
+  { key: "show:show1", original: "The Show", kind: "show" },
+  { key: "act:act1", original: "First Act", kind: "act" },
+] as const)("edits and clears the translated $kind name through the names dialog", async ({ key, original, kind }) => {
+  await act(async () => useStore.setState((s) => ({
+    shows: s.shows.map((show) => ({
+      ...show, names: { "en-US": "Show display", "ja-JP": "Show Japanese" },
+      items: show.items.map((item) => item.kind === "act"
+        ? { ...item, names: { "en-US": "Act display", "ja-JP": "Act Japanese" } } : item),
+    })),
+  })));
+  vi.spyOn(ask, "askNames").mockResolvedValue({ name: "New original", display: "" });
+  vi.spyOn(api, "renameShow").mockResolvedValue(useStore.getState().shows[0]);
+  vi.spyOn(api, "renameAct").mockResolvedValue({ kind: "act", id: "act1", name: original, scene_ids: ["s1"] });
+  mockOrganizationRefresh();
+  await contextMenu(key);
+  await menuClick("Edit original / translated names…");
+  expect(ask.askNames).toHaveBeenCalledWith("Rename", original, kind === "show" ? "Show display" : "Act display", "en-US");
+  const expected = { "ja-JP": kind === "show" ? "Show Japanese" : "Act Japanese" };
+  if (kind === "show") expect(api.renameShow).toHaveBeenCalledWith("show1", "New original", expected);
+  else expect(api.renameAct).toHaveBeenCalledWith("show1", "act1", "New original", expected);
+});
+
+it("uses translated show and act names throughout the outline, results, settings and copy destinations", async () => {
+  await act(async () => useStore.setState((s) => ({
+    shows: s.shows.map((show) => ({
+      ...show, names: { "en-US": "Display show", "ja-JP": "Japanese show" },
+      items: show.items.map((item) => item.kind === "act" ? { ...item, names: { "en-US": "Display act" } } : item),
+    })),
+  })));
+  expect(row("show:show1").textContent).toBe("Display show");
+  expect(row("act:act1").textContent).toBe("Display act");
+  await click("Display act");
+  expect(container.querySelector(".results-wrap")?.textContent).toContain("Results · Display act");
+  await openSettings();
+  expect(container.querySelector('[role="dialog"] h2')?.textContent).toBe("Show settings — Display show");
+  await settingsButton("Cancel");
+  await contextMenu("scene:s2");
+  await menuClick("Copy to…");
+  expect(container.querySelector(".explorer-transfer")?.textContent).toContain("Display show / Display act");
+  await act(async () => container.querySelector<HTMLButtonElement>('.explorer-transfer button[type="button"]')!.click());
+  await act(async () => useStore.setState((s) => ({ ui: { ...s.ui, locale: "ja-JP" } })));
+  expect(row("show:show1").textContent).toBe("Japanese show");
+  expect(row("act:act1").textContent).toBe("First Act");
+});
+
+it("uses the translated show name in the Generate node's output information", async () => {
+  vi.spyOn(api, "sceneSnaps").mockResolvedValue({ max: 30, default_max: 30, items: [] });
+  await act(async () => {
+    useStore.setState((s) => ({
+      activeId: "s1", selectedId: "g",
+      shows: s.shows.map((show) => ({ ...show, names: { "en-US": "Display show" }, output_layout: "show_scene" })),
+      nodes: [{ id: "g", type: "generate", data: { profile: "p" }, position: { x: 0, y: 0 } }],
+    }));
+    root.render(<Inspector />);
+  });
+  expect(container.textContent).toContain("Inherited from show “Display show”");
 });
 
 it.each(["show:show1", "act:act1", "scene:s2"])("omits redundant movement actions from the %s menu", async (key) => {

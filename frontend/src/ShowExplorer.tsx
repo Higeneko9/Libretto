@@ -13,6 +13,8 @@ import type { OutputScope, ScenePlace, Show } from "./types";
 type Menu = { target: OutputScope; x: number; y: number };
 type InlineRename = { target: OutlineItem; original: string; value: string; locale: string };
 const itemKey = (item: OutputScope) => `${item.kind}:${"id" in item ? item.id : ""}`;
+const displayName = (item: { name: string; names?: Record<string, string> }, locale: string) =>
+  translatedName(item.name, item.names, locale) ?? item.name;
 
 function OutlineIcon({ kind }: { kind: "show" | "act" | "scene" | "standalone" }) {
   return <svg className={`explorer-icon explorer-icon-${kind}`} viewBox="0 0 24 24" fill="none"
@@ -64,15 +66,16 @@ export function ShowExplorer() {
   const showId = actionTarget.kind === "show" ? actionTarget.id : actionTarget.kind === "act" ? actionTarget.show_id : selectedScene?.show_id;
   const show = shows.find((s) => s.id === showId);
   const act = actionTarget.kind === "act" ? show?.items.filter((i) => i.kind === "act").find((i) => i.id === actionTarget.id) : undefined;
-  const label = selectedScene ? translatedName(selectedScene.name, selectedScene.names, locale) ?? selectedScene.name : act?.name ?? show?.name ?? "";
+  const namedItem = selectedScene ?? act ?? (actionTarget.kind === "show" ? show : undefined);
+  const label = namedItem ? displayName(namedItem, locale) : "";
   const actionable = "id" in actionTarget;
   const copyable = actionTarget.kind === "scene" || actionTarget.kind === "act";
   const destinations: { key: string; label: string; place: ScenePlace }[] = [
     ...(actionTarget.kind === "scene" ? [{ key: "", label: t("showExplorer.standalone"), place: {} }] : []),
     ...shows.flatMap((s) => [
-      { key: s.id, label: s.name, place: { show_id: s.id } },
+      { key: s.id, label: displayName(s, locale), place: { show_id: s.id } },
       ...(actionTarget.kind === "scene" ? s.items.filter((i) => i.kind === "act").map((a) => ({
-        key: a.id, label: `${s.name} / ${a.name}`, place: { show_id: s.id, act_id: a.id },
+        key: a.id, label: `${displayName(s, locale)} / ${displayName(a, locale)}`, place: { show_id: s.id, act_id: a.id },
       })) : []),
     ]),
   ];
@@ -196,10 +199,14 @@ export function ShowExplorer() {
     }
   };
   const renameNames = async () => {
-    if (selectedScene) {
-      const names = await askNames(t("sceneTabs.rename"), selectedScene.name, translatedName(selectedScene.name, selectedScene.names, locale) ?? "", locale);
-      if (names?.name.trim()) await renameScene(selectedScene.id, names.name.trim(), withName(selectedScene.names, locale, names.display));
-    }
+    if (!namedItem) return;
+    const names = await askNames(t("sceneTabs.rename"), namedItem.name, translatedName(namedItem.name, namedItem.names, locale) ?? "", locale);
+    if (!names?.name.trim()) return;
+    const original = names.name.trim();
+    const translations = withName(namedItem.names, locale, names.display);
+    if (actionTarget.kind === "scene") await renameScene(actionTarget.id, original, translations);
+    else if (actionTarget.kind === "act") await organize(() => api.renameAct(actionTarget.show_id, actionTarget.id, original, translations));
+    else if (actionTarget.kind === "show") await organize(() => api.renameShow(actionTarget.id, original, translations));
   };
   const startRename = (target: OutputScope, name: string) => {
     if (!("id" in target) || mutationBusy || editing || copyTarget) return;
@@ -237,8 +244,13 @@ export function ShowExplorer() {
           await renameScene(scene.id, scene.name, withName(scene.names, edit.locale, name));
         } else {
           await organize(async () => {
-            if (target.kind === "act") await api.renameAct(target.show_id, target.id, name);
-            else await api.renameShow(target.id, name);
+            const parent = useStore.getState().shows.find((s) => s.id === (target.kind === "show" ? target.id : target.show_id));
+            const item = target.kind === "show" ? parent
+              : parent?.items.filter((entry) => entry.kind === "act").find((entry) => entry.id === target.id);
+            if (!item) throw new Error(t("showExplorer.missingItem", { id: target.id }));
+            const names = withName(item.names, edit.locale, name);
+            if (target.kind === "act") await api.renameAct(target.show_id, target.id, item.name, names);
+            else await api.renameShow(target.id, item.name, names);
           });
         }
         finishRename(edit, restoreFocus);
@@ -496,10 +508,10 @@ export function ShowExplorer() {
           </li>
           {shows.map((s) => {
             return <li key={s.id}>
-              {groupButton({ kind: "show", id: s.id }, s.name, s.id, t("showExplorer.show"))}
+              {groupButton({ kind: "show", id: s.id }, displayName(s, locale), s.id, t("showExplorer.show"))}
               {!collapsed.has(s.id) && <ul>
                 {showItems(s, scenes).map((item) => item.kind === "scene" ? sceneRow(item.id) : <li key={item.id}>
-                  {groupButton({ kind: "act", id: item.id, show_id: s.id }, item.name, item.id, t("showExplorer.act"))}
+                  {groupButton({ kind: "act", id: item.id, show_id: s.id }, displayName(item, locale), item.id, t("showExplorer.act"))}
                   {!collapsed.has(item.id) && <ul>{item.scene_ids.map(sceneRow)}</ul>}
                 </li>)}
               </ul>}
@@ -532,7 +544,7 @@ export function ShowExplorer() {
               setSettingsTarget(show);
               closeMenu();
             }}>{t("showExplorer.settings")}</button>}
-            {selectedScene && <button role="menuitem" onClick={() => menuAction(renameNames)}>{t("showExplorer.renameNames")}</button>}
+            {namedItem && <button role="menuitem" onClick={() => menuAction(renameNames)}>{t("showExplorer.renameNames")}</button>}
             {copyable && <>
               <button role="menuitem" onClick={() => menuAction(duplicate)}>{t("sceneTabs.duplicate")}</button>
               <button role="menuitem" onClick={startCopy}>{t("showExplorer.copy")}</button>
