@@ -100,8 +100,10 @@ choose your own working profile before generating.
    the Prompt preview.
 
 Scenes autosave. Right-click a scene tab to rename, duplicate, export, close,
-or delete it. Use **Export scene** and **Import scene** in the Toolbar to
-exchange scene JSON files.
+close the other tabs, close all tabs, or delete it. Closing tabs does not delete
+scenes; reopen them from the outline or the **+** menu, which lists up to eight
+recently closed scenes. Use **Export scene** and **Import scene** in the Toolbar
+to exchange scene JSON files.
 
 ### Organize shows, acts, and scenes
 

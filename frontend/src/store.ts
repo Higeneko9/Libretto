@@ -74,7 +74,9 @@ export interface UiPrefs {
   historyThumb: number;
   libSel: string[];
   openScenes: string[];
+  recentScenes: string[];
   activeScene: string | null;
+  closedAllScenes: boolean;
   /** display language (one of i18n LANGUAGES); also the language new tag names are stored under */
   locale: string;
 }
@@ -91,7 +93,9 @@ const defaultUi: UiPrefs = {
   historyThumb: 72,
   libSel: ["character"],
   openScenes: [],
+  recentScenes: [],
   activeScene: null,
+  closedAllScenes: false,
   locale: resolveLanguage(typeof navigator === "undefined" ? "" : navigator.language),
 };
 
@@ -205,6 +209,7 @@ interface State {
   redoOrganization: () => Promise<void>;
   activeId: string | null;
   sceneReady: boolean;
+  tabsBusy: boolean;
   onNodesChange: (changes: NodeChange<LbNode>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
@@ -232,6 +237,8 @@ interface State {
   initScenes: () => Promise<void>;
   openScene: (id: string) => Promise<void>;
   closeScene: (id: string) => Promise<void>;
+  closeOtherScenes: (id: string) => Promise<void>;
+  closeAllScenes: () => Promise<void>;
   newScene: (name?: string, graph?: Graph) => Promise<void>;
   renameScene: (id: string, name: string, names?: Record<string, string>) => Promise<void>;
   deleteScene: (id: string) => Promise<void>;
@@ -329,6 +336,7 @@ const sceneName = (scenes: SceneMeta[], id: string | null) => scenes.find((s) =>
 // ---- autosave of the active scene ------------------------------------
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let saveInFlight: Promise<unknown> | null = null;
+let saveNeedsRetry = false;
 
 async function saveNow() {
   const { activeId, sceneReady, toGraph } = useStore.getState();
@@ -342,14 +350,18 @@ async function saveNow() {
   saveInFlight = write;
   try {
     await write;
+    saveNeedsRetry = false;
+  } catch (error) {
+    saveNeedsRetry = true;
+    throw error;
   } finally {
     if (saveInFlight === write) saveInFlight = null;
   }
 }
 
 export async function flushSave() {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
+  if (saveTimer || saveNeedsRetry) {
+    if (saveTimer) clearTimeout(saveTimer);
     saveTimer = null;
     await saveNow();
   }
@@ -384,7 +396,25 @@ export const useStore = create<State>((set, get) => {
     if (libraryChanged) get().bumpThumbs();
   };
 
-  const persistOpen = (openScenes: string[], activeScene: string | null) => get().setUi({ openScenes, activeScene });
+  const persistOpen = (openScenes: string[], activeScene: string | null, closedAllScenes = false) => {
+    const { ui, scenes } = get();
+    const removed = ui.openScenes.filter((id) => !openScenes.includes(id) && scenes.some((scene) => scene.id === id));
+    // When several tabs close together, keep the active scene first.
+    if (ui.activeScene && removed.includes(ui.activeScene)) {
+      removed.splice(removed.indexOf(ui.activeScene), 1);
+      removed.unshift(ui.activeScene);
+    }
+    const recentScenes = [...new Set([...removed, ...ui.recentScenes])]
+      .filter((id) => !openScenes.includes(id) && scenes.some((scene) => scene.id === id))
+      .slice(0, 8);
+    get().setUi({ openScenes, activeScene, closedAllScenes, recentScenes });
+  };
+  const checkTabsBusy = () => {
+    if (get().tabsBusy) throw new Error(t("sceneTabs.busy"));
+  };
+  const checkOrganizationBusy = () => {
+    if (get().organizationBusy) throw new Error(t("showExplorer.busy"));
+  };
 
   return {
     nodes: [],
@@ -421,6 +451,8 @@ export const useStore = create<State>((set, get) => {
       set({ scenes, shows, outputScope, organizationHistory });
       const { activeId, ui } = get();
       const open = ui.openScenes.filter((id) => scenes.some((scene) => scene.id === id));
+      const recentScenes = ui.recentScenes.filter((id) => scenes.some((scene) => scene.id === id));
+      if (recentScenes.length !== ui.recentScenes.length) get().setUi({ recentScenes });
       if (activeId && !scenes.some((scene) => scene.id === activeId)) {
         const next = open[0] ?? scenes[0]?.id ?? null;
         if (next && !open.includes(next)) open.push(next);
@@ -437,6 +469,7 @@ export const useStore = create<State>((set, get) => {
       }
     },
     organize: async (action) => {
+      checkTabsBusy();
       if (get().organizationBusy) throw new Error(t("showExplorer.busy"));
       set({ organizationBusy: true });
       try {
@@ -456,6 +489,7 @@ export const useStore = create<State>((set, get) => {
     },
     activeId: null,
     sceneReady: false,
+    tabsBusy: false,
     canUndo: false,
     canRedo: false,
     undo: () => stepHistory(undoStack, redoStack),
@@ -466,6 +500,7 @@ export const useStore = create<State>((set, get) => {
     select: (id) => set({ selectedId: id }),
     focusId: null,
     addNodeFocused: (type, data) => {
+      if (!get().activeId || !get().sceneReady || get().tabsBusy) return;
       const k = get().nodes.length % 8;
       get().addNode(type, data, { x: 120 + k * 30, y: 80 + k * 30 });
       const id = get().selectedId;
@@ -614,8 +649,12 @@ export const useStore = create<State>((set, get) => {
         localStorage.removeItem(LEGACY_KEY);
         scenes = await api.scenes();
       }
-      const { openScenes, activeScene } = get().ui;
+      const { openScenes, activeScene, closedAllScenes } = get().ui;
       const open = openScenes.filter((id) => scenes.some((s) => s.id === id));
+      if (closedAllScenes && open.length === 0) {
+        set({ scenes, activeId: null, sceneReady: true });
+        return;
+      }
       if (open.length === 0) {
         // first run: open the shipped example scenes so they are easy to find
         const starters = scenes.filter((s) => s.starter != null).sort((a, b) => a.starter! - b.starter!);
@@ -630,36 +669,85 @@ export const useStore = create<State>((set, get) => {
       set({ sceneReady: true });
     },
     openScene: async (id) => {
-      set({ outputScope: { kind: "scene", id } });
-      if (id === get().activeId) return;
-      await flushSave();
-      const scene = await api.scene(id);
-      const open = get().ui.openScenes.includes(id) ? get().ui.openScenes : [...get().ui.openScenes, id];
-      set({ activeId: id });
-      persistOpen(open, id);
-      await applyGraph(scene.graph);
+      checkTabsBusy();
+      checkOrganizationBusy();
+      if (id === get().activeId) return set({ outputScope: { kind: "scene", id } });
+      set({ tabsBusy: true });
+      try {
+        await flushSave();
+        const scene = await api.scene(id);
+        const open = get().ui.openScenes.includes(id) ? get().ui.openScenes : [...get().ui.openScenes, id];
+        set({ activeId: id, outputScope: { kind: "scene", id } });
+        persistOpen(open, id);
+        await applyGraph(scene.graph);
+        set({ sceneReady: true });
+      } finally {
+        set({ tabsBusy: false });
+      }
     },
     closeScene: async (id) => {
+      checkTabsBusy();
+      checkOrganizationBusy();
       const open = get().ui.openScenes.filter((s) => s !== id);
       if (id !== get().activeId) return persistOpen(open, get().activeId);
-      await flushSave();
-      if (open.length === 0) {
-        const fallback = get().scenes.find((s) => s.id !== id);
-        if (!fallback) return get().newScene(t("store.sceneN", { n: 1 }));
-        open.push(fallback.id);
+      if (open.length === 0) return get().closeAllScenes();
+      set({ tabsBusy: true });
+      try {
+        await flushSave();
+        const index = get().ui.openScenes.indexOf(id);
+        const next = open[Math.min(index, open.length - 1)];
+        const scene = await api.scene(next);
+        set({ activeId: next });
+        persistOpen(open, next);
+        await applyGraph(scene.graph);
+      } finally {
+        set({ tabsBusy: false });
       }
-      const index = get().ui.openScenes.indexOf(id);
-      const next = open[Math.min(index, open.length - 1)];
-      const scene = await api.scene(next);
-      set({ activeId: next });
-      persistOpen(open, next);
-      await applyGraph(scene.graph);
+    },
+    closeOtherScenes: async (id) => {
+      checkTabsBusy();
+      checkOrganizationBusy();
+      if (!get().ui.openScenes.includes(id)) throw new Error(t("sceneTabs.missingTab"));
+      set({ tabsBusy: true });
+      try {
+        if (id !== get().activeId) {
+          await flushSave();
+          const scene = await api.scene(id);
+          set({ activeId: id });
+          persistOpen([id], id);
+          await applyGraph(scene.graph);
+          set({ sceneReady: true, outputScope: { kind: "scene", id } });
+        } else {
+          persistOpen([id], id);
+        }
+      } finally {
+        set({ tabsBusy: false });
+      }
+    },
+    closeAllScenes: async () => {
+      checkTabsBusy();
+      checkOrganizationBusy();
+      set({ tabsBusy: true });
+      try {
+        await flushSave();
+        set({ activeId: null, nodes: [], edges: [], scenePrompt: "", sceneNegative: "", selectedId: null, focusId: null, outputScope: { kind: "all" } });
+        resetHistory();
+        persistOpen([], null, true);
+      } finally {
+        set({ tabsBusy: false });
+      }
     },
     newScene: async (name, graph) => {
       const created = await get().organize(() => api.createScene(name || t("store.sceneN", { n: get().scenes.length + 1 }), graph ?? emptyGraph(get().library), sceneDestination(get().outputScope, get().scenes)));
-      set({ activeId: created.id, outputScope: { kind: "scene", id: created.id } });
-      persistOpen([...get().ui.openScenes, created.id], created.id);
-      await applyGraph(created.graph);
+      set({ tabsBusy: true });
+      try {
+        set({ activeId: created.id, outputScope: { kind: "scene", id: created.id } });
+        persistOpen([...get().ui.openScenes, created.id], created.id);
+        await applyGraph(created.graph);
+        set({ sceneReady: true });
+      } finally {
+        set({ tabsBusy: false });
+      }
     },
     applySceneGraph: (graph) => {
       // the batch count belongs to the current Generate click, not the saved scene content
@@ -702,7 +790,7 @@ useStore.subscribe((state, prev) => {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    void saveNow();
+    void saveNow().catch((error) => console.error("Scene autosave failed:", error));
   }, 600);
 });
 

@@ -22,7 +22,7 @@ const settle = () => vi.advanceTimersByTime(500);
 
 beforeEach(() => {
   vi.useFakeTimers();
-  useStore.setState({ nodes: [generate(), character()], edges: [], scenePrompt: "", sceneNegative: "", selectedId: null, sceneReady: false });
+  useStore.setState({ nodes: [generate(), character()], edges: [], scenePrompt: "", sceneNegative: "", selectedId: null, activeId: "scene1", sceneReady: false });
   useStore.setState({ sceneReady: true });
   resetHistory();
 });

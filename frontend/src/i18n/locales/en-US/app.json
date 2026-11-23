@@ -31,5 +31,6 @@
   "duplicate": "Duplicate",
   "delete": "Delete",
   "paste": "Paste",
-  "loading": "Loading…"
+  "loading": "Loading…",
+  "noScene": "No scene open. Select a scene in the outline or use + to open or create one."
 }

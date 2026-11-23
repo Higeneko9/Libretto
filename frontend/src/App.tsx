@@ -30,6 +30,7 @@ function Toolbar() {
   const [showSettings, setShowSettings] = useState(false);
   const { newScene } = useStore.getState();
   const { busy, error } = useGeneration();
+  const sceneAvailable = useStore((s) => !!s.activeId && s.sceneReady && !s.tabsBusy);
 
   useEffect(() => {
     // first run: ask for the ComfyUI address
@@ -86,12 +87,12 @@ function Toolbar() {
       </button>
       {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
       <div className="spacer" />
-      <button onClick={exportGraph}>{t("app.exportScene")}</button>
+      <button disabled={!sceneAvailable} onClick={exportGraph}>{t("app.exportScene")}</button>
       <label className="button">
         {t("app.importScene")}
         <input type="file" accept=".json" hidden onChange={(e) => importGraph(e.target.files?.[0])} />
       </label>
-      <button className="primary" disabled={busy} onClick={() => void runGenerate()}>
+      <button className="primary" disabled={busy || !sceneAvailable} onClick={() => void runGenerate()}>
         {busy ? t("app.queuing") : t("app.generate")}
       </button>
       {error && <span className="error-inline">{error}</span>}
@@ -167,6 +168,7 @@ function GenerateBar() {
 
 export function Canvas() {
   const t = useT();
+  const tabsBusy = useStore((s) => s.tabsBusy);
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, select } = useStore();
   // Connections still determine prompt inputs; hide them only in the editor.
   const hiddenEdges = useMemo(() => edges.map((edge) => ({ ...edge, hidden: true })), [edges]);
@@ -189,6 +191,7 @@ export function Canvas() {
   };
   usePanelShortcuts(canvasRef, (event) => {
     const state = useStore.getState();
+    if (state.tabsBusy) return;
     const key = event.key.toLowerCase();
     if (event.altKey) return;
     if (event.key === "F2" && !event.ctrlKey && !event.metaKey) {
@@ -264,6 +267,7 @@ export function Canvas() {
 
   useEffect(() => {
     const onDrop = (event: Event) => {
+      if (useStore.getState().tabsBusy) return;
       const { x, y, payload } = (event as CustomEvent<{ x: number; y: number; payload: DragPayload }>).detail;
       const hit = document
         .elementsFromPoint(x, y)
@@ -289,7 +293,7 @@ export function Canvas() {
   }, [screenToFlowPosition]);
 
   return (
-    <div ref={canvasRef} className="canvas" data-shortcut-panel="canvas">
+    <div ref={canvasRef} className="canvas" data-shortcut-panel="canvas" inert={tabsBusy}>
       <ReactFlow
         nodes={nodes}
         edges={hiddenEdges}
@@ -388,6 +392,7 @@ export default function App() {
   const initScenes = useStore((s) => s.initScenes);
   const ready = useStore((s) => s.sceneReady);
   const activeId = useStore((s) => s.activeId);
+  const tabsBusy = useStore((s) => s.tabsBusy);
   const ui = useStore((s) => s.ui);
   const setUi = useStore((s) => s.setUi);
   const [error, setError] = useState("");
@@ -406,10 +411,10 @@ export default function App() {
       <div className="app" style={style}>
         <Toolbar />
         <SceneTabs />
-        {ready ? <Canvas key={activeId} /> : <div className="canvas muted">{error || t("app.loading")}</div>}
-        <div className="inspector-wrap" data-shortcut-panel="inspector">
+        {ready && activeId ? <Canvas key={activeId} /> : <div className="canvas muted">{error || (ready ? t("app.noScene") : t("app.loading"))}</div>}
+        <div className="inspector-wrap" data-shortcut-panel="inspector" inert={tabsBusy}>
           <Splitter axis="x" className="edge-left" value={ui.inspectorW} min={240} max={800} direction={-1} onChange={(v) => setUi({ inspectorW: v })} />
-          <Inspector />
+          {ready && activeId && <Inspector />}
         </div>
         <aside className="output-sidebar">
           <Splitter axis="x" className="edge" value={ui.resultsW} min={200} max={1000} direction={1} onChange={(v) => setUi({ resultsW: v })} />

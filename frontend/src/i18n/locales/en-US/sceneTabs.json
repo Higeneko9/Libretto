@@ -5,7 +5,11 @@
   "defaultSceneName": "Scene {n}",
   "renameTitle": "Double-click to rename, right-click for more",
   "closeTab": "Close tab",
-  "plusTitle": "New scene, import, or reopen a closed scene",
+  "closeOthers": "Close other tabs",
+  "closeAll": "Close all tabs",
+  "busy": "A tab operation is already in progress.",
+  "missingTab": "The scene tab is no longer open.",
+  "plusTitle": "New scene, import, or reopen a recent scene",
   "rename": "Rename",
   "duplicate": "Duplicate…",
   "exportJson": "Export JSON",
@@ -14,6 +18,6 @@
   "delete": "Delete…",
   "newScene": "New scene",
   "importJson": "Import scene JSON…",
-  "closedScenes": "Closed scenes (click to open)",
+  "recentScenes": "Recent scenes (click to open)",
   "reopen": "Reopen"
 }

@@ -5,7 +5,11 @@
   "defaultSceneName": "シーン {n}",
   "renameTitle": "ダブルクリックで名前変更、右クリックでその他の操作",
   "closeTab": "タブを閉じる",
-  "plusTitle": "新規シーン、読み込み、閉じたシーンを開き直す",
+  "closeOthers": "他のタブを閉じる",
+  "closeAll": "すべてのタブを閉じる",
+  "busy": "タブの操作が進行中です。",
+  "missingTab": "シーンのタブは既に閉じられています。",
+  "plusTitle": "新規シーン、読み込み、最近のシーンを開き直す",
   "rename": "名前を変更",
   "duplicate": "複製…",
   "exportJson": "JSON を書き出し",
@@ -14,6 +18,6 @@
   "delete": "削除…",
   "newScene": "新規シーン",
   "importJson": "シーン JSON を読み込み…",
-  "closedScenes": "閉じたシーン (クリックで開く)",
+  "recentScenes": "最近のシーン (クリックで開く)",
   "reopen": "開き直す"
 }
