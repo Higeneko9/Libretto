@@ -17,6 +17,8 @@ export function ShowSettings({ show, onClose }: { show: Show; onClose: () => voi
   const busy = useStore((s) => s.organizationBusy);
   const locale = useStore((s) => s.ui.locale);
   const [layout, setLayout] = useState<ShowOutputLayout>(show.output_layout ?? "workflow");
+  const [comfyRoot, setComfyRoot] = useState(show.output_comfy_root ?? { enabled: false, path: "" });
+  const [localRoot, setLocalRoot] = useState(show.output_local_root ?? { enabled: false, path: "" });
   const [sceneId, setSceneId] = useState(useStore.getState().activeId);
   const [preview, setPreview] = useState<Preview>({ status: "loading" });
   const [saving, setSaving] = useState(false);
@@ -53,12 +55,14 @@ export function ShowSettings({ show, onClose }: { show: Show; onClose: () => voi
     <form className="modal-body explorer-transfer" onSubmit={async (event) => {
       event.preventDefault();
       if (savingRef.current || busy || preview.status !== "ready") return;
-      if (layout === (show.output_layout ?? "workflow")) { onClose(); return; }
+      if (layout === (show.output_layout ?? "workflow") &&
+          JSON.stringify(comfyRoot) === JSON.stringify(show.output_comfy_root ?? { enabled: false, path: "" }) &&
+          JSON.stringify(localRoot) === JSON.stringify(show.output_local_root ?? { enabled: false, path: "" })) { onClose(); return; }
       savingRef.current = true;
       setSaving(true);
       setError("");
       try {
-        await useStore.getState().organize(() => api.saveShowSettings(show.id, layout));
+        await useStore.getState().organize(() => api.saveShowSettings(show.id, layout, comfyRoot, localRoot));
         onClose();
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : String(reason));
@@ -68,6 +72,29 @@ export function ShowSettings({ show, onClose }: { show: Show; onClose: () => voi
       }
     }}>
       <h2 id={titleId}>{t("showExplorer.settingsTitle", { name: translatedName(show.name, show.names, locale) ?? show.name })}</h2>
+      <label className="show-root-toggle">
+        <input type="checkbox" role="switch" checked={comfyRoot.enabled} disabled={saving || busy}
+          onChange={(event) => setComfyRoot({ ...comfyRoot, enabled: event.currentTarget.checked })} />{" "}
+        {t("showExplorer.comfyRootEnabled")}
+      </label>
+      <label className="field">
+        <span>{t("showExplorer.comfyRoot")}</span>
+        <input value={comfyRoot.path} disabled={!comfyRoot.enabled || saving || busy} required={comfyRoot.enabled}
+          placeholder={t("showExplorer.comfyRootPlaceholder")}
+          onChange={(event) => setComfyRoot({ ...comfyRoot, path: event.currentTarget.value })} />
+      </label>
+      <label className="show-root-toggle">
+        <input type="checkbox" role="switch" checked={localRoot.enabled} disabled={saving || busy}
+          onChange={(event) => setLocalRoot({ ...localRoot, enabled: event.currentTarget.checked })} />{" "}
+        {t("showExplorer.localRootEnabled")}
+      </label>
+      <label className="field">
+        <span>{t("showExplorer.localRoot")}</span>
+        <input value={localRoot.path} disabled={!localRoot.enabled || saving || busy} required={localRoot.enabled}
+          placeholder={t("showExplorer.localRootPlaceholder")}
+          onChange={(event) => setLocalRoot({ ...localRoot, path: event.currentTarget.value })} />
+      </label>
+      <p className="muted">{t("showExplorer.rootRules")}</p>
       <label className="field">
         <span>{t("showExplorer.outputLayout")}</span>
         <select autoFocus value={layout} disabled={saving || busy} onChange={(event) => {
@@ -80,7 +107,17 @@ export function ShowSettings({ show, onClose }: { show: Show; onClose: () => voi
       {preview.status === "loading" && <p role="status">{t("showExplorer.previewLoading")}</p>}
       {preview.status === "error" && <p className="error" role="alert">{preview.message}</p>}
       {preview.status === "ready" && (layout === "workflow"
-        ? <p className="muted">{t("showExplorer.workflowOutput")}</p>
+        ? <>
+          <p className="muted">{t(comfyRoot.enabled ? "showExplorer.workflowRootOutput" : "showExplorer.workflowOutput")}</p>
+          {comfyRoot.enabled && comfyRoot.path.trim() && <div className="field">
+            <span>{t("showExplorer.previewPrefix")}</span>
+            <code>{`${comfyRoot.path.trim().replace(/[\\/]+$/, "")}/${t("showExplorer.workflowPrefixExample")}`}</code>
+          </div>}
+          {localRoot.enabled && localRoot.path.trim() && <div className="field">
+            <span>{t("showExplorer.previewLocal")}</span>
+            <code>{`${localRoot.path.trim().replace(/[\\/]+$/, "")}/${t("showExplorer.workflowPrefixExample")}`}</code>
+          </div>}
+        </>
         : example ? <>
           {preview.examples.length > 1 && <label className="field">
             <span>{t("showExplorer.previewScene")}</span>
@@ -90,8 +127,13 @@ export function ShowSettings({ show, onClose }: { show: Show; onClose: () => voi
           </label>}
           <div className="field">
             <span>{t("showExplorer.previewPrefix")}</span>
-            <code className="show-output-prefix">{example.prefix}</code>
+            <code className="show-output-prefix">{comfyRoot.enabled && comfyRoot.path.trim()
+              ? `${comfyRoot.path.trim().replace(/[\\/]+$/, "")}/${example.prefix}` : example.prefix}</code>
           </div>
+          {localRoot.enabled && localRoot.path.trim() && <div className="field">
+            <span>{t("showExplorer.previewLocal")}</span>
+            <code>{`${localRoot.path.trim().replace(/[\\/]+$/, "")}/${example.prefix}_00001_.png`}</code>
+          </div>}
         </> : <p className="muted">{t("showExplorer.emptyPreview")}</p>)}
       <p className="muted">{t("showExplorer.outputRules")}</p>
       {layout !== "workflow" && <p className="muted">{t("showExplorer.outputNumbering")}</p>}

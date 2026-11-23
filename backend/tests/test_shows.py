@@ -176,6 +176,131 @@ def test_show_output_changes_only_future_generations_and_validates_settings(env)
     assert generator.read_snapshot(rerun["id"])["output"]["prefix"] == "show/01-act/01-scene"
 
 
+def test_show_output_roots_validate_persist_and_undo(env, tmp_path):
+    client, _, generator = env
+    show = client.post("/api/shows", json={"name": "Show"}).json()
+    url = f"/api/shows/{show['id']}/settings"
+    local = str(tmp_path / "copies")
+    settings = {"output_layout": "show_scene",
+                "output_comfy_root": {"enabled": True, "path": "production\\renders"},
+                "output_local_root": {"enabled": True, "path": local}}
+    for bad in ("/absolute", "\\absolute", "../escape", "a/../b", "C:\\outside", "a//b", ""):
+        body = {**settings, "output_comfy_root": {"enabled": True, "path": bad}}
+        assert client.patch(url, json=body).status_code == 400
+    assert client.patch(url, json={**settings, "output_local_root": {"enabled": True, "path": "relative"}}).status_code == 400
+    response = client.patch(url, json=settings)
+    assert response.status_code == 200, response.text
+    persisted = Scenes(generator.scenes.root).get_show(show["id"])
+    assert persisted["output_comfy_root"] == {"enabled": True, "path": "production/renders"}
+    assert persisted["output_local_root"] == settings["output_local_root"]
+    step(generator.scenes)
+    assert "output_comfy_root" not in generator.scenes.get_show(show["id"])
+    step(generator.scenes, redo=True)
+    assert generator.scenes.get_show(show["id"]) == persisted
+
+
+@pytest.mark.parametrize(("layout", "comfy_enabled", "local_enabled"), [
+    ("show_act_scene", True, True), ("show_act_scene", False, True),
+    ("show_act_scene", True, False), ("workflow", True, True), ("workflow", False, False),
+])
+def test_show_roots_apply_independently_and_requeue(env, tmp_path, layout, comfy_enabled, local_enabled):
+    client, comfy, generator = env
+    show = client.post("/api/shows", json={"name": "Show"}).json()
+    act = client.post(f"/api/shows/{show['id']}/acts", json={"name": "Act"}).json()
+    scene = client.post("/api/scenes", json={"name": "Scene", "show_id": show["id"], "act_id": act["id"]}).json()
+    local = tmp_path / "show-copies"
+    node_dir = tmp_path / "node-copies"
+    settings = {"output_layout": layout,
+                "output_comfy_root": {"enabled": comfy_enabled, "path": "root"},
+                "output_local_root": {"enabled": local_enabled, "path": str(local)}}
+    client.patch(f"/api/shows/{show['id']}/settings", json=settings).raise_for_status()
+    node_graph = graph(output_prefix="manual/img", output_dir=str(node_dir))
+    run = client.post("/api/generate", json={"graph": node_graph, "scene_id": scene["id"]}).json()[0]
+    snapshot = generator.read_snapshot(run["id"])
+    prefixes = [n["inputs"]["filename_prefix"] for n in comfy.queued[-1].values() if "filename_prefix" in n["inputs"]]
+    assert prefixes
+    if comfy_enabled and layout == "show_act_scene":
+        assert all(p == "root/show/01-act/01-scene" for p in prefixes)
+    elif comfy_enabled:
+        assert all(p.startswith("root/") and not p.endswith("manual/img") for p in prefixes)
+    else:
+        assert all(p == "manual/img" for p in prefixes)
+    assert snapshot["output"]["dir"] == str(local if local_enabled else node_dir)
+    comfy.done = True
+    generator.poll_once()
+    if local_enabled and layout == "show_act_scene":
+        assert (local / "show" / "01-act" / "01-scene_Libretto_00001_.png").exists()
+    else:
+        assert ((local if local_enabled else node_dir) / "Libretto_00001_.png").exists()
+    settings["output_local_root"]["path"] = str(tmp_path / "changed")
+    client.patch(f"/api/shows/{show['id']}/settings", json=settings).raise_for_status()
+    rerun = client.post(f"/api/runs/{run['id']}/requeue").json()
+    rerun_snapshot = generator.read_snapshot(rerun["id"])
+    assert rerun_snapshot["workflow"] == snapshot["workflow"]
+    assert rerun_snapshot["output"] == snapshot["output"]
+
+
+def test_workflow_local_copies_preserve_subfolders_and_duplicate_filenames(env, tmp_path, monkeypatch):
+    client, comfy, generator = env
+    show = client.post("/api/shows", json={"name": "Show"}).json()
+    scene = client.post("/api/scenes", json={"name": "Scene", "show_id": show["id"]}).json()
+    local = tmp_path / "copies"
+    settings = {"output_layout": "workflow", "output_comfy_root": {"enabled": True, "path": "root"},
+                "output_local_root": {"enabled": True, "path": str(local)}}
+    client.patch(f"/api/shows/{show['id']}/settings", json=settings).raise_for_status()
+    run = client.post("/api/generate", json={"graph": graph(), "scene_id": scene["id"]}).json()[0]
+    monkeypatch.setattr(comfy, "history", lambda _: {
+        "status": {"status_str": "success"},
+        "outputs": {
+            "1": {"images": [{"filename": "image.png", "subfolder": "root/one", "type": "output"}]},
+            "2": {"images": [{"filename": "image.png", "subfolder": "root/two", "type": "output"}]},
+        },
+    })
+    monkeypatch.setattr(comfy, "view", lambda filename, subfolder, folder_type: subfolder.encode())
+    generator.poll_once()
+    assert (local / "one" / "image.png").read_bytes() == b"root/one"
+    assert (local / "two" / "image.png").read_bytes() == b"root/two"
+    assert generator.read_snapshot(run["id"])["images"] == ["image.png", "image_2.png"]
+    rerun = client.post(f"/api/runs/{run['id']}/requeue").json()
+    generator.poll_once()
+    assert (local / "one" / "image_2.png").read_bytes() == b"root/one"
+    assert generator.read_snapshot(rerun["id"])["images"] == ["image.png", "image_2.png"]
+
+
+def test_show_local_copy_rejects_escaping_workflow_subfolder(env, tmp_path, monkeypatch):
+    client, comfy, generator = env
+    show = client.post("/api/shows", json={"name": "Show"}).json()
+    scene = client.post("/api/scenes", json={"name": "Scene", "show_id": show["id"]}).json()
+    local = tmp_path / "copies"
+    client.patch(f"/api/shows/{show['id']}/settings", json={
+        "output_layout": "workflow", "output_local_root": {"enabled": True, "path": str(local)}
+    }).raise_for_status()
+    run = client.post("/api/generate", json={"graph": graph(), "scene_id": scene["id"]}).json()[0]
+    monkeypatch.setattr(comfy, "history", lambda _: {"status": {"status_str": "success"},
+        "outputs": {"1": {"images": [{"filename": "image.png", "subfolder": "../escape", "type": "output"}]}}})
+    generator.poll_once()
+    result = client.get(f"/api/runs/{run['id']}").json()
+    assert "copying" in result["error"]
+    assert not (tmp_path / "escape" / "image.png").exists()
+
+
+def test_show_local_copy_keeps_matching_scene_filename(env, tmp_path, monkeypatch):
+    client, comfy, generator = env
+    show = client.post("/api/shows", json={"name": "Show"}).json()
+    scene = client.post("/api/scenes", json={"name": "Scene", "show_id": show["id"]}).json()
+    local = tmp_path / "copies"
+    client.patch(f"/api/shows/{show['id']}/settings", json={
+        "output_layout": "show_scene",
+        "output_comfy_root": {"enabled": True, "path": "root"},
+        "output_local_root": {"enabled": True, "path": str(local)},
+    }).raise_for_status()
+    client.post("/api/generate", json={"graph": graph(), "scene_id": scene["id"]}).raise_for_status()
+    monkeypatch.setattr(comfy, "history", lambda _: {"status": {"status_str": "success"},
+        "outputs": {"1": {"images": [{"filename": "01-scene_00001_.png", "subfolder": "root/show", "type": "output"}]}}})
+    generator.poll_once()
+    assert (local / "show" / "01-scene_00001_.png").exists()
+
+
 def test_organization_creation_can_be_undone_and_redone_with_stable_ids(tmp_path):
     scenes = Scenes(tmp_path / "scenes")
     show = scenes.create_show("Show")

@@ -1,4 +1,4 @@
-import type { Act, Show, ShowOutputLayout, ShowOutputPreview, ScenePlace, OrganizationHistory, AppSettings, BackupInfo, Category, CategoryConfig, CategoryKindInfo, LibraryInfo, Preset, Profile, Run, SceneMeta, SceneSnapList, Snapshot, WorkflowFile } from "./types";
+import type { Act, Show, ShowOutputLayout, ShowOutputPreview, ShowOutputRoot, ScenePlace, OrganizationHistory, AppSettings, BackupInfo, Category, CategoryConfig, CategoryKindInfo, LibraryInfo, Preset, Profile, Run, SceneMeta, SceneSnapList, Snapshot, WorkflowFile } from "./types";
 import type { Tag } from "./tags";
 import type { DropPosition } from "./showOutline";
 import type { OutputScope } from "./types";
@@ -118,8 +118,8 @@ export const api = {
   shows: () => call<Show[]>("/api/shows"),
   createShow: (name: string) => call<Show>("/api/shows", json("POST", { name })),
   renameShow: (id: string, name: string, names?: Record<string, string>) => call<Show>(`/api/shows/${id}`, json("PATCH", { name, names })),
-  saveShowSettings: (id: string, output_layout: ShowOutputLayout) =>
-    call<Show>(`/api/shows/${id}/settings`, json("PATCH", { output_layout })),
+  saveShowSettings: (id: string, output_layout: ShowOutputLayout, output_comfy_root: ShowOutputRoot, output_local_root: ShowOutputRoot) =>
+    call<Show>(`/api/shows/${id}/settings`, json("PATCH", { output_layout, output_comfy_root, output_local_root })),
   showOutputPreview: (id: string, layout: ShowOutputLayout) =>
     call<ShowOutputPreview>(`/api/shows/${id}/output-preview?layout=${layout}`),
   placeShow: (id: string, index: number) => call<Show>(`/api/shows/${id}/place`, json("POST", { index })),

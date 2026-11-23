@@ -210,6 +210,10 @@ export interface Act {
 
 export const SHOW_OUTPUT_LAYOUTS = ["workflow", "show_scene", "show_act_scene"] as const;
 export type ShowOutputLayout = typeof SHOW_OUTPUT_LAYOUTS[number];
+export interface ShowOutputRoot {
+  enabled: boolean;
+  path: string;
+}
 export interface ShowOutputPreview {
   examples: { scene_id: string; name: string; prefix: string | null }[];
 }
@@ -221,6 +225,8 @@ export interface Show {
   names?: Record<string, string>;
   order?: number;
   output_layout?: ShowOutputLayout;
+  output_comfy_root?: ShowOutputRoot;
+  output_local_root?: ShowOutputRoot;
   items: (Act | { kind: "scene"; id: string })[];
 }
 

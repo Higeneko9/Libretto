@@ -174,6 +174,13 @@ a.button { text-decoration: none; color: inherit; }
 .prompt-edit-hint { font-size: 10px; }
 .order-toggle { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
 .order-toggle button.on { background: var(--accent); color: #111; border-color: var(--accent); }
+.show-root-toggle { display: flex; align-items: center; gap: 8px; }
+.show-root-toggle input { appearance: none; box-sizing: border-box; flex: none; width: 32px; height: 18px; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); cursor: pointer; }
+.show-root-toggle input::before { content: ""; display: block; width: 12px; height: 12px; margin: 2px; border-radius: 50%; background: #e6e8ee; transition: transform 0.15s; }
+.show-root-toggle input:checked { background: var(--accent); }
+.show-root-toggle input:checked::before { transform: translateX(14px); background: #111; }
+.show-root-toggle input:focus-visible { outline: 2px solid #ffc08f; outline-offset: 2px; }
+.show-root-toggle input:disabled { opacity: 0.5; cursor: default; }
 
 .results-wrap { display: flex; flex-direction: column; }
 .results-bar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--line); flex: none; }

@@ -18,6 +18,30 @@ _ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 OUTPUT_LAYOUTS = ("workflow", "show_scene", "show_act_scene")
 
 
+def relative_output_path(path: str) -> str:
+    path = path.strip().replace("\\", "/").strip("/")
+    if not path or re.match(r"^[A-Za-z]:", path) or any(part in ("", ".", "..") for part in path.split("/")):
+        raise ValueError("output root must be a non-empty relative path without '.' or '..'")
+    if any(re.search(r'[<>:"|?*\x00-\x1f]', part) for part in path.split("/")):
+        raise ValueError("output root contains invalid path characters")
+    return path
+
+
+def _output_root(value: dict, local: bool = False) -> dict:
+    if not isinstance(value, dict) or type(value.get("enabled")) is not bool or not isinstance(value.get("path"), str):
+        raise ValueError("invalid output root setting")
+    path = value["path"].strip()
+    if value["enabled"]:
+        if local:
+            if not Path(path).expanduser().is_absolute():
+                raise ValueError("local output root must be an absolute path")
+        else:
+            if path.startswith(("/", "\\")):
+                raise ValueError("ComfyUI output root must be relative")
+            path = relative_output_path(path)
+    return {"enabled": value["enabled"], "path": path}
+
+
 def _check(scene_id: str) -> None:
     if not isinstance(scene_id, str) or not _ID_RE.fullmatch(scene_id):
         raise ValueError(f"invalid scene id: {scene_id!r}")
@@ -169,6 +193,9 @@ class Scenes:
                 raise ValueError(f"invalid show order: {show_id}")
             if show.get("output_layout", "workflow") not in OUTPUT_LAYOUTS:
                 raise ValueError(f"invalid show output layout: {show_id}")
+            for key, local in (("output_comfy_root", False), ("output_local_root", True)):
+                if key in show:
+                    _output_root(show[key], local)
             seen = set()
             for item in show["items"]:
                 if not isinstance(item, dict):
@@ -512,15 +539,19 @@ class Scenes:
             changes[self._outline(show_id)] = show
         return show
 
-    def set_output_layout(self, show_id: str, layout: str) -> dict:
+    def set_output_layout(self, show_id: str, layout: str, comfy_root: dict | None = None,
+                          local_root: dict | None = None) -> dict:
         if layout not in OUTPUT_LAYOUTS:
             raise ValueError("invalid show output layout")
+        roots = {key: _output_root(value, local) for key, value, local in (
+            ("output_comfy_root", comfy_root, False), ("output_local_root", local_root, True)) if value is not None}
         with self._changes() as changes:
             show = self.get_show(show_id)
             if layout == "workflow":
                 show.pop("output_layout", None)
             else:
                 show["output_layout"] = layout
+            show.update(roots)
             changes[self._outline(show_id)] = show
         return show
 
@@ -578,6 +609,13 @@ class Scenes:
                 return None
             return next(item["prefix"] for item in self.output_preview(show["id"])["examples"]
                         if item["scene_id"] == scene_id)
+
+    def output_settings(self, scene_id: str) -> tuple[dict | None, str | None]:
+        with self._lock:
+            path = self._file(scene_id)
+            if path.parent == self.root:
+                return None, None
+            return self.get_show(path.parent.name), self.output_prefix(scene_id)
 
     @staticmethod
     def _act(show: dict, act_id: str) -> dict:

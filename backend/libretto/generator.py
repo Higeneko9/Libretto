@@ -15,7 +15,7 @@ from .libraries import DEFAULT_LIBRARY, Libraries
 from .library import Library, slugify
 from .profiles import load_workflow_template
 from .scene_snaps import SceneSnaps
-from .scenes import Scenes
+from .scenes import Scenes, relative_output_path
 from .store import RunStore
 from .workflow import apply_output_prefix, build_workflow
 
@@ -190,10 +190,19 @@ class Generator:
         template = load_workflow_template(self.settings.ProfilesRoot, self.settings.UserProfilesRoot, profile)
         defaults = profile.get("defaults", {})
         params = {k: options.get(k) if options.get(k) not in (None, "") else defaults.get(k) for k in PARAM_KEYS}
-        output_prefix = resolve_output_prefix(options.get("output_prefix"), graph, profile_id)
-        if output_prefix is None and scene_id and self.scenes is not None:
-            output_prefix = self.scenes.output_prefix(scene_id)
+        show, layout_prefix = self.scenes.output_settings(scene_id) if scene_id and self.scenes is not None else (None, None)
+        comfy_root = (show or {}).get("output_comfy_root") or {}
+        local_root = (show or {}).get("output_local_root") or {}
+        show_comfy = comfy_root.get("enabled", False)
+        show_local = local_root.get("enabled", False)
+        output_prefix = None if show_comfy else resolve_output_prefix(options.get("output_prefix"), graph, profile_id)
+        if output_prefix is None:
+            output_prefix = layout_prefix
+        if show_comfy and output_prefix:
+            output_prefix = f"{relative_output_path(comfy_root['path'])}/{output_prefix}"
         output_dir = (options.get("output_dir") or "").strip() or None
+        if show_local:
+            output_dir = local_root["path"]
         environment = self._environment()
         rng = random.SystemRandom()
         runs: list[dict] = []
@@ -211,6 +220,17 @@ class Generator:
                 workflow = build_workflow(template, profile, positive, negative, run_params, compiled.loras)
                 if output_prefix:
                     apply_output_prefix(workflow, output_prefix)
+                elif show_comfy:
+                    root = relative_output_path(comfy_root["path"])
+                    for node in workflow.values():
+                        prefix = node.get("inputs", {}).get("filename_prefix")
+                        if isinstance(prefix, str):
+                            prefix = prefix.replace("\\", "/")
+                            if prefix.startswith("/"):
+                                raise ValueError("workflow output prefix must be relative")
+                            if prefix:
+                                relative_output_path(prefix)
+                            node["inputs"]["filename_prefix"] = f"{root}/{prefix}"
                 snapshot = {
                     "id": f"{datetime.now():%Y%m%d-%H%M%S}-{uuid.uuid4().hex[:6]}",
                     "created_at": _now(),
@@ -231,6 +251,11 @@ class Generator:
                     "prompt_id": None,
                     "images": [],
                 }
+                if show_local:
+                    snapshot["output"]["show_copy"] = {
+                        "layout_prefix": layout_prefix,
+                        "comfy_root": relative_output_path(comfy_root["path"]) if show_comfy else None,
+                    }
                 runs.append(self._queue(snapshot))
             self._save_state(state)
         if scene and runs and self.scene_snaps is not None:
@@ -320,7 +345,9 @@ class Generator:
         snapshot["timing"] = {"started_at": run.get("started_at"), "finished_at": finished, "duration_s": duration}
         self._write_snapshot(snapshot)
         self._update_scene_snap_thumbnail(snapshot, images)
-        copy_error = self._copy_to_output_dir(run["id"], images, (snapshot.get("output") or {}).get("dir"))
+        output = snapshot.get("output") or {}
+        copy_error = self._copy_to_output_dir(run["id"], images, output.get("dir"),
+                                              output.get("show_copy"), history.get("outputs", {}))
         self.store.update(
             run["id"],
             status="done",
@@ -330,15 +357,42 @@ class Generator:
             **({"error": copy_error} if copy_error else {}),
         )
 
-    def _copy_to_output_dir(self, run_id: str, images: list[str], target: str | None) -> str | None:
+    def _copy_to_output_dir(self, run_id: str, images: list[str], target: str | None,
+                            show_copy: dict | None = None, outputs: dict | None = None) -> str | None:
         if not target or not images:
             return None
         try:
-            folder = Path(target).expanduser()
-            folder.mkdir(parents=True, exist_ok=True)
-            for name in images:
-                shutil.copy2(self.snapshot_dir(run_id) / "images" / name, folder / name)
-        except OSError as exc:
+            root = Path(target).expanduser()
+            records = [image for node in (outputs or {}).values() for image in node.get("images", [])
+                       if image.get("type") == "output"]
+            for index, name in enumerate(images):
+                folder = root
+                dest_name = Path(records[index]["filename"]).name if show_copy is not None else name
+                if show_copy is not None:
+                    layout = show_copy.get("layout_prefix")
+                    if layout:
+                        parts = relative_output_path(layout).split("/")
+                        folder = root.joinpath(*parts[:-1])
+                        if not dest_name.startswith(parts[-1] + "_"):
+                            dest_name = parts[-1] + "_" + dest_name
+                    else:
+                        subfolder = records[index].get("subfolder", "").replace("\\", "/")
+                        comfy_root = show_copy.get("comfy_root")
+                        if comfy_root and (subfolder == comfy_root or subfolder.startswith(comfy_root + "/")):
+                            subfolder = subfolder[len(comfy_root):].lstrip("/")
+                        if subfolder:
+                            if subfolder.startswith("/"):
+                                raise ValueError("invalid output subfolder")
+                            folder = root.joinpath(*relative_output_path(subfolder).split("/"))
+                folder.mkdir(parents=True, exist_ok=True)
+                destination = folder / dest_name
+                if show_copy is not None:
+                    suffix = 2
+                    while destination.exists():
+                        destination = folder / f"{Path(dest_name).stem}_{suffix}{Path(dest_name).suffix}"
+                        suffix += 1
+                shutil.copy2(self.snapshot_dir(run_id) / "images" / name, destination)
+        except (OSError, ValueError) as exc:
             return f"images generated, but copying to {target} failed: {exc}"
         return None
 
@@ -352,6 +406,12 @@ class Generator:
                     continue
                 data = self.comfy.view(image["filename"], image.get("subfolder", ""), image["type"])
                 name = Path(image["filename"]).name
+                if name in saved:
+                    original = Path(name)
+                    number = 2
+                    while name in saved:
+                        name = f"{original.stem}_{number}{original.suffix}"
+                        number += 1
                 (folder / name).write_bytes(data)
                 saved.append(name)
         return saved

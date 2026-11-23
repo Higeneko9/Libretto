@@ -158,8 +158,17 @@ follow act order, scene numbers restart within each act, and direct scenes use
 their own numbering without an act folder. Names are normalized for file paths
 while preserving Unicode; identically normalized show names share a directory.
 
-An explicit Generate-node output prefix takes precedence over the show's layout;
-leave it blank to inherit. The Inspector indicates inheritance or an override.
+Show settings can independently enable a ComfyUI-relative root and an absolute
+local copy root on the computer running Libretto. Each enabled root overrides
+the corresponding Generate-node setting; when disabled, that setting is
+inherited. The selected layout is appended to each root. With workflow default,
+the ComfyUI root is prepended to each workflow filename prefix and local copies
+follow the resulting workflow subfolders (excluding the ComfyUI root).
+With a show layout, local filenames use the scene prefix; if ComfyUI used a
+different prefix, it is retained after the scene prefix.
+Without an enabled ComfyUI root, an explicit Generate-node output prefix takes
+precedence over the show's layout; leave it blank to inherit. The Inspector
+indicates inheritance or an override.
 The default remains the imported workflow's behavior, including for standalone
 scenes. Settings are saved in `show-outline.json` and support organization undo.
 Only future generations use changed layouts, names, and ordering: existing images

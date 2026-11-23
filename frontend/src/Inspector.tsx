@@ -518,7 +518,9 @@ function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
         placeholder={t("inspector.outputPrefixPlaceholder")}
         onChange={(v) => update(id, { output_prefix: v })}
       />
-      {outputShow?.output_layout && outputShow.output_layout !== "workflow" &&
+      {outputShow?.output_comfy_root?.enabled
+        ? <p className="muted">{t("showExplorer.comfyRootOverrides")}</p>
+        : outputShow?.output_layout && outputShow.output_layout !== "workflow" &&
         <p className="muted">{t(data.output_prefix?.trim() ? "showExplorer.outputOverride" : "showExplorer.outputInherited", {
           name: translatedName(outputShow.name, outputShow.names, locale) ?? outputShow.name, layout: t(`showExplorer.layout_${outputShow.output_layout}`),
         })}</p>}
@@ -531,6 +533,7 @@ function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
         placeholder={t("inspector.outputDirPlaceholder")}
         onChange={(v) => update(id, { output_dir: v })}
       />
+      {outputShow?.output_local_root?.enabled && <p className="muted">{t("showExplorer.localRootOverrides")}</p>}
     </>
   );
 }

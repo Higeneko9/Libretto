@@ -289,11 +289,41 @@ it("previews output layouts and example scenes, then saves through organization 
   expect(container.querySelector(".show-output-prefix")?.textContent).toBe("the-show/01-two");
   expect(api.saveShowSettings).not.toHaveBeenCalled();
   await settingsButton("Save");
-  expect(api.saveShowSettings).toHaveBeenCalledWith("show1", "show_act_scene");
+  expect(api.saveShowSettings).toHaveBeenCalledWith("show1", "show_act_scene",
+    { enabled: false, path: "" }, { enabled: false, path: "" });
   expect(useStore.getState().shows[0].output_layout).toBe("show_act_scene");
   expect(useStore.getState().organizationHistory.undo).toBe(1);
   expect(container.querySelector('[role="dialog"]')).toBeNull();
   expect(document.activeElement).toBe(row("show:show1"));
+});
+
+it("edits independent output roots and previews the chosen layout", async () => {
+  vi.spyOn(api, "showOutputPreview").mockResolvedValue({ examples: [
+    { scene_id: "s1", name: "One", prefix: "the-show/01-first-act/01-one" },
+  ] });
+  const updated = useStore.getState().shows[0];
+  const save = vi.spyOn(api, "saveShowSettings").mockResolvedValue(updated);
+  mockOrganizationRefresh();
+  await openSettings();
+  await selectLayout("show_act_scene");
+  const toggles = container.querySelectorAll<HTMLInputElement>('[role="dialog"] input[type="checkbox"]');
+  const inputs = container.querySelectorAll<HTMLInputElement>('[role="dialog"] input:not([type="checkbox"])');
+  expect(toggles[0].closest("label")?.textContent?.trim()).toBe("ComfyUI output root");
+  expect(toggles[1].closest("label")?.textContent?.trim()).toBe("Local copy root");
+  expect(toggles[1].compareDocumentPosition(container.querySelector('[role="dialog"] select')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(inputs[0].disabled && inputs[1].disabled).toBe(true);
+  await act(async () => { toggles[0].click(); toggles[1].click(); });
+  await act(async () => {
+    for (const [input, value] of [[inputs[0], "renders"], [inputs[1], "D:\\Images"]] as const) {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+  expect(container.querySelector(".show-output-prefix")?.textContent).toBe("renders/the-show/01-first-act/01-one");
+  expect(container.querySelector('[role="dialog"]')?.textContent).toContain("D:\\Images/the-show/01-first-act/01-one_00001_.png");
+  await settingsButton("Save");
+  expect(save).toHaveBeenCalledWith("show1", "show_act_scene",
+    { enabled: true, path: "renders" }, { enabled: true, path: "D:\\Images" });
 });
 
 it("allows settings on an empty show and cancels drafts with Escape", async () => {

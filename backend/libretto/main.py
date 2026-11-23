@@ -140,8 +140,15 @@ class OutlineMoveBody(BaseModel):
     history_id: str
 
 
+class OutputRootBody(BaseModel):
+    enabled: bool
+    path: str
+
+
 class ShowSettingsBody(BaseModel):
     output_layout: Literal["workflow", "show_scene", "show_act_scene"]
+    output_comfy_root: OutputRootBody | None = None
+    output_local_root: OutputRootBody | None = None
 
 
 class HierarchyDeleteBody(BaseModel):
@@ -551,7 +558,10 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
 
     @app.patch("/api/shows/{show_id}/settings")
     def show_settings(show_id: str, body: ShowSettingsBody):
-        return guard(lambda: scenes.set_output_layout(show_id, body.output_layout))
+        return guard(lambda: scenes.set_output_layout(
+            show_id, body.output_layout,
+            body.output_comfy_root.model_dump() if body.output_comfy_root else None,
+            body.output_local_root.model_dump() if body.output_local_root else None))
 
     @app.get("/api/shows/{show_id}/output-preview")
     def show_output_preview(show_id: str, layout: Literal["workflow", "show_scene", "show_act_scene"] | None = None):
