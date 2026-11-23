@@ -34,7 +34,18 @@ def build_workflow(
     segments = [s.strip() for s in positive.split(" BREAK ") if s.strip()] or [positive]
     set_input(injection["positive"], injection.get("positive_input", "text"), segments[0])
     if len(segments) > 1:
-        _split_break(workflow, injection["positive"], injection.get("positive_input", "text"), segments)
+        ids = injection["positive"] if isinstance(injection["positive"], list) else [injection["positive"]]
+        for node_id in ids:
+            node_id = str(node_id)
+            if workflow[node_id]["class_type"] == "CLIPTextEncode":
+                _split_break(workflow, node_id, injection.get("positive_input", "text"), segments)
+            else:
+                encoders = [key for key, node in workflow.items()
+                            if node["class_type"] == "CLIPTextEncode" and node["inputs"].get("text") == [node_id, 0]]
+                if not encoders:
+                    raise ValueError("BREAK requires a directly connected CLIPTextEncode prompt")
+                for encoder in encoders:
+                    _split_break(workflow, encoder, "text", segments)
     if "negative" in injection:
         set_input(injection["negative"], injection.get("negative_input", "text"), negative)
     for key, default_input in PARAM_INPUTS.items():
@@ -103,7 +114,7 @@ def apply_output_prefix(workflow: dict, prefix: str) -> None:
 
 
 def _next_id(workflow: dict) -> int:
-    return max(int(k) for k in workflow if k.isdigit()) + 1
+    return max((int(k) for k in workflow if k.isdigit()), default=0) + 1
 
 
 def _insert_model_loras(workflow: dict, sampler_id: str, loras: list[dict]) -> None:
@@ -120,7 +131,7 @@ def _insert_model_loras(workflow: dict, sampler_id: str, loras: list[dict]) -> N
         }
         prev = [node_id, 0]
     for node in workflow.values():
-        if node["class_type"] == "KSampler" and node["inputs"].get("model") == source:
+        if node["class_type"] in {"KSampler", "CFGGuider", "BasicGuider", "BasicScheduler"} and node["inputs"].get("model") == source:
             node["inputs"]["model"] = prev
 
 

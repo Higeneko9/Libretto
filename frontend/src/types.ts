@@ -140,6 +140,7 @@ export interface Profile {
   use_negative?: boolean;
   source?: { type: string; path: string };
   defaults: Record<string, string | number>;
+  supported_params?: string[];
 }
 
 export interface WorkflowFile {

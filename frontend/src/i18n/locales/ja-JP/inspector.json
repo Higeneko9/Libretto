@@ -72,6 +72,7 @@
   "steps": "ステップ数",
   "sampler": "サンプラー",
   "scheduler": "スケジューラ",
+  "unsupportedWorkflowParameter": "このワークフローではこの設定を変更できません。",
   "breakHint": "BREAK はキャラクターごとに新しい CLIP チャンクを開始します。テキストエンコーダが BREAK に対応したワークフローが必要です",
   "betweenCharacters": "キャラクター間（タグ系モデル用）",
   "sepComma": "カンマ（タグをキャラクターごとにまとめる）",

@@ -13,20 +13,24 @@ function Text({
   onChange,
   multiline,
   placeholder,
+  disabled,
+  title,
 }: {
   label: string;
   value?: string | number;
   onChange: (v: string) => void;
   multiline?: boolean;
   placeholder?: string;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
-    <label className="field">
+    <label className="field" title={title}>
       <span>{label}</span>
       {multiline ? (
-        <textarea rows={3} value={value ?? ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+        <textarea rows={3} value={value ?? ""} placeholder={placeholder} disabled={disabled} onChange={(e) => onChange(e.target.value)} />
       ) : (
-        <input value={value ?? ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+        <input value={value ?? ""} placeholder={placeholder} disabled={disabled} onChange={(e) => onChange(e.target.value)} />
       )}
     </label>
   );
@@ -38,21 +42,26 @@ function Num({
   onChange,
   placeholder,
   step,
+  disabled,
+  title,
 }: {
   label: string;
   value?: number;
   onChange: (v: number | undefined) => void;
   placeholder?: string;
   step?: number;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
-    <label className="field">
+    <label className="field" title={title}>
       <span>{label}</span>
       <input
         type="number"
         step={step}
         value={value ?? ""}
         placeholder={placeholder}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
       />
     </label>
@@ -448,13 +457,24 @@ function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
     const scene = s.scenes.find((item) => item.id === s.activeId);
     return s.shows.find((item) => item.id === scene?.show_id);
   });
-  const defaults = profiles.find((p) => p.id === data.profile)?.defaults ?? {};
+  const profile = profiles.find((p) => p.id === data.profile);
+  const defaults = profile?.defaults ?? {};
   const d = (key: string) => (defaults[key] !== undefined ? String(defaults[key]) : "");
+  const unavailable = (key: string) => profile?.supported_params && !profile.supported_params.includes(key)
+    ? { disabled: true, title: t("inspector.unsupportedWorkflowParameter") }
+    : {};
   return (
     <>
       <label className="field">
         <span>{t("inspector.profileWorkflow")}</span>
-        <select value={data.profile} onChange={(e) => update(id, { profile: e.target.value })}>
+        <select value={data.profile} onChange={(e) => {
+          const next = profiles.find((p) => p.id === e.target.value);
+          const cleared = next?.supported_params
+            ? Object.fromEntries(["checkpoint", "width", "height", "steps", "cfg", "sampler", "scheduler", "denoise"]
+              .filter((key) => !next.supported_params!.includes(key)).map((key) => [key, undefined]))
+            : {};
+          update(id, { profile: e.target.value, ...cleared });
+        }}>
           <optgroup label={t("inspector.builtIn")}>
             {profiles
               .filter((p) => !p.source)
@@ -492,13 +512,13 @@ function GenerateFields({ id, data }: { id: string; data: GraphNodeData }) {
         placeholder={t("inspector.random")}
         onChange={(v) => update(id, { pick_seed: v ?? -1 })}
       />
-      <Text label={t("inspector.checkpoint")} value={data.checkpoint} placeholder={d("checkpoint")} onChange={(v) => update(id, { checkpoint: v })} />
-      <Num label={t("inspector.width")} value={data.width} placeholder={d("width")} onChange={(v) => update(id, { width: v })} />
-      <Num label={t("inspector.height")} value={data.height} placeholder={d("height")} onChange={(v) => update(id, { height: v })} />
-      <Num label={t("inspector.steps")} value={data.steps} placeholder={d("steps")} onChange={(v) => update(id, { steps: v })} />
-      <Num label="CFG" step={0.5} value={data.cfg} placeholder={d("cfg")} onChange={(v) => update(id, { cfg: v })} />
-      <Text label={t("inspector.sampler")} value={data.sampler} placeholder={d("sampler")} onChange={(v) => update(id, { sampler: v })} />
-      <Text label={t("inspector.scheduler")} value={data.scheduler} placeholder={d("scheduler")} onChange={(v) => update(id, { scheduler: v })} />
+      <Text label={t("inspector.checkpoint")} value={data.checkpoint} placeholder={d("checkpoint")} onChange={(v) => update(id, { checkpoint: v })} {...unavailable("checkpoint")} />
+      <Num label={t("inspector.width")} value={data.width} placeholder={d("width")} onChange={(v) => update(id, { width: v })} {...unavailable("width")} />
+      <Num label={t("inspector.height")} value={data.height} placeholder={d("height")} onChange={(v) => update(id, { height: v })} {...unavailable("height")} />
+      <Num label={t("inspector.steps")} value={data.steps} placeholder={d("steps")} onChange={(v) => update(id, { steps: v })} {...unavailable("steps")} />
+      <Num label="CFG" step={0.5} value={data.cfg} placeholder={d("cfg")} onChange={(v) => update(id, { cfg: v })} {...unavailable("cfg")} />
+      <Text label={t("inspector.sampler")} value={data.sampler} placeholder={d("sampler")} onChange={(v) => update(id, { sampler: v })} {...unavailable("sampler")} />
+      <Text label={t("inspector.scheduler")} value={data.scheduler} placeholder={d("scheduler")} onChange={(v) => update(id, { scheduler: v })} {...unavailable("scheduler")} />
       <label className="field" title={t("inspector.breakHint")}>
         <span>{t("inspector.betweenCharacters")}</span>
         <select value={data.group_sep ?? "comma"} onChange={(e) => update(id, { group_sep: e.target.value as "comma" | "break" })}>

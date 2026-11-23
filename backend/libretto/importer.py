@@ -63,7 +63,9 @@ def flatten_subgraphs(ui: dict) -> dict:
         widget_values = instance.get("widgets_values") or []
         widget_index = 0
         input_source: dict[int, tuple] = {}
-        for slot, inp in enumerate(instance.get("inputs", [])):
+        definition_slots = {inp["name"]: slot for slot, inp in enumerate(sg.get("inputs", []))}
+        for index, inp in enumerate(instance.get("inputs", [])):
+            slot = definition_slots.get(inp["name"], index)
             if inp.get("link") is not None:
                 link = next(l for l in links if l[0] == inp["link"])
                 input_source[slot] = ("link", link[1], link[2])
@@ -246,6 +248,8 @@ def _text_target(api: dict, conditioning_ref, warnings: list[str], label: str) -
             return None
         node = api[current]
         inputs = node["inputs"]
+        if node["class_type"] == "ConditioningZeroOut":
+            return None
         text_input = None
         if node["class_type"] == "CLIPTextEncode":
             text_input = "text"
@@ -275,8 +279,14 @@ def analyze(api: dict, keep_positive: bool = False, keep_negative: bool = True) 
     """Derive profile fields (injection map, defaults, templates) from an API-format workflow."""
     warnings: list[str] = []
     samplers = [k for k, n in api.items() if n["class_type"] == "KSampler"]
+    advanced = [k for k, n in api.items() if n["class_type"] == "SamplerCustomAdvanced"]
+    if samplers and advanced:
+        raise WorkflowImportError("mixed KSampler and SamplerCustomAdvanced workflows are not supported")
     if not samplers:
-        raise WorkflowImportError("no KSampler node found; only KSampler-based workflows are supported")
+        if advanced:
+            return _analyze_advanced(api, advanced, keep_positive, keep_negative)
+        types = ", ".join(sorted({n["class_type"] for n in api.values()}))
+        raise WorkflowImportError(f"unsupported workflow: no KSampler or SamplerCustomAdvanced found (node types: {types})")
     primary = next(
         (
             s
@@ -342,6 +352,116 @@ def analyze(api: dict, keep_positive: bool = False, keep_negative: bool = True) 
     }
 
 
+def _analyze_advanced(api: dict, samplers: list[str], keep_positive: bool, keep_negative: bool) -> dict:
+    if len(samplers) != 1:
+        raise WorkflowImportError("multiple SamplerCustomAdvanced nodes are not supported")
+    sampler_id = samplers[0]
+    sampler = api[sampler_id]["inputs"]
+
+    def linked(name: str, types: set[str]) -> tuple[str, dict]:
+        node_id = _ref(sampler.get(name))
+        node = api.get(node_id)
+        if not node or node["class_type"] not in types:
+            actual = node["class_type"] if node else "missing or unlinked"
+            raise WorkflowImportError(f"unsupported SamplerCustomAdvanced {name}: {actual}")
+        return node_id, node["inputs"]
+
+    noise_id, noise = linked("noise", {"RandomNoise"})
+    guider_id, guider = linked("guider", {"CFGGuider", "BasicGuider"})
+    select_id, select = linked("sampler", {"KSamplerSelect"})
+    scheduler_id, scheduler = linked("sigmas", {"Flux2Scheduler", "BasicScheduler"})
+    if not isinstance(noise.get("noise_seed"), int):
+        raise WorkflowImportError("RandomNoise noise_seed must be a literal integer")
+    if _ref(guider.get("model")) not in api:
+        raise WorkflowImportError("SamplerCustomAdvanced guider model must be connected")
+    if api[scheduler_id]["class_type"] == "BasicScheduler" and scheduler.get("model") != guider.get("model"):
+        raise WorkflowImportError("BasicScheduler and guider must use the same model connection")
+
+    warnings: list[str] = []
+    injection = {"seed": noise_id, "seed_input": "noise_seed"}
+    defaults: dict = {}
+    positive = _text_target(api, guider.get("positive") or guider.get("conditioning"), warnings, "positive prompt")
+    if not positive:
+        raise WorkflowImportError("could not find the positive prompt text node for SamplerCustomAdvanced")
+    negative = _text_target(api, guider.get("negative"), warnings, "negative prompt")
+    injection["positive"], injection["positive_input"] = positive[0], positive[1]
+    if negative:
+        if negative[:2] == positive[:2]:
+            raise WorkflowImportError("positive and negative prompts share the same text input")
+        injection["negative"], injection["negative_input"] = negative[0], negative[1]
+
+    for key, node_id, inputs, input_name, expected in (
+        ("cfg", guider_id, guider, "cfg", (int, float)),
+        ("steps", scheduler_id, scheduler, "steps", (int,)),
+        ("scheduler", scheduler_id, scheduler, "scheduler", (str,)),
+        ("denoise", scheduler_id, scheduler, "denoise", (int, float)),
+        ("sampler", select_id, select, "sampler_name", (str,)),
+    ):
+        if isinstance(inputs.get(input_name), expected):
+            injection[key] = node_id
+            defaults[key] = inputs[input_name]
+
+    latent_id = next(
+        (node_id for node_id in _ancestors(api, _ref(sampler.get("latent_image")) or "")
+         if "Empty" in api[node_id]["class_type"] and "Latent" in api[node_id]["class_type"]),
+        None,
+    )
+    if latent_id:
+        latent = api[latent_id]["inputs"]
+        for dimension in ("width", "height"):
+            value = latent.get(dimension)
+            sched_value = scheduler.get(dimension)
+            source_id = _ref(value)
+            source = api.get(source_id)
+            if (source and source["class_type"] == "PrimitiveInt" and value[1] == 0
+                    and isinstance(source["inputs"].get("value"), int)
+                    and (dimension not in scheduler or sched_value == value)):
+                injection[dimension] = source_id
+                injection[f"{dimension}_input"] = "value"
+                defaults[dimension] = source["inputs"]["value"]
+            elif isinstance(value, int) and (dimension not in scheduler or sched_value == value):
+                injection[dimension] = [latent_id, scheduler_id] if dimension in scheduler else latent_id
+                defaults[dimension] = value
+            else:
+                warnings.append(f"{dimension} is driven by unsupported nodes; resolution comes from the workflow")
+        if (injection.get("width") == injection.get("height") and injection.get("width") is not None
+                and injection.get("width_input", "width") == injection.get("height_input", "height")):
+            for dimension in ("width", "height"):
+                injection.pop(dimension)
+                injection.pop(f"{dimension}_input", None)
+                defaults.pop(dimension, None)
+            warnings.append("width and height share one input; resolution comes from the workflow")
+    else:
+        raise WorkflowImportError("SamplerCustomAdvanced requires an empty latent node for text-to-image workflows")
+
+    lora = {"mode": "model_only", "sampler": guider_id}
+    for ancestor in _ancestors(api, _ref(guider.get("model")) or ""):
+        node = api[ancestor]
+        for loader, input_name in (("CheckpointLoaderSimple", "ckpt_name"), ("UNETLoader", "unet_name")):
+            if node["class_type"] == loader and isinstance(node["inputs"].get(input_name), str):
+                injection["checkpoint"], injection["checkpoint_input"] = ancestor, input_name
+                defaults["checkpoint"] = node["inputs"][input_name]
+                if loader == "CheckpointLoaderSimple":
+                    lora["mode"] = "checkpoint"
+                break
+        if "checkpoint" in injection:
+            break
+    else:
+        warnings.append("model loader not recognized; checkpoint cannot be overridden")
+
+    return {
+        "injection": injection,
+        "defaults": defaults,
+        "lora": lora,
+        "supported_params": [key for key in ("seed", "width", "height", "steps", "cfg", "sampler", "scheduler", "denoise", "checkpoint") if key in injection],
+        "format": "natural" if negative is None or any(h in str(defaults.get("checkpoint", "")).lower() for h in NATURAL_HINTS) else "tags",
+        "use_negative": negative is not None,
+        "quality_prefix": positive[2].strip().rstrip(",") if keep_positive else "",
+        "negative_template": negative[2].strip() if negative and keep_negative else "",
+        "warnings": warnings,
+    }
+
+
 def build_profile(name: str, source_path: str, template_file: str, analysis: dict, fmt: str | None) -> dict:
     profile = {
         "name": name,
@@ -356,6 +476,8 @@ def build_profile(name: str, source_path: str, template_file: str, analysis: dic
         "injection": analysis["injection"],
         "lora": analysis["lora"],
     }
+    if "supported_params" in analysis:
+        profile["supported_params"] = analysis["supported_params"]
     if profile["format"] == "natural":
         profile["natural"] = {
             "style": "A {text} image",

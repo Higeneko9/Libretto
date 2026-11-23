@@ -72,6 +72,7 @@
   "steps": "Steps",
   "sampler": "Sampler",
   "scheduler": "Scheduler",
+  "unsupportedWorkflowParameter": "This workflow does not support overriding this setting.",
   "breakHint": "BREAK starts a new CLIP chunk for each character; needs a workflow whose text encoder understands BREAK",
   "betweenCharacters": "Between characters (tag models)",
   "sepComma": "comma (tags stay grouped per character)",

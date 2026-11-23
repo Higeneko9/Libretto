@@ -55,7 +55,8 @@ class ComfyClient:
             params={"dir": "workflows", "recurse": "true", "split": "false", "full_info": "true"},
         )
         response.raise_for_status()
-        return sorted(response.json(), key=lambda f: f["path"].lower())
+        return sorted((f for f in response.json() if f["path"].lower().endswith(".json")),
+                      key=lambda f: f["path"].lower())
 
     def get_workflow(self, path: str) -> dict:
         response = self._client.get("/api/userdata/" + quote("workflows/" + path, safe=""))

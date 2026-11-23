@@ -38,3 +38,18 @@ def test_resolution_overrides_linked_latent_size_even_without_width_injection():
     wf = build_workflow(template, profile, "a", "n", {"width": 640, "height": 960}, [])
     assert wf["7"]["inputs"]["width"] == 640 and wf["7"]["inputs"]["height"] == 960
     assert build_workflow(template, profile, "a", "n", {}, [])["7"]["inputs"]["width"] == ["8", 0]
+
+
+def test_break_splits_encoder_when_prompt_comes_from_primitive():
+    template = {
+        "1": {"class_type": "PrimitiveStringMultiline", "inputs": {"value": "old"}},
+        "2": {"class_type": "CLIPTextEncode", "inputs": {"text": ["1", 0], "clip": ["4", 0]}},
+        "3": {"class_type": "BasicGuider", "inputs": {"conditioning": ["2", 0]}},
+        "4": {"class_type": "CLIPLoader", "inputs": {}},
+    }
+    profile = {"injection": {"positive": "1", "positive_input": "value"}}
+    wf = build_workflow(template, profile, "first BREAK second", "", {}, [])
+    assert wf["1"]["inputs"]["value"] == "first"
+    concat = wf[wf["3"]["inputs"]["conditioning"][0]]
+    assert concat["class_type"] == "ConditioningConcat"
+    assert wf[concat["inputs"]["conditioning_from"][0]]["inputs"]["text"] == "second"

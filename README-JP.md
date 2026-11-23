@@ -17,15 +17,15 @@ Libretto は、ComfyUI 向けのノードベースの**プロンプト生成ツ�
 
 [最新リリース](https://github.com/Higeneko9/Libretto/releases/latest)から
 デスクトップ版のパッケージをダウンロードしてください。
-以下の直接ダウンロードリンクは **v0.26.1122.0** のものです。
+以下の直接ダウンロードリンクは **v0.26.1122.1** のものです。
 これらのパッケージを使用する場合、Python や Node.js のインストールは不要です。
 
 | プラットフォーム | ダウンロード | インストール手順 |
 |---|---|---|
-| Windows x64 | [Windows インストーラー (.exe)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-win-x64.exe) | インストーラーを実行し、スタートメニューから Libretto を起動します。インストーラーは未署名です。SmartScreen の警告が表示された場合は、このリポジトリからダウンロードしたことを確認したうえで、**詳細情報 > 実行**を選択してください。 |
-| macOS Apple シリコン | [macOS ディスクイメージ (.dmg)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-mac-arm64.dmg) | ディスクイメージを開き、Libretto をアプリケーションフォルダーにドラッグします。アプリは Developer ID で署名され、Apple の公証を受けています。別のコンピューターの ComfyUI に接続する場合は、ローカルネットワークへのアクセスを許可してください。 |
-| Debian / Ubuntu amd64 | [Debian パッケージ (.deb)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-linux-amd64.deb) | `sudo apt install ./Libretto-0.26.1122-linux-amd64.deb` でインストールし、アプリメニューから Libretto を起動します。 |
-| Linux x86_64 | [AppImage](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-linux-x86_64.AppImage) | ダウンロードしたファイルに実行権限を付与して起動します。ディストリビューションによっては `libfuse2` が必要です。 |
+| Windows x64 | [Windows インストーラー (.exe)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.1/Libretto-0.26.1122-win-x64.exe) | インストーラーを実行し、スタートメニューから Libretto を起動します。インストーラーは未署名です。SmartScreen の警告が表示された場合は、このリポジトリからダウンロードしたことを確認したうえで、**詳細情報 > 実行**を選択してください。 |
+| macOS Apple シリコン | [macOS ディスクイメージ (.dmg)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.1/Libretto-0.26.1122-mac-arm64.dmg) | ディスクイメージを開き、Libretto をアプリケーションフォルダーにドラッグします。アプリは Developer ID で署名され、Apple の公証を受けています。別のコンピューターの ComfyUI に接続する場合は、ローカルネットワークへのアクセスを許可してください。 |
+| Debian / Ubuntu amd64 | [Debian パッケージ (.deb)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.1/Libretto-0.26.1122-linux-amd64.deb) | `sudo apt install ./Libretto-0.26.1122-linux-amd64.deb` でインストールし、アプリメニューから Libretto を起動します。 |
+| Linux x86_64 | [AppImage](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.1/Libretto-0.26.1122-linux-x86_64.AppImage) | ダウンロードしたファイルに実行権限を付与して起動します。ディストリビューションによっては `libfuse2` が必要です。 |
 
 [ComfyUI](https://github.com/Comfy-Org/ComfyUI) は別途インストールして起動し、
 動作するテキストからの画像生成ワークフローと、それに必要なモデルを
@@ -89,8 +89,11 @@ API 形式に変換し、モデルプロファイルとして登録します。
 チェックポイントを設定します。ComfyUI 側でワークフローを変更した場合は、
 再度インポートしてください。
 
-対応するのは KSampler ベースのテキストからの画像生成ワークフローです。
-サブグラフを使用するワークフローは、インポート時に展開されます。
+対応するのは、KSampler、または RandomNoise、CFGGuider／BasicGuider、
+KSamplerSelect、Flux2Scheduler／BasicScheduler と組み合わせた
+SamplerCustomAdvanced を使用するテキストからの画像生成ワークフローです
+（FLUX.2 Klein のサブグラフを含みます）。サブグラフはインポート時に展開されます。
+変更に対応していない設定はワークフローの値が使われます。
 アップスケール専用や 3D のワークフローには対応していません。
 プロンプトを拡張する機能の切り替えスイッチが含まれる場合は、
 ComfyUI 側でその設定を確認してください。

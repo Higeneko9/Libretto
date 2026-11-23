@@ -186,6 +186,10 @@ class Generator:
         if profile_id not in self.profiles:
             raise ValueError(f"unknown profile: {profile_id}")
         profile = self.profiles[profile_id]
+        if "supported_params" in profile:
+            unsupported = [key for key in PARAM_KEYS if key not in profile["supported_params"] and options.get(key) not in (None, "")]
+            if unsupported:
+                raise ValueError(f"workflow does not support overrides for: {', '.join(unsupported)}")
         library = self.library_for(graph)
         template = load_workflow_template(self.settings.ProfilesRoot, self.settings.UserProfilesRoot, profile)
         defaults = profile.get("defaults", {})

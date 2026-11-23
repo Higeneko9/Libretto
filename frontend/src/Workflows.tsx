@@ -28,7 +28,7 @@ export function WorkflowDialog({ onClose }: { onClose: () => void }) {
 
   const useProfile = async (profileId: string) => {
     const generate = nodes.find((n) => n.type === "generate");
-    if (generate) updateNode(generate.id, { profile: profileId, checkpoint: "", width: undefined, height: undefined, steps: undefined, cfg: undefined, sampler: "", scheduler: "" });
+    if (generate) updateNode(generate.id, { profile: profileId, checkpoint: "", width: undefined, height: undefined, steps: undefined, cfg: undefined, sampler: "", scheduler: "", denoise: undefined });
     onClose();
   };
 

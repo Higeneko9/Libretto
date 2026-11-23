@@ -166,6 +166,15 @@ def test_generate_snapshot_and_exact_requeue(env):
     assert again["parent_id"] == runs[0]["id"]
 
 
+def test_generate_rejects_unsupported_imported_workflow_override(env):
+    client, comfy, generator = env
+    generator.profiles["sdxl"]["supported_params"] = ["seed", "width"]
+    response = client.post("/api/generate", json={"graph": graph(scheduler="karras")})
+    assert response.status_code == 400
+    assert "scheduler" in response.json()["detail"]
+    assert not comfy.queued
+
+
 def test_pick_is_reproducible_from_pick_seed(env):
     _, _, generator = env
     g = graph(pick_seed=7, pick_locked=True)

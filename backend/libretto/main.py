@@ -333,12 +333,13 @@ def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = 
 
             api = ui_to_api(ui, object_info)
             analysis = analyze(api, body.keep_positive, body.keep_negative)
-            profile_id = "wf-" + slugify(body.path.removesuffix(".json"))
+            workflow_name = body.path[:-5] if body.path.lower().endswith(".json") else body.path
+            profile_id = "wf-" + slugify(workflow_name)
             template_file = f"{profile_id}.json"
             template_path = settings.UserProfilesRoot / template_file
             template_path.parent.mkdir(parents=True, exist_ok=True)
             template_path.write_text(json.dumps(api, indent=2), encoding="utf-8")
-            profile = build_profile(body.path.removesuffix(".json"), body.path, template_file, analysis, body.format)
+            profile = build_profile(workflow_name, body.path, template_file, analysis, body.format)
             profile["id"] = profile_id
             save_profile(settings.UserProfilesRoot, profile)
             profiles[profile_id] = profile
