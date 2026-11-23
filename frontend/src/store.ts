@@ -550,6 +550,11 @@ export const useStore = create<State>((set, get) => {
         position: { x: at.x + n.position.x - minX, y: at.y + n.position.y - minY },
         selected: true,
       }));
+      const newIds = new Map(clip.map((n, i) => [n.id, added[i].id]));
+      for (const node of added) {
+        const owner = node.data.owner && newIds.get(node.data.owner);
+        if (owner) node.data.owner = owner;
+      }
       const newEdges = generate ? added.map((n) => ({ id: `${n.id}->${generate.id}`, source: n.id, target: generate.id })) : [];
       set({
         nodes: [...get().nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), ...added],

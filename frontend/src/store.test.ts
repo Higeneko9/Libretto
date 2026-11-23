@@ -208,6 +208,42 @@ describe("node clipboard", () => {
     useStore.getState().removeNodes(["generate", copy!.id]);
     expect(useStore.getState().nodes.map((n) => n.id)).toEqual(["generate", "c1"]);
   });
+
+  it("remaps each copied owner to its new character when pasted into another scene", () => {
+    const sceneNodes: LbNode[] = [
+      character(),
+      { id: "c2", type: "collection", position: { x: 100, y: 0 }, data: { category: "character", mode: "random" } },
+      { id: "hair", type: "hair", position: { x: 0, y: 100 }, data: { owner: "c1" } },
+      { id: "prompt", type: "prompt", position: { x: 30, y: 100 }, data: { owner: "c1", text: "smiling" } },
+      { id: "pose", type: "pose", position: { x: 100, y: 100 }, data: { owner: "c2" } },
+    ];
+    useStore.setState({ nodes: [generate(), ...sceneNodes], sceneReady: false });
+    useStore.getState().copyNodes(sceneNodes.map((n) => n.id));
+    useStore.setState({ nodes: [generate()], edges: [], activeId: "other-scene" });
+    useStore.getState().pasteNodes({ x: 200, y: 300 });
+    let copies = useStore.getState().nodes.filter((n) => n.id !== "generate");
+    const copiedCharacter = copies.find((n) => n.type === "character")!;
+    const copiedCollection = copies.find((n) => n.type === "collection")!;
+    expect(copiedCharacter.id).not.toBe("c1");
+    expect(copiedCollection.id).not.toBe("c2");
+    expect(copies.find((n) => n.type === "hair")?.data.owner).toBe(copiedCharacter.id);
+    expect(copies.find((n) => n.type === "prompt")?.data.owner).toBe(copiedCharacter.id);
+    expect(copies.find((n) => n.type === "pose")?.data.owner).toBe(copiedCollection.id);
+    expect(useStore.getState().nodeClip.find((n) => n.id === "hair")?.data.owner).toBe("c1");
+
+    useStore.getState().pasteNodes({ x: 400, y: 500 });
+    copies = useStore.getState().nodes.filter((n) => n.selected);
+    expect(copies.find((n) => n.type === "hair")?.data.owner).toBe(copies.find((n) => n.type === "character")?.id);
+    expect(copies.find((n) => n.type === "pose")?.data.owner).toBe(copies.find((n) => n.type === "collection")?.id);
+    expect(copies.find((n) => n.type === "character")?.id).not.toBe(copiedCharacter.id);
+  });
+
+  it("keeps the existing owner when only its dependent node is copied", () => {
+    useStore.setState({ nodes: [generate(), character(), { id: "hair", type: "hair", position: { x: 0, y: 20 }, data: { owner: "c1" } }], sceneReady: false });
+    useStore.getState().copyNodes(["hair"]);
+    useStore.getState().pasteNodes({ x: 20, y: 40 });
+    expect(useStore.getState().nodes.find((n) => n.selected)?.data.owner).toBe("c1");
+  });
 });
 
 describe("owner handling", () => {
