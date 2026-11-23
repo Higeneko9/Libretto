@@ -16,15 +16,15 @@ models and workflows.
 ## How to install
 
 Download a desktop package from the [latest release](https://github.com/Higeneko9/Libretto/releases/latest).
-The direct links below are for **v0.26.1111.2**.
+The direct links below are for **v0.26.1122.0**.
 You do not need to install Python or Node.js to use these packages.
 
 | Platform | Download | Installation |
 |---|---|---|
-| Windows x64 | [Windows installer (.exe)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-win-x64.exe) | Run the installer, then open Libretto from the Start menu. The installer is unsigned; if SmartScreen warns, choose **More info > Run anyway** after confirming you downloaded it from this repository. |
-| macOS Apple silicon | [macOS disk image (.dmg)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-mac-arm64.dmg) | Open the disk image and drag Libretto into Applications. The app is Developer ID signed and notarized. Allow Local Network access if connecting to ComfyUI on another machine. |
-| Debian / Ubuntu amd64 | [Debian package (.deb)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-linux-amd64.deb) | Install with `sudo apt install ./Libretto-0.26.1111-linux-amd64.deb`, then open Libretto from the app menu. |
-| Linux x86_64 | [AppImage](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-linux-x86_64.AppImage) | Make the downloaded file executable and run it. Some distributions require `libfuse2`. |
+| Windows x64 | [Windows installer (.exe)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-win-x64.exe) | Run the installer, then open Libretto from the Start menu. The installer is unsigned; if SmartScreen warns, choose **More info > Run anyway** after confirming you downloaded it from this repository. |
+| macOS Apple silicon | [macOS disk image (.dmg)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-mac-arm64.dmg) | Open the disk image and drag Libretto into Applications. The app is Developer ID signed and notarized. Allow Local Network access if connecting to ComfyUI on another machine. |
+| Debian / Ubuntu amd64 | [Debian package (.deb)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-linux-amd64.deb) | Install with `sudo apt install ./Libretto-0.26.1122-linux-amd64.deb`, then open Libretto from the app menu. |
+| Linux x86_64 | [AppImage](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-linux-x86_64.AppImage) | Make the downloaded file executable and run it. Some distributions require `libfuse2`. |
 
 Install and start [ComfyUI](https://github.com/Comfy-Org/ComfyUI) separately,
 with a working text-to-image workflow and the models it needs.
@@ -42,7 +42,7 @@ The Windows uninstaller asks whether to delete this data.
 
 ## How to use it
 
-[![Libretto workspace with the Results browser on the left, Graph editor in the center, Inspector on the right, and Library browser at the bottom. Click to watch the English introduction on YouTube.](docs/images/workspace.png)](https://youtu.be/jTv9STxC0xk)
+[![Libretto workspace with the Show Outline and Results browser on the left, Graph editor in the center, Inspector on the right, and Library browser at the bottom. Click to watch the English introduction on YouTube.](docs/images/workspace.png)](https://youtu.be/jTv9STxC0xk)
 
 **YouTube walkthrough:** [English introduction](https://youtu.be/jTv9STxC0xk)
 | [Japanese introduction](https://youtu.be/FM9a2HxqP0Q)

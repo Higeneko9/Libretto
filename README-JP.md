@@ -17,15 +17,15 @@ Libretto は、ComfyUI 向けのノードベースの**プロンプト生成ツ�
 
 [最新リリース](https://github.com/Higeneko9/Libretto/releases/latest)から
 デスクトップ版のパッケージをダウンロードしてください。
-以下の直接ダウンロードリンクは **v0.26.1111.2** のものです。
+以下の直接ダウンロードリンクは **v0.26.1122.0** のものです。
 これらのパッケージを使用する場合、Python や Node.js のインストールは不要です。
 
 | プラットフォーム | ダウンロード | インストール手順 |
 |---|---|---|
-| Windows x64 | [Windows インストーラー (.exe)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-win-x64.exe) | インストーラーを実行し、スタートメニューから Libretto を起動します。インストーラーは未署名です。SmartScreen の警告が表示された場合は、このリポジトリからダウンロードしたことを確認したうえで、**詳細情報 > 実行**を選択してください。 |
-| macOS Apple シリコン | [macOS ディスクイメージ (.dmg)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-mac-arm64.dmg) | ディスクイメージを開き、Libretto をアプリケーションフォルダーにドラッグします。アプリは Developer ID で署名され、Apple の公証を受けています。別のコンピューターの ComfyUI に接続する場合は、ローカルネットワークへのアクセスを許可してください。 |
-| Debian / Ubuntu amd64 | [Debian パッケージ (.deb)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-linux-amd64.deb) | `sudo apt install ./Libretto-0.26.1111-linux-amd64.deb` でインストールし、アプリメニューから Libretto を起動します。 |
-| Linux x86_64 | [AppImage](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1111.2/Libretto-0.26.1111-linux-x86_64.AppImage) | ダウンロードしたファイルに実行権限を付与して起動します。ディストリビューションによっては `libfuse2` が必要です。 |
+| Windows x64 | [Windows インストーラー (.exe)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-win-x64.exe) | インストーラーを実行し、スタートメニューから Libretto を起動します。インストーラーは未署名です。SmartScreen の警告が表示された場合は、このリポジトリからダウンロードしたことを確認したうえで、**詳細情報 > 実行**を選択してください。 |
+| macOS Apple シリコン | [macOS ディスクイメージ (.dmg)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-mac-arm64.dmg) | ディスクイメージを開き、Libretto をアプリケーションフォルダーにドラッグします。アプリは Developer ID で署名され、Apple の公証を受けています。別のコンピューターの ComfyUI に接続する場合は、ローカルネットワークへのアクセスを許可してください。 |
+| Debian / Ubuntu amd64 | [Debian パッケージ (.deb)](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-linux-amd64.deb) | `sudo apt install ./Libretto-0.26.1122-linux-amd64.deb` でインストールし、アプリメニューから Libretto を起動します。 |
+| Linux x86_64 | [AppImage](https://github.com/Higeneko9/Libretto/releases/download/v0.26.1122.0/Libretto-0.26.1122-linux-x86_64.AppImage) | ダウンロードしたファイルに実行権限を付与して起動します。ディストリビューションによっては `libfuse2` が必要です。 |
 
 [ComfyUI](https://github.com/Comfy-Org/ComfyUI) は別途インストールして起動し、
 動作するテキストからの画像生成ワークフローと、それに必要なモデルを
@@ -44,7 +44,7 @@ Windows のアンインストーラーでは、このデータも削除するか
 
 ## 使い方
 
-[![左に結果ブラウザー、中央にグラフエディター、右にインスペクター、下部にライブラリブラウザーが配置された Libretto のワークスペース。クリックすると YouTube の日本語紹介動画が開きます。](docs/images/workspace.png)](https://youtu.be/FM9a2HxqP0Q)
+[![左にショーアウトラインと結果ブラウザー、中央にグラフエディター、右にインスペクター、下部にライブラリブラウザーが配置された Libretto のワークスペース。クリックすると YouTube の日本語紹介動画が開きます。](docs/images/workspace.png)](https://youtu.be/FM9a2HxqP0Q)
 
 **YouTube 解説動画：** [日本語版](https://youtu.be/FM9a2HxqP0Q)
 | [英語版](https://youtu.be/jTv9STxC0xk)
