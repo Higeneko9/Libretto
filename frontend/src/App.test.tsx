@@ -5,12 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Canvas } from "./App";
 import { useStore } from "./store";
 
+const screenToFlowPosition = vi.fn(({ x, y }: { x: number; y: number }) => ({ x: x - 10, y: y - 20 }));
+
 vi.mock("@xyflow/react", async (importOriginal) => ({
   ...await importOriginal<typeof import("@xyflow/react")>(),
   ReactFlow: vi.fn((props: ReactFlowProps) => (
     <div data-testid="selection" onContextMenu={(event) => props.onSelectionContextMenu?.(event, (props.nodes ?? []).filter((node) => node.selected))} />
   )),
-  useReactFlow: () => ({}),
+  useReactFlow: () => ({ screenToFlowPosition }),
 }));
 
 let container: HTMLDivElement;
@@ -24,6 +26,7 @@ beforeEach(async () => {
   useStore.setState({
     sceneReady: false,
     focusId: null,
+    nodeClip: [],
     nodes: [
       { id: "generate", type: "generate", position: { x: 600, y: 0 }, data: { profile: "sdxl" } },
       { id: "character", type: "character", position: { x: 0, y: 0 }, data: { name: "Nancy" } },
@@ -156,5 +159,66 @@ describe("hidden scene connections", () => {
     await act(async () => copy!.click());
     expect(useStore.getState().nodeClip.map((node) => node.id)).toEqual(["character", "costume"]);
     expect(useStore.getState().nodes.filter((node) => node.selected).map((node) => node.id)).toEqual(["generate", "character", "costume"]);
+  });
+
+  it.each(["ctrlKey", "metaKey"] as const)("copies and pastes selected nodes at the pointer using %s", async (modifier) => {
+    await act(async () => useStore.setState((s) => ({
+      nodes: [
+        ...s.nodes.map((node) => ({ ...node, selected: true })),
+        { id: "costume", type: "costume", position: { x: 30, y: 40 }, data: { name: "Suit" }, selected: true },
+      ],
+    })));
+    const canvas = container.querySelector(".canvas")!;
+    canvas.dispatchEvent(new MouseEvent("mouseover", { bubbles: true, clientX: 100, clientY: 120 }));
+    const copy = new KeyboardEvent("keydown", { key: "c", [modifier]: true, bubbles: true, cancelable: true });
+    await act(async () => canvas.dispatchEvent(copy));
+    expect(copy.defaultPrevented).toBe(true);
+    expect(useStore.getState().nodeClip.map((node) => node.id)).toEqual(["character", "costume"]);
+    canvas.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 300, clientY: 400 }));
+    const paste = new KeyboardEvent("keydown", { key: "v", [modifier]: true, bubbles: true, cancelable: true });
+    await act(async () => canvas.dispatchEvent(paste));
+    expect(paste.defaultPrevented).toBe(true);
+    expect(screenToFlowPosition).toHaveBeenCalledWith(expect.objectContaining({ x: 300, y: 400 }));
+    const pasted = useStore.getState().nodes.filter((node) => node.selected);
+    expect(pasted.map((node) => node.position)).toEqual([{ x: 290, y: 380 }, { x: 320, y: 420 }]);
+    expect(pasted.map((node) => node.data.name)).toEqual(["Nancy", "Suit"]);
+    expect(useStore.getState().edges.filter((edge) => pasted.some((node) => node.id === edge.source))).toHaveLength(2);
+  });
+
+  it("cuts only removable selected nodes and ignores held-key repeats", async () => {
+    await act(async () => useStore.setState((s) => ({
+      nodes: [
+        ...s.nodes.map((node) => ({ ...node, selected: true })),
+        { id: "protected", type: "pose", position: { x: 10, y: 20 }, data: {}, selected: true, deletable: false },
+      ],
+    })));
+    const canvas = container.querySelector(".canvas")!;
+    canvas.dispatchEvent(new MouseEvent("mouseover", { bubbles: true, clientX: 100, clientY: 120 }));
+    await act(async () => canvas.dispatchEvent(new KeyboardEvent("keydown", { key: "x", ctrlKey: true, bubbles: true, cancelable: true })));
+    expect(useStore.getState().nodes.map((node) => node.id)).toEqual(["generate", "protected"]);
+    expect(useStore.getState().nodeClip.map((node) => node.id)).toEqual(["character"]);
+    await act(async () => canvas.dispatchEvent(new KeyboardEvent("keydown", { key: "v", ctrlKey: true, repeat: true, bubbles: true, cancelable: true })));
+    expect(useStore.getState().nodes).toHaveLength(2);
+    await act(async () => canvas.dispatchEvent(new KeyboardEvent("keydown", { key: "v", ctrlKey: true, bubbles: true, cancelable: true })));
+    expect(useStore.getState().nodes).toHaveLength(3);
+  });
+
+  it("preserves text editing and ignores canvas shortcuts outside the hovered panel", async () => {
+    await act(async () => useStore.setState((s) => ({ nodes: s.nodes.map((node) => ({ ...node, selected: true })) })));
+    const canvas = container.querySelector(".canvas")!;
+    const input = document.createElement("textarea");
+    canvas.append(input);
+    canvas.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    const textCopy = new KeyboardEvent("keydown", { key: "c", ctrlKey: true, bubbles: true, cancelable: true });
+    await act(async () => input.dispatchEvent(textCopy));
+    expect(textCopy.defaultPrevented).toBe(false);
+    expect(useStore.getState().nodeClip).toEqual([]);
+    const outside = document.createElement("div");
+    outside.dataset.shortcutPanel = "outline";
+    container.append(outside);
+    outside.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    await act(async () => canvas.dispatchEvent(new KeyboardEvent("keydown", { key: "x", ctrlKey: true, bubbles: true, cancelable: true })));
+    expect(useStore.getState().nodes).toHaveLength(2);
+    expect(useStore.getState().nodeClip).toEqual([]);
   });
 });

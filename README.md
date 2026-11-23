@@ -99,6 +99,10 @@ choose your own working profile before generating.
 5. Adjust scene-wide positive and negative text in the Inspector and inspect
    the Prompt preview.
 
+With the pointer over the graph, use **Ctrl+C**, **Ctrl+X**, and **Ctrl+V**
+(**Cmd** on macOS) to copy, cut, and paste selected nodes. Pasted nodes appear
+at the pointer; the Generate node cannot be copied or cut.
+
 Scenes autosave. Right-click a scene tab to rename, duplicate, export, close,
 close the other tabs, close all tabs, or delete it. Closing tabs does not delete
 scenes; reopen them from the outline or the **+** menu, which lists up to eight

@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 
-type Handler = (event: KeyboardEvent) => void;
+type Handler = (event: KeyboardEvent, pointer: { x: number; y: number }) => void;
 const panels = new Map<RefObject<HTMLElement | null>, RefObject<Handler>>();
 let pointer: { x: number; y: number; target: Element | null } | null = null;
 
@@ -18,10 +18,10 @@ function routeKey(event: KeyboardEvent) {
   const overlays = document.querySelectorAll(".modal, .fullscreen-view");
   const blocked = document.body.classList.contains("lb-dragging") || !!document.querySelector(".ask-box, .ctx-menu") ||
     (overlays.length > 0 && panel?.closest(".modal, .fullscreen-view") !== overlays[overlays.length - 1]);
-  if (!blocked && panel?.isConnected) {
+  if (!blocked && panel?.isConnected && pointer) {
     for (const [ref, handler] of panels) {
       if (ref.current === panel) {
-        handler.current(event);
+        handler.current(event, pointer);
         break;
       }
     }

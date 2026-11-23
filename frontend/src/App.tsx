@@ -189,7 +189,7 @@ export function Canvas() {
       .find((element) => element.dataset.nodeId === id);
     button?.click();
   };
-  usePanelShortcuts(canvasRef, (event) => {
+  usePanelShortcuts(canvasRef, (event, pointer) => {
     const state = useStore.getState();
     if (state.tabsBusy) return;
     const key = event.key.toLowerCase();
@@ -203,6 +203,22 @@ export function Canvas() {
       event.preventDefault();
       if (key === "y" || event.shiftKey) state.redo();
       else state.undo();
+    } else if ((event.ctrlKey || event.metaKey) && !event.shiftKey && (key === "c" || key === "x" || key === "v")) {
+      if (key === "v") {
+        if (state.nodeClip.length === 0) return;
+        event.preventDefault();
+        if (!event.repeat) state.pasteNodes(screenToFlowPosition(pointer));
+      } else {
+        const ids = state.nodes.filter((node) =>
+          node.selected && node.type !== "generate" && (key !== "x" || node.deletable !== false),
+        ).map((node) => node.id);
+        if (ids.length === 0) return;
+        event.preventDefault();
+        if (!event.repeat) {
+          state.copyNodes(ids);
+          if (key === "x") state.removeNodes(ids);
+        }
+      }
     } else if (!event.ctrlKey && !event.metaKey && (event.key === "Delete" || event.key === "Backspace")) {
       event.preventDefault();
       const ids = state.nodes.filter((node) => node.selected && node.type !== "generate" && node.deletable !== false).map((node) => node.id);
