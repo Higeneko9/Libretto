@@ -1,4 +1,4 @@
-import { ReactFlow } from "@xyflow/react";
+import { ReactFlow, type ReactFlowProps } from "@xyflow/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,7 +7,9 @@ import { useStore } from "./store";
 
 vi.mock("@xyflow/react", async (importOriginal) => ({
   ...await importOriginal<typeof import("@xyflow/react")>(),
-  ReactFlow: vi.fn(() => null),
+  ReactFlow: vi.fn((props: ReactFlowProps) => (
+    <div data-testid="selection" onContextMenu={(event) => props.onSelectionContextMenu?.(event, (props.nodes ?? []).filter((node) => node.selected))} />
+  )),
   useReactFlow: () => ({}),
 }));
 
@@ -61,6 +63,14 @@ describe("hidden scene connections", () => {
     expect(useStore.getState().edges[0].hidden).toBeUndefined();
     expect(useStore.getState().toGraph()).toEqual(graph);
     expect(graph.edges).toEqual([{ source: "character", target: "generate" }]);
+  });
+
+  it("allows zooming from 10% to 400% while keeping the initial fit limits", () => {
+    const props = renderedEdges();
+    expect(props.minZoom).toBe(0.1);
+    expect(props.maxZoom).toBe(4);
+    expect(props.fitViewOptions?.minZoom).toBe(0.5);
+    expect(props.fitViewOptions?.maxZoom).toBe(2);
   });
 
   it("routes prompt F2 editing only to the hovered canvas and offers it in the node menu", async () => {
@@ -124,5 +134,27 @@ describe("hidden scene connections", () => {
     expect(useStore.getState().toGraph().edges).toEqual(edges.map(({ source, target }) => ({ source, target })));
     expect(renderedEdges().edges).toEqual(useStore.getState().edges.map((edge) => ({ ...edge, hidden: true })));
     expect(useStore.getState().edges.every((edge) => edge.hidden === undefined)).toBe(true);
+  });
+
+  it("opens the selection context menu and copies selected nodes except Generate", async () => {
+    await act(async () => useStore.setState((s) => ({
+      nodes: [
+        ...s.nodes.map((node) => ({ ...node, selected: true })),
+        { id: "costume", type: "costume", position: { x: 20, y: 30 }, data: { name: "Suit" }, selected: true },
+        { id: "other", type: "pose", position: { x: 30, y: 40 }, data: {}, selected: false },
+      ],
+    })));
+    const bubbled = vi.fn();
+    document.addEventListener("contextmenu", bubbled);
+    const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 100, clientY: 100 });
+    await act(async () => container.querySelector('[data-testid="selection"]')!.dispatchEvent(event));
+    document.removeEventListener("contextmenu", bubbled);
+    expect(event.defaultPrevented).toBe(true);
+    expect(bubbled).not.toHaveBeenCalled();
+    const copy = [...container.querySelectorAll<HTMLButtonElement>(".ctx-menu button")].find((item) => item.textContent === "Copy (2)");
+    expect(copy).toBeDefined();
+    await act(async () => copy!.click());
+    expect(useStore.getState().nodeClip.map((node) => node.id)).toEqual(["character", "costume"]);
+    expect(useStore.getState().nodes.filter((node) => node.selected).map((node) => node.id)).toEqual(["generate", "character", "costume"]);
   });
 });

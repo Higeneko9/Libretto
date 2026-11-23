@@ -312,6 +312,11 @@ export function Canvas() {
           const selected = useStore.getState().nodes.filter((n) => n.selected).map((n) => n.id);
           setMenu({ x: e.clientX, y: e.clientY, ids: selected.includes(node.id) ? selected : [node.id] });
         }}
+        onSelectionContextMenu={(e, selected) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setMenu({ x: e.clientX, y: e.clientY, ids: selected.map((node) => node.id) });
+        }}
         onPaneContextMenu={(e) => {
           e.preventDefault();
           setMenu({ x: (e as React.MouseEvent).clientX, y: (e as React.MouseEvent).clientY, ids: [] });
@@ -319,7 +324,10 @@ export function Canvas() {
         deleteKeyCode={null}
         selectionKeyCode={["Control", "Shift"]}
         multiSelectionKeyCode={["Control", "Meta", "Shift"]}
+        minZoom={0.1}
+        maxZoom={4}
         fitView
+        fitViewOptions={{ minZoom: 0.5, maxZoom: 2 }}
         colorMode="dark"
       >
         <Background />
