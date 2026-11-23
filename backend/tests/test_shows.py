@@ -185,11 +185,74 @@ def test_organization_creation_can_be_undone_and_redone_with_stable_ids(tmp_path
     for _ in range(3):
         step(scenes)
     assert scenes.list() == scenes.list_shows() == []
+    assert not (scenes.shows_root / show["id"]).exists()
     assert scenes.history()["undo"] == 0
     for _ in range(3):
         step(scenes, redo=True)
     assert {p: p.read_bytes() for p in tmp_path.rglob("*.json")} == original
     assert scenes.get_show(show["id"])["items"][0]["scene_ids"] == [scene["id"]]
+
+
+@pytest.mark.parametrize("hierarchy", [False, True])
+def test_deleting_a_show_removes_its_empty_folder_and_undo_restores_it(tmp_path, hierarchy):
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Show")
+    scene = scenes.create("Scene", graph(), show["id"]) if hierarchy else None
+    folder = scenes.shows_root / show["id"]
+    scenes.clear_history()
+    if hierarchy:
+        scenes.delete_hierarchy(show["id"])
+    else:
+        scenes.delete_group(show["id"])
+    assert not folder.exists()
+    step(scenes)
+    assert scenes.get_show(show["id"])["name"] == "Show"
+    if scene:
+        assert scenes.get(scene["id"])["graph"] == graph()
+    step(scenes, redo=True)
+    assert not folder.exists()
+
+
+def test_deleting_empty_show_preserves_unmanaged_files_and_directories(tmp_path):
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Show")
+    folder = scenes.shows_root / show["id"]
+    notes = folder / "notes.txt"
+    notes.write_text("Keep", encoding="utf-8")
+    (folder / "attachments").mkdir()
+    scenes.clear_history()
+    scenes.delete_group(show["id"])
+    assert notes.read_text(encoding="utf-8") == "Keep"
+    assert (folder / "attachments").is_dir()
+    step(scenes)
+    assert scenes.get_show(show["id"])["name"] == "Show"
+    step(scenes, redo=True)
+    assert notes.read_text(encoding="utf-8") == "Keep"
+    assert (folder / "attachments").is_dir()
+
+
+def test_show_folder_cleanup_rolls_back_deletion_on_failure(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    scenes = Scenes(tmp_path / "scenes")
+    show = scenes.create_show("Show")
+    scene = scenes.create("Scene", graph(), show["id"])
+    folder = scenes.shows_root / show["id"]
+    before = {p: p.read_bytes() for p in folder.iterdir()}
+    history = scenes.history()
+    rmdir = Path.rmdir
+
+    def fail_show_folder(path):
+        if path == folder:
+            raise PermissionError("cannot remove show folder")
+        return rmdir(path)
+
+    monkeypatch.setattr(Path, "rmdir", fail_show_folder)
+    with pytest.raises(PermissionError, match="cannot remove show folder"):
+        scenes.delete_hierarchy(show["id"])
+    assert {p: p.read_bytes() for p in folder.iterdir()} == before
+    assert scenes.get(scene["id"])["graph"] == graph()
+    assert scenes.history() == history
 
 
 def test_organization_undo_keeps_later_graph_edits_and_editor_redo(tmp_path):

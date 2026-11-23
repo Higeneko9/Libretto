@@ -183,6 +183,8 @@ menus block background panel actions.
 
 Each show is a shareable folder: `ugc/shows/<show-id>/show-outline.json` stores
 its name, acts, and ordering, with `<scene-id>.scene.json` files alongside it.
+Deleting a show removes its folder when empty; unrelated files or folders are
+preserved. Organization undo restores the show folder and its scene files.
 Standalone scenes remain in `ugc/scenes/<scene-id>.json`; nothing is automatically
 relocated. Generated images and local history remain outside show folders.
 Sharing a show folder does not include referenced libraries, ComfyUI workflows,

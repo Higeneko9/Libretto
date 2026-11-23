@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import copy
+import errno
 import json
 import re
 import shutil
-import copy
 import threading
 import uuid
 from contextlib import contextmanager
@@ -295,11 +296,19 @@ class Scenes:
                         temp.replace(path)
                     finally:
                         temp.unlink(missing_ok=True)
+            for path, data in following.items():
+                if data is None and previous[path] is not None and path.name == "show-outline.json" and path.parent.parent == self.shows_root:
+                    try:
+                        path.parent.rmdir()
+                    except OSError as exc:
+                        if exc.errno not in (errno.ENOTEMPTY, errno.EEXIST):
+                            raise
         except OSError:
             for path, content in previous.items():
                 if content is None:
                     path.unlink(missing_ok=True)
                 else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_bytes(content)
             raise
         if changed:
