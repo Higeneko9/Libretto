@@ -1,0 +1,152 @@
+{
+  "id": "s-99970613",
+  "name": "Props",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false,
+          "checkpoint": "",
+          "sampler": "",
+          "scheduler": "",
+          "batch": 1
+        },
+        "position": {
+          "x": 341,
+          "y": -22.72231705855497
+        }
+      },
+      {
+        "id": "prompt-mw0e3eat",
+        "type": "prompt",
+        "data": {
+          "text": "gray background, solo, no characters, full item shot",
+          "polarity": "positive",
+          "placement": "inline",
+          "disabled": false
+        },
+        "position": {
+          "x": 619.2126365207987,
+          "y": 206.92506055343438
+        }
+      },
+      {
+        "id": "style-mw0e3eav",
+        "type": "style",
+        "data": {
+          "presetId": "p-7293def1",
+          "lib": "default",
+          "name": "Anime illustration",
+          "names": {
+            "ja-JP": "アニメイラスト風"
+          },
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "t-b9f9722c"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 621.0407610108136,
+          "y": -26.19073805607435
+        }
+      },
+      {
+        "id": "prompt-mw0e3eba",
+        "type": "prompt",
+        "data": {
+          "text": "character, character sheet",
+          "polarity": "negative",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 355.62212503963497,
+          "y": 106.63205304104635
+        }
+      },
+      {
+        "id": "view-mwh0b15p",
+        "type": "view",
+        "data": {
+          "presetId": "p-86d73ece",
+          "lib": "default",
+          "name": "Three-Quarter",
+          "keywords": "three-quarter view",
+          "description": "three-quarter view",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 644.6294242871411,
+          "y": 91.47623947199415
+        }
+      },
+      {
+        "id": "props-mwsbqzit",
+        "type": "props",
+        "data": {
+          "presetId": "p-63ac2340",
+          "lib": "default",
+          "name": "Teddy Bear",
+          "names": {
+            "ja-JP": "ぬいぐるみ(クマ)"
+          },
+          "keywords": "teddy bear",
+          "description": "teddy bear",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-ea88d8bb"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 318.18120042814184,
+          "y": 179.8480020611773
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "prompt-mw0e3eat",
+        "target": "generate"
+      },
+      {
+        "source": "style-mw0e3eav",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mw0e3eba",
+        "target": "generate"
+      },
+      {
+        "source": "view-mwh0b15p",
+        "target": "generate"
+      },
+      {
+        "source": "props-mwsbqzit",
+        "target": "generate"
+      }
+    ],
+    "name": "Props",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "names": {
+    "ja-JP": "小道具"
+  },
+  "order": 9,
+  "updated_at": "2026-11-23T05:33:42.326866+00:00"
+}

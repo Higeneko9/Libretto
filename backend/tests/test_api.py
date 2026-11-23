@@ -54,7 +54,8 @@ class FakeComfy:
 def env(tmp_path):
     libraries = tmp_path / "libraries"
     shutil.copytree(Path(__file__).parent / "fixtures" / "library", libraries / "default", ignore=shutil.ignore_patterns("*.webp"))
-    (tmp_path / "scenes").mkdir()  # an existing scenes folder is never seeded with the sample scenes
+    (tmp_path / "scenes").mkdir()
+    (tmp_path / "shows").mkdir()  # keep the fixture free of bundled samples
     settings = LB_Settings(
         ComfyUrl="http://fake",
         LibrariesRoot=libraries,

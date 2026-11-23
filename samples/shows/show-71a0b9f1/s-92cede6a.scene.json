@@ -1,0 +1,349 @@
+{
+  "id": "s-92cede6a",
+  "name": "Situation",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false,
+          "checkpoint": "",
+          "sampler": "",
+          "scheduler": "",
+          "batch": 1
+        },
+        "position": {
+          "x": -33.94246604902139,
+          "y": 50.022126789261094
+        }
+      },
+      {
+        "id": "situation-mwdu4tcd",
+        "type": "situation",
+        "data": {
+          "presetId": "p-1570eed2",
+          "lib": "default",
+          "name": "Headpat",
+          "names": {
+            "ja-JP": "なでなで"
+          },
+          "keywords": "headpat",
+          "description": "headpat",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": -0.1865822555763117,
+          "y": 452.49406982632075
+        }
+      },
+      {
+        "id": "style-mwsbqziu",
+        "type": "style",
+        "data": {
+          "presetId": "p-7293def1",
+          "lib": "default",
+          "name": "Anime illustration",
+          "names": {
+            "ja-JP": "アニメイラスト風"
+          },
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "t-b9f9722c"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": -35.788650035106315,
+          "y": 173.25711723285426
+        }
+      },
+      {
+        "id": "character-mwsbqziv",
+        "type": "character",
+        "data": {
+          "presetId": "p-0a38de68",
+          "lib": "default",
+          "name": "Mai",
+          "names": {
+            "ja-JP": "まい"
+          },
+          "keywords": "Mai,1girl, young child",
+          "description": "Mai,1girl, young child",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-70fb8f8e",
+            "t-fa71efe4"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 247.76325575805356,
+          "y": 61.25388841525475
+        }
+      },
+      {
+        "id": "character-mwsbqzix",
+        "type": "character",
+        "data": {
+          "presetId": "p-c991254b",
+          "lib": "default",
+          "name": "Mike",
+          "names": {
+            "ja-JP": "ミケ"
+          },
+          "keywords": "Mike, calico cat",
+          "description": "Mike, calico cat",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-67e23300",
+            "t-82ca0c7a"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 538.4641243798094,
+          "y": 427.87227541896914
+        }
+      },
+      {
+        "id": "hair-mwsbqziy",
+        "type": "hair",
+        "data": {
+          "presetId": "p-7640c391",
+          "lib": "default",
+          "name": "Long straight",
+          "names": {
+            "ja-JP": "ストレートロング"
+          },
+          "keywords": "{color} hair, long hair, straight hair",
+          "description": "long straight {color} hair",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-728183cd"
+          ],
+          "weight": 1,
+          "hair_color": "black",
+          "owner": "character-mwsbqziv"
+        },
+        "position": {
+          "x": 236.8178056772743,
+          "y": 177.04397473395431
+        }
+      },
+      {
+        "id": "costume-mwsbqziz",
+        "type": "costume",
+        "data": {
+          "presetId": "p-275068c6",
+          "lib": "default",
+          "name": "JS Uniform",
+          "names": {
+            "ja-JP": "小学生制服(女子)"
+          },
+          "keywords": "navy suspender skirt, white blouse, white sox, name tag, mary jane shoes",
+          "description": "navy suspender skirt, white blouse, white sox, name tag, mary jane shoes",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-955d59f3",
+            "t-5c825084"
+          ],
+          "weight": 1,
+          "owner": "character-mwsbqziv"
+        },
+        "position": {
+          "x": 246.27509948112709,
+          "y": 312.18439096527476
+        }
+      },
+      {
+        "id": "pose-mwsbqzj0",
+        "type": "pose",
+        "data": {
+          "presetId": "p-edc18d2d",
+          "lib": "default",
+          "name": "Squatting",
+          "names": {
+            "ja-JP": "しゃがみ"
+          },
+          "keywords": "squatting",
+          "description": "squatting",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-6cea1520"
+          ],
+          "weight": 1,
+          "owner": "character-mwsbqziv"
+        },
+        "position": {
+          "x": 259.8867558683663,
+          "y": 435.44535907107576
+        }
+      },
+      {
+        "id": "location-mwsbqzj1",
+        "type": "location",
+        "data": {
+          "presetId": "p-831799ff",
+          "lib": "default",
+          "name": "Park: Bench",
+          "names": {
+            "ja-JP": "ベンチ(公園)"
+          },
+          "keywords": "white wooden bench front of bushes, park",
+          "description": "white wooden bench front of bushes, park",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-6a72642e",
+            "t-a00bd594"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 506.1852916695068,
+          "y": 53.12230373699407
+        }
+      },
+      {
+        "id": "lighting-mwsbqzj2",
+        "type": "lighting",
+        "data": {
+          "presetId": "p-e41097f5",
+          "lib": "default",
+          "name": "Mid day",
+          "names": {
+            "ja-JP": "日中"
+          },
+          "keywords": "mid-day lighting, strong shadow",
+          "description": "mid-day lighting, strong shadow",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 511.90761408617254,
+          "y": 172.71955474585695
+        }
+      },
+      {
+        "id": "emotion-mwsbqzj4",
+        "type": "emotion",
+        "data": {
+          "presetId": "p-199bd8b8",
+          "lib": "default",
+          "name": "Smiling",
+          "names": {
+            "ja-JP": "微笑み"
+          },
+          "keywords": "smile, happy",
+          "description": "smile, happy",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-7e2169b7"
+          ],
+          "weight": 1,
+          "owner": "character-mwsbqziv"
+        },
+        "position": {
+          "x": -21.455577582607063,
+          "y": 309.3197786166526
+        }
+      },
+      {
+        "id": "view-mwsbqzj5",
+        "type": "view",
+        "data": {
+          "presetId": "p-86d73ece",
+          "lib": "default",
+          "name": "Three-Quarter",
+          "names": {
+            "ja-JP": "斜め後ろ"
+          },
+          "keywords": "three-quarter view",
+          "description": "three-quarter view",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 523.9245645068155,
+          "y": 288.3111905410031
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "situation-mwdu4tcd",
+        "target": "generate"
+      },
+      {
+        "source": "style-mwsbqziu",
+        "target": "generate"
+      },
+      {
+        "source": "character-mwsbqziv",
+        "target": "generate"
+      },
+      {
+        "source": "character-mwsbqzix",
+        "target": "generate"
+      },
+      {
+        "source": "hair-mwsbqziy",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mwsbqziz",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mwsbqzj0",
+        "target": "generate"
+      },
+      {
+        "source": "location-mwsbqzj1",
+        "target": "generate"
+      },
+      {
+        "source": "lighting-mwsbqzj2",
+        "target": "generate"
+      },
+      {
+        "source": "emotion-mwsbqzj4",
+        "target": "generate"
+      },
+      {
+        "source": "view-mwsbqzj5",
+        "target": "generate"
+      }
+    ],
+    "name": "Situation",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "names": {
+    "ja-JP": "シチュエーション"
+  },
+  "order": 8,
+  "updated_at": "2026-11-23T05:33:49.121330+00:00"
+}

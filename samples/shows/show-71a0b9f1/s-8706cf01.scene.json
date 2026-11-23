@@ -1,5 +1,5 @@
 {
-  "id": "sample",
+  "id": "s-8706cf01",
   "name": "Sample",
   "graph": {
     "nodes": [
@@ -59,7 +59,8 @@
             "long"
           ],
           "weight": 1,
-          "hair_color": "black"
+          "hair_color": "black",
+          "owner": "character-mw78t07m"
         },
         "position": {
           "x": 550.8034509863423,
@@ -84,7 +85,8 @@
             "t-955d59f3",
             "t-5c825084"
           ],
-          "weight": 1
+          "weight": 1,
+          "owner": "character-mw78t07m"
         },
         "position": {
           "x": 551.3837826057468,
@@ -105,7 +107,8 @@
           "labels": [
             "standing"
           ],
-          "weight": 1
+          "weight": 1,
+          "owner": "character-mw78t07m"
         },
         "position": {
           "x": 555.1561506686334,
@@ -124,7 +127,8 @@
           "negative": "",
           "emphasis": 1,
           "labels": [],
-          "weight": 1
+          "weight": 1,
+          "owner": "character-mw78t07m"
         },
         "position": {
           "x": 816.0311538477685,
@@ -145,7 +149,8 @@
           "labels": [
             "happy"
           ],
-          "weight": 1
+          "weight": 1,
+          "owner": "character-mw78t07m"
         },
         "position": {
           "x": 816.9017044110647,
@@ -164,7 +169,8 @@
           "negative": "",
           "emphasis": 1,
           "labels": [],
-          "weight": 1
+          "weight": 1,
+          "owner": "character-mw78t07m"
         },
         "position": {
           "x": 1083.9688036178436,
@@ -331,9 +337,10 @@
     "scene_prompt": "",
     "scene_negative": ""
   },
-  "updated_at": "2026-11-09T20:19:49.266231+00:00",
   "names": {
     "ja-JP": "サンプル"
   },
-  "starter": 1
+  "starter": 1,
+  "order": 0,
+  "updated_at": "2026-11-23T05:32:39.386732+00:00"
 }

@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "id": "show-71a0b9f1",
+  "name": "Sample Show",
+  "items": [
+    {
+      "kind": "act",
+      "id": "act-42af65ae",
+      "name": "Samples",
+      "scene_ids": [
+        "s-8706cf01",
+        "s-ef0e71b2"
+      ],
+      "names": {
+        "ja-JP": "サンプルシーン"
+      }
+    },
+    {
+      "kind": "act",
+      "id": "act-20cb5d5e",
+      "name": "Thumbnails Creation",
+      "scene_ids": [
+        "s-54a7f8fc",
+        "s-65c2c329",
+        "s-da220761",
+        "s-2b960c04",
+        "s-99970613",
+        "s-92cede6a",
+        "s-11d02b8d"
+      ],
+      "names": {
+        "ja-JP": "サムネイル生成シーン"
+      }
+    }
+  ],
+  "output_layout": "show_scene",
+  "names": {
+    "ja-JP": "ショーサンプル"
+  }
+}

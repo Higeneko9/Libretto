@@ -1,0 +1,206 @@
+{
+  "id": "s-54a7f8fc",
+  "name": "Hair",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "batch": 1,
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false
+        },
+        "position": {
+          "x": -116.27511333261415,
+          "y": -111.82342961005338
+        }
+      },
+      {
+        "id": "location-mwspt0wn",
+        "type": "location",
+        "data": {
+          "presetId": "p-2065c8b0",
+          "lib": "default",
+          "name": "Photo Studio",
+          "names": {
+            "ja-JP": "撮影スタジオ"
+          },
+          "keywords": "photo studio, white background, softbox lightingねbackdrop stand, behind-the-scenes photoshoot, wide studio shot",
+          "description": "photo studio, white background, softbox lightingねbackdrop stand, behind-the-scenes photoshoot, wide studio shot",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 412.57576108272656,
+          "y": -1.150630157459318
+        }
+      },
+      {
+        "id": "character-mwspt0wo",
+        "type": "character",
+        "data": {
+          "presetId": "p-ee45808f",
+          "lib": "default",
+          "name": "Yui",
+          "names": {
+            "ja-JP": "ゆい"
+          },
+          "keywords": "Yui,1girl, skinny, slender, small breasts",
+          "description": "Yui,1girl, skinny, slender, small breasts",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-70fb8f8e",
+            "t-fa71efe4"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 142.76310434304827,
+          "y": -113.81809024743302
+        }
+      },
+      {
+        "id": "view-mwspt0wp",
+        "type": "view",
+        "data": {
+          "presetId": "p-653e224b",
+          "lib": "default",
+          "name": "Upper body",
+          "names": {
+            "ja-JP": "上半身"
+          },
+          "keywords": "upper body, portrait, eye level",
+          "description": "an eye-level upper-body portrait",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-57d4011b"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 300.72723615010136,
+          "y": 114.37059551926808
+        }
+      },
+      {
+        "id": "costume-mwspt0wq",
+        "type": "costume",
+        "data": {
+          "presetId": "p-4a1b6bb6",
+          "lib": "default",
+          "name": "White one-piece",
+          "names": {
+            "ja-JP": "ワンピース(白)"
+          },
+          "keywords": "white one-piece dress, sundress",
+          "description": "a white one-piece dress",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-02dacc75",
+            "t-d0211c6c",
+            "t-8dff1a4c",
+            "t-5c825084"
+          ],
+          "weight": 1,
+          "owner": "character-mwspt0wo"
+        },
+        "position": {
+          "x": 150.68607183942066,
+          "y": 0.17122471515881443
+        }
+      },
+      {
+        "id": "emotion-mwspt0wr",
+        "type": "emotion",
+        "data": {
+          "presetId": "p-199bd8b8",
+          "lib": "default",
+          "name": "Smiling",
+          "names": {
+            "ja-JP": "微笑み"
+          },
+          "keywords": "smile, happy",
+          "description": "smile, happy",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-7e2169b7"
+          ],
+          "weight": 1,
+          "owner": "character-mwspt0wo"
+        },
+        "position": {
+          "x": 411.70411655378007,
+          "y": -116.7421417167448
+        }
+      },
+      {
+        "id": "style-mwspt0ws",
+        "type": "style",
+        "data": {
+          "presetId": "p-7293def1",
+          "lib": "default",
+          "name": "Anime illustration",
+          "names": {
+            "ja-JP": "アニメイラスト風"
+          },
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "t-b9f9722c"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": -108.75,
+          "y": 0.578663909849638
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "location-mwspt0wn",
+        "target": "generate"
+      },
+      {
+        "source": "character-mwspt0wo",
+        "target": "generate"
+      },
+      {
+        "source": "view-mwspt0wp",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mwspt0wq",
+        "target": "generate"
+      },
+      {
+        "source": "emotion-mwspt0wr",
+        "target": "generate"
+      },
+      {
+        "source": "style-mwspt0ws",
+        "target": "generate"
+      }
+    ],
+    "name": "Hair",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "names": {
+    "ja-JP": "髪型"
+  },
+  "updated_at": "2026-11-23T05:33:10.331375+00:00"
+}

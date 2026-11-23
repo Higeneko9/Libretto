@@ -86,9 +86,12 @@ setting in ComfyUI.
 
 ### Build a scene
 
-A new data folder starts with the **default** library and **Sample** and
-**Complex Sample** scenes. The examples use the built-in `sdxl` profile;
-choose your own working profile before generating.
+A new data folder starts with the **default** library and a sample show with
+two acts and nine scenes. **Sample** and **Complex Sample** open as tabs on
+first launch. The examples use the built-in `sdxl` profile; choose your own
+working profile before generating.
+Existing installations receive the sample show if their shows folder does not
+yet exist; existing scenes and shows are left unchanged.
 
 1. Open a scene using Scene tabs, or use **+** to create one.
 2. Choose a category in the Library browser and filter by tags or search text.

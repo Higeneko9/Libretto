@@ -1,0 +1,269 @@
+{
+  "id": "s-da220761",
+  "name": "Pose",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "batch": 1,
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false
+        },
+        "position": {
+          "x": 323.56393258888505,
+          "y": 80.29261866159341
+        }
+      },
+      {
+        "id": "style-mwsq5hft",
+        "type": "style",
+        "data": {
+          "presetId": "p-7293def1",
+          "lib": "default",
+          "name": "Anime illustration",
+          "names": {
+            "ja-JP": "アニメイラスト風"
+          },
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "t-b9f9722c"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 344.59024604461354,
+          "y": 201.98114547197522
+        }
+      },
+      {
+        "id": "view-mwsq5hfu",
+        "type": "view",
+        "data": {
+          "presetId": "p-801f1353",
+          "lib": "default",
+          "name": "Full Body Fashion Portrait",
+          "names": {
+            "ja-JP": "全身"
+          },
+          "keywords": "full body shot, full Body fashion portrait,",
+          "description": "full body shot, full Body fashion portrait,",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 879.9213209623474,
+          "y": 216.25831119835914
+        }
+      },
+      {
+        "id": "costume-mwsq5hfv",
+        "type": "costume",
+        "data": {
+          "presetId": "p-6e4dba6f",
+          "lib": "default",
+          "name": "T-Shirt and Jeans",
+          "names": {
+            "ja-JP": "Tシャツ＆ジーンズ"
+          },
+          "keywords": "semi long t-shirt, denim loosen jeans",
+          "description": "semi long t-shirt, denim loosen jeans",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-02dacc75",
+            "t-5c825084"
+          ],
+          "weight": 1,
+          "owner": "character-mwsq5hfz"
+        },
+        "position": {
+          "x": 632.2477547719802,
+          "y": 313.2427680732674
+        }
+      },
+      {
+        "id": "emotion-mwsq5hfw",
+        "type": "emotion",
+        "data": {
+          "presetId": "p-199bd8b8",
+          "lib": "default",
+          "name": "Smiling",
+          "keywords": "smile, happy",
+          "description": "smile, happy",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-6ae95d56",
+            "t-780a3ab2"
+          ],
+          "weight": 1,
+          "disabled": false,
+          "owner": "character-mwsq5hfz"
+        },
+        "position": {
+          "x": 638.1157999216719,
+          "y": 191.70669543064952
+        }
+      },
+      {
+        "id": "prompt-mwsq5hfx",
+        "type": "prompt",
+        "data": {
+          "text": "gray background, solo",
+          "polarity": "positive",
+          "placement": "inline",
+          "disabled": false
+        },
+        "position": {
+          "x": 899.2723902627542,
+          "y": 332.6554847253556
+        }
+      },
+      {
+        "id": "pose-mwsq5hfy",
+        "type": "pose",
+        "data": {
+          "presetId": "p-236e991a",
+          "lib": "default",
+          "name": "Standing",
+          "names": {
+            "ja-JP": "立つ"
+          },
+          "keywords": "standing",
+          "description": "standing",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-acad01ca"
+          ],
+          "weight": 1,
+          "owner": "character-mwsq5hfz"
+        },
+        "position": {
+          "x": 394.1213231431793,
+          "y": 366.6231095160961
+        }
+      },
+      {
+        "id": "character-mwsq5hfz",
+        "type": "character",
+        "data": {
+          "presetId": "p-ee45808f",
+          "lib": "default",
+          "name": "Yui",
+          "names": {
+            "ja-JP": "ゆい"
+          },
+          "keywords": "Yui,1girl, skinny, slender, small breasts",
+          "description": "Yui,1girl, skinny, slender, small breasts",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-70fb8f8e",
+            "t-fa71efe4"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 603.1144581834417,
+          "y": 75
+        }
+      },
+      {
+        "id": "hair-mwsq5hg0",
+        "type": "hair",
+        "data": {
+          "presetId": "p-3a8537a8",
+          "lib": "default",
+          "name": "Short bob",
+          "names": {
+            "ja-JP": "ショートボブ"
+          },
+          "keywords": "{color} hair, short hair, bob cut",
+          "description": "a short {color} bob cut",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-9bccaad6"
+          ],
+          "weight": 1,
+          "hair_color": "brown",
+          "owner": "character-mwsq5hfz"
+        },
+        "position": {
+          "x": 870.3061776068264,
+          "y": 77.53434985095919
+        }
+      },
+      {
+        "id": "prompt-mwsqotcd",
+        "type": "prompt",
+        "data": {
+          "text": "character sheet",
+          "polarity": "negative",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 896.9368437466386,
+          "y": 401.10102836365076
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "style-mwsq5hft",
+        "target": "generate"
+      },
+      {
+        "source": "view-mwsq5hfu",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mwsq5hfv",
+        "target": "generate"
+      },
+      {
+        "source": "emotion-mwsq5hfw",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mwsq5hfx",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mwsq5hfy",
+        "target": "generate"
+      },
+      {
+        "source": "character-mwsq5hfz",
+        "target": "generate"
+      },
+      {
+        "source": "hair-mwsq5hg0",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mwsqotcd",
+        "target": "generate"
+      }
+    ],
+    "name": "Pose",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "names": {
+    "ja-JP": "ポーズ"
+  },
+  "updated_at": "2026-11-23T05:33:24.270003+00:00"
+}

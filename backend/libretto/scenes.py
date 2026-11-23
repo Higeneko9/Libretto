@@ -5,6 +5,7 @@ import errno
 import json
 import re
 import shutil
+import tempfile
 import threading
 import uuid
 from contextlib import contextmanager
@@ -51,7 +52,7 @@ class Scenes:
     """A scene is a saved node graph (its own library, prompt additions and nodes), one JSON file each."""
 
     def __init__(self, root: Path, seed: Path | None = None, shows_root: Path | None = None,
-                 snapshots_root: Path | None = None):
+                 snapshots_root: Path | None = None, shows_seed: Path | None = None):
         self.root = root
         self.shows_root = shows_root if shows_root is not None else root.parent / "shows"
         self.snapshots_root = snapshots_root
@@ -60,9 +61,16 @@ class Scenes:
         self._redo: list[tuple[dict, dict]] = []
         self._revision = 0
         self._history_id = uuid.uuid4().hex
-        # only a brand-new data folder gets the sample scenes, so deleting them stays deleted
         if seed is not None and seed.is_dir() and not root.exists():
             shutil.copytree(seed, root)
+        if shows_seed is not None and shows_seed.is_dir():
+            if not self.shows_root.exists():
+                self.shows_root.parent.mkdir(parents=True, exist_ok=True)
+                with tempfile.TemporaryDirectory(dir=self.shows_root.parent) as temp:
+                    staged = Path(temp) / "shows"
+                    shutil.copytree(shows_seed, staged)
+                    staged.rename(self.shows_root)
+            root.mkdir(parents=True, exist_ok=True)
 
     def _file(self, scene_id: str) -> Path:
         _check(scene_id)

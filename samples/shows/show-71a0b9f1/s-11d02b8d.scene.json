@@ -1,0 +1,135 @@
+{
+  "id": "s-11d02b8d",
+  "name": "Location",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "batch": 1,
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false,
+          "height": 1024
+        },
+        "position": {
+          "x": 411.60595158168246,
+          "y": 67.86833343505859
+        }
+      },
+      {
+        "id": "location-mvyxwr0y",
+        "type": "location",
+        "data": {
+          "presetId": "p-3abd3030",
+          "lib": "default",
+          "name": "House",
+          "names": {
+            "ja-JP": "家"
+          },
+          "keywords": "real architecture, real dimensions, in front of a cozy house, garden, wooden porch",
+          "description": "real architecture, real dimensions, front of a cozy house with a garden and a wooden porch",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-a00bd594"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 396.61277416637927,
+          "y": 251.1742246171648
+        }
+      },
+      {
+        "id": "prompt-mvyxwr0z",
+        "type": "prompt",
+        "data": {
+          "text": "no characters",
+          "polarity": "positive",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 719.5222692007416,
+          "y": 322.58521802898906
+        }
+      },
+      {
+        "id": "style-mvyxwr10",
+        "type": "style",
+        "data": {
+          "presetId": "p-7293def1",
+          "lib": "default",
+          "name": "Anime illustration",
+          "names": {
+            "ja-JP": "アニメイラスト風"
+          },
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "t-b9f9722c"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 672.3101392802564,
+          "y": 70.6948950649898
+        }
+      },
+      {
+        "id": "lighting-mw71lbcd",
+        "type": "lighting",
+        "data": {
+          "presetId": "p-ccbc23b7",
+          "lib": "default",
+          "name": "Morning",
+          "names": {
+            "ja-JP": "朝"
+          },
+          "keywords": "morning sunlight, soft shadows",
+          "description": "morning sunlight, soft shadows",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1
+        },
+        "position": {
+          "x": 694.3134854058414,
+          "y": 189.4484394003812
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "location-mvyxwr0y",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mvyxwr0z",
+        "target": "generate"
+      },
+      {
+        "source": "style-mvyxwr10",
+        "target": "generate"
+      },
+      {
+        "source": "lighting-mw71lbcd",
+        "target": "generate"
+      }
+    ],
+    "name": "Location",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "names": {
+    "ja-JP": "場所"
+  },
+  "order": 14,
+  "updated_at": "2026-11-23T05:33:55.242515+00:00"
+}

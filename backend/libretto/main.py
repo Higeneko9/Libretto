@@ -168,8 +168,8 @@ class SnapSettings(BaseModel):
 def create_app(settings: LB_Settings | None = None, comfy: ComfyClient | None = None, start_worker: bool = True) -> FastAPI:
     settings = settings or LB_LoadSettings()
     libraries = Libraries(settings.LibrariesRoot, LB_PROJECT_ROOT / "samples" / "default")
-    scenes = Scenes(settings.ScenesRoot, LB_PROJECT_ROOT / "samples" / "scenes", settings.EffectiveShowsRoot,
-                    settings.SceneSnapsRoot)
+    scenes = Scenes(settings.ScenesRoot, shows_root=settings.EffectiveShowsRoot,
+                    snapshots_root=settings.SceneSnapsRoot, shows_seed=LB_PROJECT_ROOT / "samples" / "shows")
     scene_snaps = SceneSnaps(settings.SceneSnapsRoot, settings.SceneSnapMax)
     profiles = load_profiles(settings.ProfilesRoot, settings.UserProfilesRoot)
     comfy = comfy or ComfyClient(settings.ComfyUrl)

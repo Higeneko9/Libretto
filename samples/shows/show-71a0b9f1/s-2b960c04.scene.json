@@ -1,0 +1,272 @@
+{
+  "id": "s-2b960c04",
+  "name": "Emotion",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "batch": 1,
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false
+        },
+        "position": {
+          "x": 337.8582993209016,
+          "y": -6.051657993100314
+        }
+      },
+      {
+        "id": "character-mw71lbb9",
+        "type": "character",
+        "data": {
+          "presetId": "p-ee45808f",
+          "lib": "default",
+          "name": "Yui",
+          "names": {
+            "ja-JP": "ゆい"
+          },
+          "keywords": "Yui,1girl, skinny, slender, small breasts",
+          "description": "Yui,1girl, skinny, slender, small breasts",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-70fb8f8e",
+            "t-fa71efe4"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 616.755188686627,
+          "y": -3.3043465320388137
+        }
+      },
+      {
+        "id": "hair-mw71lbba",
+        "type": "hair",
+        "data": {
+          "presetId": "p-3a8537a8",
+          "lib": "default",
+          "name": "Short bob",
+          "names": {
+            "ja-JP": "ショートボブ"
+          },
+          "keywords": "{color} hair, short hair, bob cut",
+          "description": "a short {color} bob cut",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-9bccaad6"
+          ],
+          "weight": 1,
+          "hair_color": "brown",
+          "owner": "character-mw71lbb9"
+        },
+        "position": {
+          "x": 880.9064467228282,
+          "y": -2.9220476355359573
+        }
+      },
+      {
+        "id": "emotion-mw71lbbb",
+        "type": "emotion",
+        "data": {
+          "presetId": "p-ea12ee16",
+          "lib": "default",
+          "name": "Big Smile",
+          "names": {
+            "ja-JP": "満面の笑み"
+          },
+          "keywords": "big smile",
+          "description": "big smile",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-7e2169b7"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbb9"
+        },
+        "position": {
+          "x": 378.70748633530275,
+          "y": 308.05950374918393
+        }
+      },
+      {
+        "id": "prompt-mw71lbbc",
+        "type": "prompt",
+        "data": {
+          "text": "gray background, solo, focus face, close-up face, looking at viewer",
+          "polarity": "positive",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 631.2495795933306,
+          "y": 280.10142537327886
+        }
+      },
+      {
+        "id": "costume-mw71lbbe",
+        "type": "costume",
+        "data": {
+          "presetId": "p-6e4dba6f",
+          "lib": "default",
+          "name": "T-Shirt and Jeans",
+          "names": {
+            "ja-JP": "Tシャツ＆ジーンズ"
+          },
+          "keywords": "semi long t-shirt, denim loosen jeans",
+          "description": "semi long t-shirt, denim loosen jeans",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-02dacc75",
+            "t-5c825084"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbb9"
+        },
+        "position": {
+          "x": 881.1797699547432,
+          "y": 135.07473037547513
+        }
+      },
+      {
+        "id": "prompt-mw71lbbf",
+        "type": "prompt",
+        "data": {
+          "text": "character sheet",
+          "polarity": "negative",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 924.7222761010175,
+          "y": 382.96224646432404
+        }
+      },
+      {
+        "id": "pose-mwsbqziq",
+        "type": "pose",
+        "data": {
+          "presetId": "p-236e991a",
+          "lib": "default",
+          "name": "Standing",
+          "names": {
+            "ja-JP": "立つ"
+          },
+          "keywords": "standing",
+          "description": "standing",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-acad01ca"
+          ],
+          "weight": 1,
+          "owner": "character-mw71lbb9"
+        },
+        "position": {
+          "x": 658.3105597055574,
+          "y": 117.38597975575999
+        }
+      },
+      {
+        "id": "style-mwsbqzir",
+        "type": "style",
+        "data": {
+          "presetId": "p-7293def1",
+          "lib": "default",
+          "name": "Anime illustration",
+          "names": {
+            "ja-JP": "アニメイラスト風"
+          },
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "t-b9f9722c"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 340.67860284361893,
+          "y": 113.17844408155302
+        }
+      },
+      {
+        "id": "view-mwsbqzis",
+        "type": "view",
+        "data": {
+          "presetId": "p-653e224b",
+          "lib": "default",
+          "name": "Upper body",
+          "names": {
+            "ja-JP": "上半身"
+          },
+          "keywords": "upper body, portrait, eye level",
+          "description": "an eye-level upper-body portrait",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-57d4011b"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 885.8468367394167,
+          "y": 258.10519559116767
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "character-mw71lbb9",
+        "target": "generate"
+      },
+      {
+        "source": "hair-mw71lbba",
+        "target": "generate"
+      },
+      {
+        "source": "emotion-mw71lbbb",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mw71lbbc",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mw71lbbe",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mw71lbbf",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mwsbqziq",
+        "target": "generate"
+      },
+      {
+        "source": "style-mwsbqzir",
+        "target": "generate"
+      },
+      {
+        "source": "view-mwsbqzis",
+        "target": "generate"
+      }
+    ],
+    "name": "Emotion",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "names": {
+    "ja-JP": "表情"
+  },
+  "order": 17,
+  "updated_at": "2026-11-23T05:33:36.266751+00:00"
+}

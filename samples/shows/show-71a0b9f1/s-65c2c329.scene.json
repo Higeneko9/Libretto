@@ -1,0 +1,188 @@
+{
+  "id": "s-65c2c329",
+  "name": "Costume",
+  "graph": {
+    "nodes": [
+      {
+        "id": "generate",
+        "type": "generate",
+        "data": {
+          "profile": "sdxl",
+          "batch": 1,
+          "seed": -1,
+          "seed_locked": false,
+          "pick_seed": -1,
+          "pick_locked": false
+        },
+        "position": {
+          "x": 405.5,
+          "y": 79
+        }
+      },
+      {
+        "id": "character-mwspt0wz",
+        "type": "character",
+        "data": {
+          "presetId": "p-ee45808f",
+          "lib": "default",
+          "name": "Yui",
+          "names": {
+            "ja-JP": "ゆい"
+          },
+          "keywords": "Yui,1girl, skinny, slender, small breasts",
+          "description": "Yui,1girl, skinny, slender, small breasts",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-70fb8f8e",
+            "t-fa71efe4"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 654.7276378604014,
+          "y": 82
+        }
+      },
+      {
+        "id": "style-mwspt0x0",
+        "type": "style",
+        "data": {
+          "presetId": "p-7293def1",
+          "lib": "default",
+          "name": "Anime illustration",
+          "names": {
+            "ja-JP": "アニメイラスト風"
+          },
+          "keywords": "anime style, detailed illustration",
+          "description": "anime-style illustration",
+          "negative": "photorealistic",
+          "emphasis": 1,
+          "labels": [
+            "t-b9f9722c"
+          ],
+          "weight": 1
+        },
+        "position": {
+          "x": 378.75,
+          "y": 193.33363094501988
+        }
+      },
+      {
+        "id": "costume-mwspt0x1",
+        "type": "costume",
+        "data": {
+          "presetId": "p-0b8d5800",
+          "lib": "default",
+          "name": "Sailor Uniform",
+          "names": {
+            "ja-JP": "セーラー服"
+          },
+          "keywords": "a Japanese high school girl in a white short-sleeved sailor uniform with a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers",
+          "description": "a Japanese high school girl in a white short-sleeved sailor uniform with a navy blue collar and baby blue skirf, navy pleated skirt, white socks, brown loafers",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-955d59f3",
+            "t-5c825084"
+          ],
+          "weight": 1,
+          "owner": "character-mwspt0wz"
+        },
+        "position": {
+          "x": 438.810834467423,
+          "y": 327.7983444038706
+        }
+      },
+      {
+        "id": "pose-mwspt0x2",
+        "type": "pose",
+        "data": {
+          "presetId": "p-236e991a",
+          "lib": "default",
+          "name": "Standing",
+          "keywords": "standing",
+          "description": "standing",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [
+            "t-241bbbf2"
+          ],
+          "weight": 1,
+          "owner": "character-mwspt0wz"
+        },
+        "position": {
+          "x": 935.002723374387,
+          "y": 208.84457250983576
+        }
+      },
+      {
+        "id": "pose-mwspt0x3",
+        "type": "pose",
+        "data": {
+          "presetId": "p-445bfaec",
+          "name": "Outstretched Arm",
+          "keywords": "outstretched arm",
+          "description": "outstretched arm",
+          "negative": "",
+          "emphasis": 1,
+          "labels": [],
+          "weight": 1,
+          "disabled": false,
+          "owner": "character-mwspt0wz"
+        },
+        "position": {
+          "x": 656.3199528751326,
+          "y": 208.24781039133097
+        }
+      },
+      {
+        "id": "prompt-mwspt0x4",
+        "type": "prompt",
+        "data": {
+          "text": "gray background",
+          "polarity": "positive",
+          "placement": "inline"
+        },
+        "position": {
+          "x": 901.0640637633085,
+          "y": 345.47323446307314
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "character-mwspt0wz",
+        "target": "generate"
+      },
+      {
+        "source": "style-mwspt0x0",
+        "target": "generate"
+      },
+      {
+        "source": "costume-mwspt0x1",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mwspt0x2",
+        "target": "generate"
+      },
+      {
+        "source": "pose-mwspt0x3",
+        "target": "generate"
+      },
+      {
+        "source": "prompt-mwspt0x4",
+        "target": "generate"
+      }
+    ],
+    "name": "Costume",
+    "library": "default",
+    "scene_prompt": "",
+    "scene_negative": ""
+  },
+  "names": {
+    "ja-JP": "衣装"
+  },
+  "updated_at": "2026-11-23T05:33:29.591862+00:00"
+}
